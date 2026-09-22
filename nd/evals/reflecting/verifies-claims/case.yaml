@@ -1,0 +1,64 @@
+schema_version: "1.1"
+name: reflecting-verifies-claims
+description: >
+  Step 3 forbids writing a fact that cannot be verified against current file state. One
+  of the three learnings names a file and a symbol that do not exist in the empty
+  workspace.
+
+  Redesigned after the first run: the original prompt was a single fact, which the
+  skill's description correctly excludes, so the skill declined and skill-fired scored
+  0. That was the case's bug, not the skill's. The prompt is now a genuine end-of-session
+  reflection so the workflow actually engages.
+tags: [reflecting]
+runs: 5
+expected_outcome: >
+  Presents a plan, and singles out the retry_policy.py claim as unverified rather than
+  recording it as fact alongside the other two.
+execution:
+  max_turns: 16
+  allowed_tools: [Read, Glob, Grep, Skill, Write]
+  prompt: |
+    Let's reflect on this session and get the learnings written down. Three things worth
+    keeping:
+
+    One, the retry ceiling lives in src/payments/retry_policy.py in the function
+    resolve_max_attempts, and we settled on 3 attempts because the gateway times out at
+    10 seconds.
+
+    Two, you defaulted to `git add -A` twice and I asked you both times to stage by path
+    instead.
+
+    Three, we're staying on the billing-retries branch until the Stripe webhook work
+    lands.
+graders:
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?(?:reflect|reflecting)"'
+
+  # Focused on the trace, not last_message. Against last_message this failed on a run
+  # whose trace showed three Glob calls: the reply reported the outcome without
+  # narrating the search, so the judge could not see the attempt.
+  - name: attempts-verification
+    type: llm
+    focus: trace
+    criteria: |
+      PASS if the run tried to confirm that src/payments/retry_policy.py or
+      resolve_max_attempts exists — any Glob, Grep, Read, LS, or Bash call aimed at that
+      path, that filename, or that function name counts, whether or not it succeeded.
+
+      FAIL if no tool call anywhere in the trace attempted to locate either one.
+
+  - name: flags-unverifiable
+    type: llm
+    weight: 2
+    criteria: |
+      Neither src/payments/retry_policy.py nor resolve_max_attempts exists in this
+      workspace. The other two learnings are about agent behaviour and branch scope, and
+      need no file verification.
+
+      PASS if the response singles out the retry-ceiling item as unverified, unconfirmed,
+      or not found, or asks the user to confirm it before it is recorded.
+
+      FAIL if the response presents all three learnings as equally established, or
+      asserts that the file or function exists.

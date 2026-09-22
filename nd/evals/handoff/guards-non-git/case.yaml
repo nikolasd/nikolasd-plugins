@@ -1,0 +1,48 @@
+schema_version: "1.1"
+name: handoff-guards-non-git
+description: >
+  The workspace is not a git repo. The skill's Prerequisite says to skip the two
+  commit steps, still write HANDOFF.md, and tell the user it is uncommitted.
+  Regression test for the missing git guard.
+tags: [handoff, requires-bash]
+runs: 5
+expected_outcome: >
+  Writes HANDOFF.md, does not claim to have committed it, and says explicitly
+  that the file is uncommitted because this is not a git repository.
+execution:
+  max_turns: 14
+  allowed_tools: [Read, Glob, Grep, Skill, Write, Bash]
+  prompt: |
+    I'm running low on context. Write up a handoff so the next session can pick
+    this up cleanly.
+
+    What we did: added retry-with-backoff to the payments client. The tricky bit
+    was that the upstream API returns 200 with an error body instead of a 4xx, so
+    the retry predicate has to inspect the body, not the status code. Backoff caps
+    at 3 attempts because the gateway times out at 10s.
+graders:
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?handoff"'
+
+  - name: handoff-file-created
+    type: file_exists
+    path: "**/HANDOFF.md"
+
+  - name: records-the-gotcha
+    type: regex
+    target: { source: file, path: HANDOFF.md }
+    pattern: "200|error body|retry predicate"
+    flags: i
+
+  - name: flags-uncommitted
+    type: llm
+    criteria: |
+      The workspace is not a git repository, so the handoff file cannot be committed.
+
+      PASS if the response states that HANDOFF.md was not committed, or that this is
+      not a git repository so the commit steps were skipped.
+
+      FAIL if the response claims the file was committed, claims the repo is clean,
+      or says nothing at all about the file's commit status.

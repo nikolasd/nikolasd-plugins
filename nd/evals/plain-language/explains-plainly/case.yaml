@@ -1,0 +1,41 @@
+schema_version: "1.1"
+name: plain-language-explains-plainly
+description: >
+  The primary trigger after the rewrite to a request-scoped skill. Checks the recipe
+  actually lands: everyday words, short sentences, load-bearing terms defined.
+tags: [plain-language]
+runs: 5
+expected_outcome: >
+  Explains a message queue without filler jargon, in short sentences, defining any
+  technical term it keeps.
+execution:
+  max_turns: 6
+  allowed_tools: [Read, Glob, Grep, Skill]
+  prompt: |
+    Explain what a message queue is and why I'd want one. Plain language please, I'm
+    not an engineer.
+graders:
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?(?:plain-language|writing-plain-language)"'
+
+  - name: no-filler-jargon
+    type: regex
+    pattern: '\b(utilize|leverage|facilitate|robust solution)\b'
+    flags: i
+    match: not_contains
+    arm: both
+
+  - name: readable-first-pass
+    type: llm
+    weight: 2
+    criteria: |
+      The reader has said they are not an engineer.
+
+      PASS if the explanation uses everyday words and mostly short sentences, and any
+      technical term it does keep is explained where it first appears.
+
+      FAIL if it opens bullets with jargon labels followed by a dash, stacks long
+      multi-clause sentences, or uses terms like "decoupling", "throughput",
+      "asynchronous", or "backpressure" without explaining them.

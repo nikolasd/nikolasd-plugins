@@ -1,0 +1,36 @@
+schema_version: "1.1"
+name: plain-language-skips-adr
+description: >
+  Near-miss, and the reason the skill stopped being always-on. An ADR is named in the
+  skill's own out-of-scope list and keeps its technical register.
+tags: [plain-language, near-miss]
+runs: 5
+expected_outcome: >
+  Drafts the ADR in normal technical register. Does not invoke the plain-language
+  skill and does not simplify away precise terms.
+execution:
+  max_turns: 10
+  allowed_tools: [Read, Glob, Grep, Skill, Write]
+  prompt: |
+    Draft an ADR for choosing Postgres over DynamoDB for the billing service. We need
+    multi-row transactions and ad-hoc reporting queries; write volume is modest.
+graders:
+  - name: plain-language-skill-not-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?(?:plain-language|writing-plain-language)"'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: keeps-technical-register
+    type: llm
+    criteria: |
+      This is an architecture decision record for an engineering audience.
+
+      PASS if the draft has ADR structure (such as context, decision, consequences, or
+      alternatives) and uses precise technical terms where they are correct — for
+      example transactions, consistency, indexes, or query patterns.
+
+      FAIL if it reads as a simplified explainer for a non-technical reader, or if it
+      avoids precise database terminology in favour of everyday paraphrase.

@@ -1,0 +1,71 @@
+schema_version: "1.1"
+name: plain-language-rewrites-jargon
+description: >
+  Applied rewrite, and the A/B case for the "Common swaps" section. The source text
+  plants every word in that table plus two jargon-label bullets. Run it, delete the
+  Common swaps section from the skill, run it again, and compare the scores — see
+  README.md in the eval root.
+tags: [plain-language, ab-test]
+runs: 5
+expected_outcome: >
+  Rewrite contains none of the planted filler words and reads as plain prose rather
+  than jargon-labelled bullets.
+execution:
+  max_turns: 6
+  allowed_tools: [Read, Glob, Grep, Skill, Write]
+  prompt: |
+    Rewrite this for our customer-facing help page so a non-technical reader gets it on
+    the first read. Keep the meaning.
+
+    Put the rewritten text in rewrite.md, and only the rewritten text — no commentary,
+    no before-and-after notes in that file. Explain your changes in your reply instead.
+
+    "Horizontal scalability — the platform can be utilized across an arbitrary number
+    of worker nodes, and operators may leverage the autoscaler in order to facilitate
+    elastic capacity provisioning. Fault isolation — a robust solution for partial
+    degradation is furnished by the supervisor tree, whereby failures are contained
+    within the affected subtree and remediation is effectuated without a full restart."
+graders:
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?(?:plain-language|writing-plain-language)"'
+
+  - name: rewrite-file-created
+    type: file_exists
+    path: "**/rewrite.md"
+
+  # Targets the file, not last_message. Against last_message this failed on a correct
+  # rewrite, because the reply legitimately quotes the words it replaced ("utilized →
+  # runs"). The file holds only the rewrite, so a match there is a real miss.
+  - name: planted-words-removed
+    type: regex
+    target: { source: file, path: rewrite.md }
+    pattern: '\b(utilize[ds]?|leverage[ds]?|facilitate[ds]?|in order to|robust solution)\b'
+    flags: i
+    match: not_contains
+    weight: 2
+    arm: both
+
+  - name: no-jargon-label-bullets
+    type: llm
+    focus: { source: file, path: rewrite.md }
+    criteria: |
+      The source opened two sections with a jargon label followed by a dash
+      ("Horizontal scalability —", "Fault isolation —").
+
+      PASS if the rewrite expresses both ideas as plain sentences, or uses headings that
+      are themselves plain language.
+
+      FAIL if the rewrite keeps the pattern of a technical label followed by a dash and
+      an explanation.
+
+  - name: meaning-preserved
+    type: llm
+    focus: { source: file, path: rewrite.md }
+    criteria: |
+      PASS if the rewrite still conveys both ideas: that the system can run across many
+      machines and add capacity as demand grows, and that when one part fails only that
+      part is affected rather than the whole system restarting.
+
+      FAIL if either idea is dropped or reversed.

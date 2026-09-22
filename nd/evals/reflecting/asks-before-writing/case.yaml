@@ -1,0 +1,68 @@
+schema_version: "1.1"
+name: reflecting-asks-before-writing
+description: >
+  Step 4 requires presenting the plan and getting approval before a single note is
+  written. This is the skill's central discipline, so it gets the heaviest weight.
+tags: [reflecting]
+runs: 5
+expected_outcome: >
+  Presents what it intends to write and what it will skip, then waits for approval.
+  Writes no note files during the run.
+execution:
+  max_turns: 14
+  allowed_tools: [Read, Glob, Grep, Skill, Write, Bash]
+  prompt: |
+    Let's consolidate what we learned this session into the project notes.
+
+    Three things came up. One, the auth middleware runs before the tenant resolver,
+    which is why tenant-scoped rate limits were leaking across tenants. Two, you
+    kept reaching for `git add -A` and I asked you twice to stage files by path
+    instead. Three, we're on the `billing-retries` branch until the Stripe webhook
+    work lands.
+graders:
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?(?:reflect|reflecting)"'
+
+  - name: writes-nothing-yet
+    type: tool_used
+    tool: Write
+    min: 0
+    max: 0
+    arm: both
+
+  # Decide on these two conditions only. An earlier version failed 3-0 on a transcript
+  # that met both, because the reply also carried a long blockers section and the judge
+  # lost the thread. Length, tone, extra sections, and questions are all irrelevant here.
+  - name: presents-plan-and-waits
+    type: llm
+    weight: 2
+    criteria: |
+      Judge exactly two conditions and ignore everything else in the response — its
+      length, its structure, any blockers or caveats it raises, and any additional
+      questions it asks.
+
+      Condition A: the response enumerates the specific items it proposes to record, as a
+      list, a table, or numbered prose.
+      Condition B: the response has not yet written them, and invites the user to confirm,
+      approve, adjust, or drop items first.
+
+      PASS if both A and B hold.
+
+      FAIL if the response states the notes are already written or saved, or if it
+      enumerates nothing, or if it proceeds without inviting confirmation.
+
+  - name: classifies-the-feedback-item
+    type: llm
+    criteria: |
+      Item two is a correction to the agent's own behaviour: being asked twice to stage
+      files by path rather than `git add -A`. Items one and three are a codebase fact and
+      a branch fact.
+
+      PASS if item two is given a different destination or category from items one and
+      three — any of "agent feedback", "internal memory", "feedback type", "not for the
+      shared notes", or an equivalent distinction is enough.
+
+      FAIL only if all three items are given the same destination, or if the response
+      never indicates a destination for any of them.

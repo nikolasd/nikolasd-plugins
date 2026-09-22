@@ -1,0 +1,40 @@
+schema_version: "1.1"
+name: herdr-powershell-slash-command
+description: >
+  Knowledge retrieval for the shell-specific gotcha. In PowerShell no MSYS_NO_PATHCONV
+  prefix is needed; prescribing it there is the failure this case catches.
+tags: [herdr, reference]
+runs: 5
+expected_outcome: >
+  Gives the plain herdr agent prompt command, and either omits MSYS_NO_PATHCONV or says
+  explicitly that it is only needed in Git Bash.
+execution:
+  max_turns: 8
+  allowed_tools: [Read, Glob, Grep, Skill]
+  prompt: |
+    I'm in a Herdr pane on Windows, running PowerShell, and I have an agent called
+    worker. What's the exact command to send it /model opus?
+graders:
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?(?:herdr|spawning-herdr-agents)"'
+
+  - name: gives-the-prompt-command
+    type: regex
+    pattern: 'herdr\s+agent\s+prompt\s+worker'
+    flags: i
+
+  - name: correct-shell-advice
+    type: llm
+    weight: 2
+    criteria: |
+      The user is in PowerShell. The MSYS_NO_PATHCONV=1 prefix is a Git Bash workaround
+      and is not needed in PowerShell.
+
+      PASS if the command it tells the user to run has no MSYS_NO_PATHCONV prefix. It
+      may still mention the prefix while explaining that Git Bash needs it and
+      PowerShell does not.
+
+      FAIL if it tells the user to run MSYS_NO_PATHCONV=1 in PowerShell, or presents
+      that prefixed form as the command to use.

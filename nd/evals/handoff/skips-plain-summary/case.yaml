@@ -1,0 +1,40 @@
+schema_version: "1.1"
+name: handoff-skips-plain-summary
+description: >
+  Near-miss. The user wants an in-conversation summary and says they are staying
+  here, so the handoff skill should not fire and no HANDOFF.md should appear.
+  Guards against an over-broad description.
+tags: [handoff, near-miss]
+runs: 5
+expected_outcome: >
+  Answers with a short summary in the reply. Does not invoke the handoff skill and
+  does not create HANDOFF.md.
+execution:
+  max_turns: 8
+  allowed_tools: [Read, Glob, Grep, Skill, Write]
+  prompt: |
+    Quick recap for me — what have we covered so far? I'm staying in this session,
+    I just want it in one place so I can reread it.
+graders:
+  - name: handoff-skill-not-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?handoff"'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: no-handoff-file
+    type: file_exists
+    path: "**/HANDOFF.md"
+    exists: false
+    arm: both
+
+  - name: answers-in-the-reply
+    type: llm
+    criteria: |
+      PASS if the response gives the recap directly in the reply, or explains that
+      there is no prior conversation to recap.
+
+      FAIL if the response announces it is producing a handoff document, or tells
+      the user to open a new session.
