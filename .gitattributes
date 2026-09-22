@@ -1,0 +1,7 @@
+# Normalise text to LF in the repository; check out native line endings.
+* text=auto
+
+# Shell scripts must keep LF in the working tree on every platform. The eval
+# scaffold (nd/evals/handoff/asks-before-committing/setup.sh) is executed by bash
+# on macOS and Linux, where CRLF breaks both the shebang and the heredocs.
+*.sh text eol=lf
