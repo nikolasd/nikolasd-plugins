@@ -1,0 +1,26 @@
+{
+  "$schema": "https://anthropic.com/claude-code/plugin.schema.json",
+  "name": "ty-lsp",
+  "displayName": "ty Language Server",
+  "version": "0.1.0",
+  "description": "Python code intelligence via Astral's ty language server",
+  "author": {
+    "name": "Nikolas Demiridis",
+    "email": "nikolas@demiridis.gr",
+    "url": "https://github.com/nikolasd"
+  },
+  "license": "MIT",
+  "keywords": ["python", "lsp", "language-server", "ty", "type-checking", "astral"],
+  "lspServers": {
+    "python": {
+      "command": "ty",
+      "args": ["server"],
+      "extensionToLanguage": {
+        ".py": "python",
+        ".pyi": "python"
+      },
+      "diagnostics": true,
+      "restartOnCrash": true
+    }
+  }
+}
