@@ -1,0 +1,14 @@
+{
+  "$schema": "https://anthropic.com/claude-code/plugin.schema.json",
+  "name": "nd",
+  "displayName": "Personal Skills",
+  "version": "0.1.0",
+  "description": "Personal workflow skills: session handoff, session reflection, plain-language writing style, and spawning/controlling agents via Herdr",
+  "author": {
+    "name": "Nikolas Demiridis",
+    "email": "nikolas@demiridis.gr",
+    "url": "https://github.com/nikolasd"
+  },
+  "license": "MIT",
+  "keywords": ["handoff", "reflection", "plain-language", "writing", "workflow", "herdr", "agents"]
+}
