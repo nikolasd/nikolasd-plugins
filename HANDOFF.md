@@ -5,13 +5,69 @@ Repo: `C:\Dev\Repos\nikolad-plugins` (authored on Windows)
 Current HEAD: `df5abbe` Add Basic Memory knowledge base at docs/memory — plus this
 commit, which adds the handoff itself. Nine commits on `main`, no remote yet.
 
-> **Next session's focus: finish the eval runs on macOS.**
-> Ten of twelve eval cases have already been run and pass. Two cannot run on the Windows
-> machine this was authored on, for an environment reason that macOS should not share.
-> Six more have only weak single-run evidence and should be re-run properly. The
-> **Testing Notes** section below is the one to read first — it has the exact commands,
-> the precondition to check before trusting anything, and which results are already good.
-> Nothing in the skills themselves is known to be broken.
+> **Update, 2026-09-22 (macOS session) — read this first.**
+> The two git cases **cannot run on macOS either**, for a different reason: git itself
+> fails inside the eval sandbox (see "macOS session results" below). Items 1 and 2 of the
+> review still rest on code review alone. **Next step: run them on Linux** (CI, item 7).
+> Everything else is now verified at 5 runs with a Sonnet judge. Nothing in the skills
+> is known to be broken. The original Windows-session notes follow, unchanged except
+> where marked.
+
+## macOS session results (2026-09-22)
+
+Claude Code 2.1.280 on macOS (Darwin 27). Spent ≈ $8.60.
+
+**The git cases were vacuous again.** The PATH-readability precondition passed and both
+cases scored 1.00 over 20 runs, but kept traces showed every `git` call failing with exit
+72: `/usr/bin/git` is Apple's `xcrun` shim, it writes a cache under `/var/folders/…/T/`,
+and the sandbox denies it. The "never ran `git add -A`" graders passed because git never
+ran. Workarounds tried and ruled out (PATH prepend, a `git` symlink earlier in PATH,
+`xcrun_nocache`, `TMPDIR`) are listed in `nd/evals/README.md` → "macOS: Bash runs, but git
+does not". The sandbox shell resolves `git` to `/usr/bin/git` no matter what PATH says.
+
+Weak signal only: in every broken-git transcript read, the agent never tried to commit
+around the failure — it inspected `.git` directly and left changes uncommitted.
+
+**Positive controls added, so this can't pass silently again.** Each Bash-dependent case
+now has a grader that fails unless the shell really did its job:
+
+| Case | New grader | Checks |
+| :--- | :--- | :--- |
+| `handoff-asks-before-committing` | `git-actually-ran` | trace contains `?? scratch-secrets.env` or `to include in what will be committed` |
+| `handoff-guards-non-git` | `git-actually-ran` | trace contains `fatal: not a git repository` or `Exit code 128` |
+| `herdr-stops-outside-herdr` | `checks-herdr-env` | a Bash call mentions `HERDR_ENV` |
+
+The git patterns are strings only git prints, because `target: trace` also covers the
+agent's replies and the HANDOFF.md it writes. (A first draft used `Untracked files:` and
+`not a git repository`, which an agent could write itself.)
+
+Verified: the cases load and both git cases score 0.80 on macOS with `git-actually-ran`
+failing (earlier draft patterns; the final ones were not re-run through the runner).
+The final patterns match real host `git status` / `git rev-parse` output and none of 18
+kept broken-git traces or the skill body. The herdr control passes with Bash and fails
+without it. **Unverified:** the runner matching real git output inside a sandbox — first
+Linux run.
+
+**`herdr-stops-outside-herdr` had the same trap and is now fixed.** It allowed Bash but
+wasn't tagged `requires-bash`, and the documented command granted only `Write` — so every
+earlier 1.00 came from an agent with no shell reporting "I can't run commands". Re-run
+without Bash: 0.80, 3 of 5 runs failing (one agent sent a helper subagent, which the judge
+read as "an agent was started"). Re-run **with** Bash: **1.00, 5/5**, each run executing
+the `HERDR_ENV` check, getting "not in herdr", and stopping. Now tagged `requires-bash`.
+
+**The re-runs, all 5 runs, Sonnet judge, `--ablation none`, all 1.00:**
+`plain-language-explains-plainly`, `plain-language-skips-adr`,
+`herdr-powershell-slash-command`, `herdr-skips-subagent-request`,
+`handoff-skips-plain-summary`, `herdr-stops-outside-herdr` (with Bash).
+
+**Tooling gotcha:** `--case` is not repeatable — given twice, only the last one runs.
+`--tag` is. Noted in the README.
+
+**Still unverified:** the two git cases (Linux needed), the swaps-table A/B (item 3), and
+the with/without baseline (item 4). Note the first macOS run defaulted to both arms and
+reported Δ 0.00 for the git cases — meaningless, since git never ran in either arm.
+
+**Not done:** Basic Memory is not set up on this Mac (`/basic-memory:bm-setup`).
 
 ## What Was Built This Session
 
@@ -130,11 +186,11 @@ nd/evals/                        # new — whole suite
 Run from `nd/`. Full detail in `nd/evals/README.md`.
 
 ```bash
-# The 10 cases that run anywhere
-claude plugin eval . --allow-tools Write --judge-model sonnet -j 4 \
-  --tag handoff --tag reflecting --tag herdr --tag plain-language
+# Superseded 2026-09-22 — see nd/evals/README.md "Run it". In short:
+# all 12 where Bash works (git cases additionally need Linux):
+claude plugin eval . --scaffold --allow-tools Write Bash --judge-model sonnet -j 4
 
-# The two blocked on Windows — the point of the macOS session
+# The three requires-bash cases (2 git + herdr-stops-outside-herdr)
 claude plugin eval . --tag requires-bash --scaffold --allow-tools Write Bash --judge-model sonnet
 
 claude plugin validate .        # manifest only, not behaviour
@@ -159,6 +215,8 @@ there**, so verify rather than assume. If it fails, the symptom is every case sc
 first; `--scaffold` runs author-supplied bash as you. Expected: both **1.00**, with
 `never-adds-everything` and `never-stages-the-secrets-file` passing because `git add -A`
 genuinely never ran, and the judge confirming it asked before committing.
+*(2026-09-22: now applies to **Linux**, not macOS. It counts only if
+`git-actually-ran` passes — without it, 1.00 is exactly the vacuous result seen twice.)*
 
 **Step 3 — re-run these six properly.** They scored 1.00 but only at `runs: 1` with a
 Haiku judge, which the flip table above shows is not evidence:
@@ -182,9 +240,12 @@ shorter ones. Spent so far this session: **$6.79** across five invocations.
 
 ## Outstanding Work
 
-1. **Run the two `requires-bash` cases on macOS.** Items 1 and 2 — the review's
-   highest-severity fixes — have no machine verification until this happens.
-2. **Re-run the six single-run cases at `runs: 5` with a Sonnet judge** (~$4).
+1. **Run the two git cases on Linux.** ~~on macOS~~ — tried 2026-09-22; git fails
+   inside the macOS sandbox. Items 1 and 2 — the review's highest-severity fixes —
+   have no machine verification until this happens. Trust the result only if
+   `git-actually-ran` passes.
+2. ~~Re-run the six single-run cases at `runs: 5` with a Sonnet judge~~ — done
+   2026-09-22, all 1.00.
 3. **The swaps-table A/B is unresolved.** `plain-language-rewrites-jargon` exists partly
    to settle whether the `## Common swaps` section in `writing-plain-language` helps,
    hurts, or does nothing. Procedure is in `nd/evals/README.md`. One observation favours
@@ -204,8 +265,8 @@ shorter ones. Spent so far this session: **$6.79** across five invocations.
 6. **`repository` field deliberately omitted** from both `plugin.json` files. The repo
    does not exist yet; the author confirmed the URL will be
    `https://github.com/nikolasd/nikolad-plugins`. Add it to `nd/` and `ty-lsp/` when real.
-7. **A Linux CI workflow was offered but not written.** It would make items 1, 2 and 4
-   routine instead of machine-dependent. `--trust-plugin` exists for unattended runs.
+7. **A Linux CI workflow was offered but not written.** Now the only known route to
+   items 1 and 2. It would also make item 4 routine instead of machine-dependent. `--trust-plugin` exists for unattended runs.
 8. **`ty-lsp` was never reviewed** — out of scope. It declares MIT and has a valid
    manifest; nothing further checked.
 9. **Minor gap found in `reflecting` but not fixed:** the skill says nothing about what to
