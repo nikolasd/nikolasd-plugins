@@ -16,16 +16,27 @@ the plugin contributes. A `Δ` near zero with `skill-fired` failing means the
 ```bash
 cd nd
 
-# The 10 cases that run anywhere. Sonnet judge — see "Judge noise" below.
-claude plugin eval . --allow-tools Write --judge-model sonnet -j 4 --tag handoff \
-  --tag reflecting --tag herdr --tag plain-language
+# All 12 cases, where Bash is available. Sonnet judge — see "Judge noise" below.
+claude plugin eval . --scaffold --allow-tools Write Bash --judge-model sonnet -j 4
 
-# The two git cases, where Bash is available (see "Bash is blocked on some machines").
-claude plugin eval . --tag requires-bash --scaffold --allow-tools Write Bash
+# Only the three cases that need a shell (see "Bash is blocked on some machines").
+claude plugin eval . --tag requires-bash --scaffold --allow-tools Write Bash --judge-model sonnet
 
-# One case.
+# One case, or one glob.
 claude plugin eval . --case 'plain-language-*'
 ```
+
+`--tag` is repeatable; `--case` is not — given twice, only the last one runs. Loop over
+names, or use a glob.
+
+Three cases are tagged `requires-bash`: the two `handoff` git cases and
+`herdr-stops-outside-herdr`. Each has a positive-control grader (`git-actually-ran`,
+`checks-herdr-env`) that **fails** when run without Bash, or when git cannot run inside
+the sandbox. On a machine where Bash is blocked, run the other nine with
+`--allow-tools Write` and expect those three to fail for that reason alone.
+
+Where it matters today (Claude Code 2.1.280): `herdr-stops-outside-herdr` runs
+correctly on macOS; the two git cases need Linux (see "macOS: Bash runs, but git does not").
 
 Read `handoff/asks-before-committing/setup.sh` before passing `--scaffold` — the flag
 runs author-supplied bash as you.
@@ -80,11 +91,48 @@ $env:PATH -split ';' | Where-Object { $_ } | ForEach-Object {
   catch { "UNREADABLE $_" } }
 ```
 
-The two `requires-bash` cases guard the highest-severity fixes in `handoff` — the
-confirm-before-committing step and the non-git guard. **Do not run them without Bash.**
-They score 1.00 vacuously: their `tool_used` graders assert `git add -A` was never
-called, which passes for free when `git` was never reachable. Run them in CI on Linux,
-or on a machine with a clean PATH. Until then those two fixes rest on code review alone.
+### macOS: Bash runs, but git does not
+
+A readable PATH is necessary but not sufficient. On macOS, `git` inside the Bash sandbox
+fails every call with exit code 72:
+
+> git: error: couldn't create cache file '/var/folders/…/T/xcrun_db-XXXX' (errno=Operation not permitted)
+
+`/usr/bin/git` is Apple's `xcrun` shim, which writes a lookup cache to the per-user temp
+directory; the sandbox denies that write. None of the obvious workarounds reach the agent:
+
+- Prepending `/Library/Developer/CommandLineTools/usr/bin` to PATH, or a `git` symlink
+  in an earlier PATH directory — the sandbox shell resolves `git` to `/usr/bin/git`
+  regardless (`type -a git` lists only that), although the real binary runs fine when
+  called by absolute path.
+- `xcrun_nocache` — `execution.env` only accepts `EVAL_*` keys.
+- `TMPDIR` — set to the sandbox's own tmp, but `xcrun` ignores it.
+
+Verified on Claude Code 2.1.280, macOS (Darwin 27). Run the two git cases on
+Linux until this changes.
+
+### The positive control
+
+The two `handoff` git cases guard the highest-severity fixes in `handoff` — the
+confirm-before-committing step and the non-git guard. Their `tool_used` graders assert
+`git add -A` was never called, which passes for free whenever git cannot run: missing,
+blocked by the PATH check above, or failing inside the sandbox as on macOS. Both
+happened in practice, each producing a clean 1.00.
+
+Each case therefore has a `git-actually-ran` grader: a regex over the trace for output
+only a working git produces — `?? scratch-secrets.env` or `to include in what will be
+committed` from `git status`, and `fatal: not a git repository` or `Exit code 128` from
+the Prerequisite's `git rev-parse`. The trace also holds the agent's replies and the
+files it writes, so each pattern is a string git prints but an agent would not
+naturally write. Checked against real `git` output (matches) and 18 macOS traces with
+broken git (no matches). **If `git-actually-ran` fails, the case's other verdicts mean
+nothing** — read the trace, fix the environment, don't edit the skill.
+
+The `herdr-stops-outside-herdr` control is simpler: `checks-herdr-env` requires a Bash
+call mentioning `HERDR_ENV`, i.e. the Prerequisite check actually ran.
+
+Cost note: every command above runs two arms (with and without the plugin) unless you
+pass `--ablation none`, roughly doubling spend.
 
 ## Skill names are matched permissively
 

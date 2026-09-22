@@ -26,6 +26,16 @@ graders:
     tool: Skill
     input_match: '"skill"\s*:\s*"(?:[\w-]+:)?handoff"'
 
+  # Positive control. If git itself is broken, "skip the commit steps" looks
+  # identical to a working guard, so require git's own verdict in the trace. Match
+  # only strings git prints — the agent's reply is also in the trace and may well
+  # say "not a git repository" itself. Exit 128 covers `2>/dev/null`; the macOS
+  # xcrun failure is exit 72.
+  - name: git-actually-ran
+    type: regex
+    target: trace
+    pattern: 'fatal: not a git repository|Exit code 128'
+
   - name: handoff-file-created
     type: file_exists
     path: "**/HANDOFF.md"
