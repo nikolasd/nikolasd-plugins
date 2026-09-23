@@ -1,0 +1,57 @@
+name: Release
+
+# Triggered by pushing a tag like v0.2.0. Pulls that version's section out of
+# CHANGELOG.md and publishes it as a GitHub Release. No Claude API
+# credentials involved - manifest validation only, same as validate.yml.
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Claude Code CLI
+        run: curl -fsSL https://claude.ai/install.sh | bash
+
+      - name: Add claude to PATH
+        run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Validate manifests before releasing
+        run: |
+          claude plugin validate . --strict
+          claude plugin validate nd --strict
+          claude plugin validate ty-lsp --strict
+
+      - name: Extract this version's CHANGELOG section
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          awk -v ver="$version" '
+            BEGIN { found = 0 }
+            /^## \[/ {
+              if (found) exit
+              if (index($0, "[" ver "]") > 0) { found = 1; next }
+              next
+            }
+            found { print }
+          ' CHANGELOG.md > release-notes.md
+
+          if [ ! -s release-notes.md ]; then
+            echo "::error::No CHANGELOG.md section found for version $version (expected a heading like '## [$version] - YYYY-MM-DD')"
+            exit 1
+          fi
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            --title "$GITHUB_REF_NAME" \
+            --notes-file release-notes.md

@@ -1,0 +1,32 @@
+name: Validate plugin manifests
+
+# Manifest/schema validation only - no Claude API credentials involved. This
+# deliberately does NOT run `claude plugin eval` (see CONTRIBUTING.md and
+# nd/evals/README.md for why that stays a manual, machine-dependent step).
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Claude Code CLI
+        run: curl -fsSL https://claude.ai/install.sh | bash
+
+      - name: Add claude to PATH
+        run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Validate marketplace manifest
+        run: claude plugin validate . --strict
+
+      - name: Validate nd plugin
+        run: claude plugin validate nd --strict
+
+      - name: Validate ty-lsp plugin
+        run: claude plugin validate ty-lsp --strict

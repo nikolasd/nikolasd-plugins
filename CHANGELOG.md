@@ -11,6 +11,14 @@ and each plugin's `version` in its own `plugin.json` follows
 ### Added
 - `README.md`, `CONTRIBUTING.md`, this changelog.
 - `repository` field on both `nd` and `ty-lsp` `plugin.json`.
+- CI: `.github/workflows/validate.yml` validates both plugin manifests (schema only,
+  no API credentials) on every push and PR into `main`.
+- Release pipeline: `.github/workflows/release.yml` publishes a GitHub Release with
+  notes pulled from this file whenever a `vX.Y.Z` tag is pushed.
+
+### Removed
+- `HANDOFF.md` — its session-continuity purpose is done (both review items verified
+  on Linux); its substantive findings live on in `nd/evals/README.md` and this file.
 
 ## [0.1.0] - 2026-09-23
 

@@ -53,6 +53,7 @@ For local development, install straight from a checkout instead:
 
 ```
 .claude-plugin/marketplace.json   # marketplace manifest — registers both plugins
+.github/workflows/                # manifest validation (every push) + release-on-tag
 nd/                                # Personal Skills plugin
   .claude-plugin/plugin.json
   skills/<skill-name>/SKILL.md

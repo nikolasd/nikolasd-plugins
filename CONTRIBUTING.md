@@ -45,6 +45,34 @@ including ones made in future sessions by an AI assistant.
   and move the `[Unreleased]` entries under a new dated version heading in
   `CHANGELOG.md`.
 
+## CI
+
+`.github/workflows/validate.yml` runs `claude plugin validate --strict` against the
+marketplace manifest and both plugins on every push and on PRs into `main`. It's
+manifest/schema validation only — it does **not** run `nd`'s eval suite. That stays a
+manual, machine-dependent step (see `nd/evals/README.md`) because it needs a real
+Claude API credential and costs real money per run; deliberately not wired into CI.
+
+## Cutting a release
+
+Both plugins are currently versioned together under one `CHANGELOG.md` heading (they
+started at `0.1.0` together and there's no reason yet to split them — revisit if their
+release cadences actually diverge).
+
+1. Move the `[Unreleased]` entries in `CHANGELOG.md` under a new
+   `## [X.Y.Z] - YYYY-MM-DD` heading.
+2. Bump `version` in whichever `plugin.json`(s) actually changed.
+3. Commit, push to `main`, then tag and push the tag:
+   ```bash
+   git tag vX.Y.Z
+   git push origin vX.Y.Z
+   ```
+4. `.github/workflows/release.yml` picks up the tag, extracts that version's
+   `CHANGELOG.md` section, and publishes a GitHub Release with it as the notes. It
+   fails loudly if it can't find a matching `## [X.Y.Z]` heading — that's a sign step 1
+   was skipped or the version number doesn't match, not something to work around in
+   the workflow.
+
 ## Basic Memory
 
 This repo's Basic Memory project is rooted at `docs/memory/` inside the checkout, so
