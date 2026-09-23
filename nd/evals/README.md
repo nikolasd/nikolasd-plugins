@@ -111,6 +111,44 @@ directory; the sandbox denies that write. None of the obvious workarounds reach 
 Verified on Claude Code 2.1.280, macOS (Darwin 27). Run the two git cases on
 Linux until this changes.
 
+### Linux: a symlink inside `~/.ssh` blocks it too
+
+A third, separate blocked precondition, hit on a fresh Ubuntu box (2026-09-23), same
+$0.00-in-~1s shape as the other two:
+
+> the SSH (~/.ssh) credential store on this machine holds a symbolic link inside it, so
+> the Bash sandbox cannot reliably exclude it — a Bash-granting evaluation cannot run
+> here; keep the store's contents in one plain directory (its root may be a link)
+
+Granting `Bash` also makes the runner check `~/.ssh` so it can exclude real credential
+material from the sandboxed shell. `~/.ssh` itself being a symlink is fine (the message
+says so); what fails it is a symlink *inside* `~/.ssh` pointing somewhere else on the
+filesystem — common with dotfile managers (chezmoi, yadm, stow) that link individual
+files like `config` or a key into place rather than copying them. The runner can't prove
+nothing sensitive lives at that other target, so it refuses outright, for every case.
+
+Find the culprit:
+
+```bash
+find ~/.ssh -maxdepth 3 -type l -ls
+```
+
+Fix by dereferencing each one so its actual content sits physically inside `~/.ssh`,
+not just a pointer to somewhere else:
+
+```bash
+for link in $(find ~/.ssh -maxdepth 3 -type l); do
+  target=$(readlink -f "$link")
+  rm "$link"
+  cp -a "$target" "$link"
+done
+chmod 700 ~/.ssh
+find ~/.ssh -type f -name 'id_*' ! -name '*.pub' -exec chmod 600 {} \;
+```
+
+Verify no symlinks remain (`find ~/.ssh -maxdepth 3 -type l` prints nothing), then
+re-run. This has not yet been verified fixed — first attempt just hit this wall.
+
 ### The positive control
 
 The two `handoff` git cases guard the highest-severity fixes in `handoff` — the
