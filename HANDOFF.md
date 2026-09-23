@@ -9,15 +9,16 @@ history was rewritten 2026-09-23 to strip `Co-Authored-By` lines (all-new hashes
 nikola**d**-plugins as earlier notes assumed — fix item 6 when touching the
 `repository` fields). Force-pushed; `origin/main` now matches local.
 
-> **Update, 2026-09-23 (later) — two Linux attempts now, both blocked, neither a plugin
-> result.** Attempt 1 (Ubuntu): a symlink inside `~/.ssh` blocked the Bash-granting
-> safety check entirely (fixed). Attempt 2, same box: missing sandbox backend
-> (`bubblewrap`/`socat` not installed) blocked every run instead. Fix is
-> `apt install bubblewrap socat`, not yet retried. Diagnosis and fixes for both are in
-> `nd/evals/README.md` and in "Linux run — attempt 2 blocked" below. **Item 1 is still
-> open** — nothing about `git-actually-ran` has been verified yet. Also since the last
-> update: a GitHub remote now exists and history was rewritten to strip
-> `Co-Authored-By` lines, then force-pushed (see the header above).
+> **Update, 2026-09-23 (latest) — real Linux signal at last: item 1 resolved (PASS),
+> item 2 surfaced a likely real defect.** Attempts 1–2 were blocked preconditions (a
+> `~/.ssh` symlink, then a missing sandbox backend — both fixed). **Attempt 3 got real
+> data:** `handoff-asks-before-committing` scored a clean 1.00/5 with `git-actually-ran`
+> passing every time — item 1 is finally machine-verified. But
+> `handoff-guards-non-git` scored **worse with the plugin than without it** (Δ −0.15):
+> the non-git guard correctly detected "not a git repo" 5/5 times but only wrote
+> `HANDOFF.md` 2/5 times. Not yet diagnosed — needs a trace. See "Linux run — attempt 3"
+> below. Also since the last update: a GitHub remote now exists and history was
+> rewritten to strip `Co-Authored-By` lines, then force-pushed (see the header above).
 
 > **Update, 2026-09-23 (macOS session) — read this first.**
 > Ran the full two-arm baseline Δ sweep (item 4 — done) and resolved the swaps-table
@@ -76,31 +77,54 @@ Mean Δ across all 12: **0.14**. Read with care:
 
 Item 4 is now done. Item 1 remains open — Linux is the only known route (item 7).
 
-## Linux run — attempt 2 blocked (2026-09-23), retry instructions below
+## Linux run — attempt 3: real signal at last (2026-09-23)
 
-**Attempt 1 (Ubuntu): blocked before any real signal**, all 3 cases, both arms,
-0.00/$0.00/~1s. A symlink inside `~/.ssh` stopped the Bash-granting safety check from
-running at all. Diagnosis and fix in `nd/evals/README.md` → "Linux: a symlink inside
-`~/.ssh` blocks it too". **Fixed and verified** — attempt 2 got past this one.
+**Attempt 1 (Ubuntu): blocked before any real signal** — a symlink inside `~/.ssh`
+stopped the Bash-granting safety check entirely. Fixed (see `nd/evals/README.md` →
+"Linux: a symlink inside `~/.ssh` blocks it too").
 
-**Attempt 2 (same box, same day): blocked by a different precondition.** Every run
-errored with:
+**Attempt 2 (same box): blocked by a different precondition** — missing sandbox
+backend, `sudo apt install -y bubblewrap socat` fixed it (see `nd/evals/README.md` →
+"Linux: missing sandbox backend").
 
-> A shell tool (Bash or PowerShell) was granted but this machine cannot confine it (no
-> sandbox backend on this platform, or it is not installed) … dependencies are missing:
-> bubblewrap (bwrap) not installed, socat not installed
+**Attempt 3 (same box): git finally ran for real. Mixed result — one win, one new
+defect found.**
 
-Fix:
+| Case | With | Without | Δ | Verdict |
+| :--- | ---: | ---: | ---: | :--- |
+| `handoff-asks-before-committing` | 1.00 (5/5) | 0.80 | +0.20 | **item 1 resolved — PASS** |
+| `handoff-guards-non-git` | 0.55 | 0.70 | **−0.15** | **new defect found, see below** |
+| `herdr-stops-outside-herdr` | 1.00 (5/5) | 0.33 | +0.67 | reconfirms the macOS result |
+
+**Item 1 is resolved.** `git-actually-ran` passed 5/5 in the "with" arm; the
+confirm-before-committing behaviour scored a clean unanimous 1.00. This is the real
+verification the whole suite existed to get.
+
+**Item 2 surfaced a real, likely genuine defect — not eval noise.** `git-actually-ran`
+passed all 5 "with" runs (the Prerequisite's `git rev-parse --git-dir` genuinely failed
+and was detected every time), but **3 of 5 "with" runs never wrote `HANDOFF.md` at all**
+(`handoff-file-created` failed; those runs scored 0.25 — only `git-actually-ran`
+passed). The skill's own Prerequisite says *"If it fails, this is not a git repo: skip
+steps 1 and 5, still write HANDOFF.md..."* — 3/5 times it detected the failure
+correctly but stopped short of writing the file anyway. The no-plugin baseline
+created the file more often (4/5), hence the negative Δ. All runs completed
+(non-zero cost, no runner errors), so this reads as a real skill defect, not a
+blocked precondition like attempts 1–2.
+
+**Not yet diagnosed — needs a trace.** Re-run just this case with `--keep-temp` and
+read `out/trace.jsonl` for a 0.25-scoring run to see what the agent did right after the
+failed `git rev-parse` (did it stop and just report the failure instead of continuing
+to step 2? hit `max_turns: 14`? something else?):
 
 ```bash
-sudo apt update && sudo apt install -y bubblewrap socat
+cd nd
+claude plugin eval . --case handoff-guards-non-git --ablation none --runs 5 \
+  --allow-tools Write Bash --judge-model sonnet --keep-temp
 ```
 
-Full details in `nd/evals/README.md` → "Linux: missing sandbox backend
-(`bubblewrap`/`socat`)". **Item 1 is still open** — neither attempt has produced a
-valid `git-actually-ran` result yet; the scores attempt 2 printed (0.70, 0.65, 0.33…)
-are noise from refused runs, not signal. Once `bubblewrap`/`socat` are installed,
-retry from step 4 below.
+Do not edit `handoff/SKILL.md`'s Prerequisite section until a trace confirms the actual
+failure mode — read `superpowers:systematic-debugging` guidance: fix the diagnosed
+cause, not a guess.
 
 CI (item 7) is on hold — no GitHub remote exists yet (item 5), so there's nowhere to
 put a workflow or a secret. This is the manual substitute: run the suite once on any
@@ -423,14 +447,17 @@ shorter ones. Spent so far this session: **$6.79** across five invocations.
 
 ## Outstanding Work
 
-1. **Run the two git cases on Linux.** Still open. ~~on macOS~~ — tried 2026-09-22 and
-   again 2026-09-23; git fails inside the macOS sandbox both times. **Two real Linux
-   attempts, 2026-09-23, both blocked before any signal:** attempt 1 hit a `~/.ssh`
-   symlink (fixed); attempt 2, same box, hit a missing sandbox backend
-   (`bubblewrap`/`socat` not installed — `sudo apt install -y bubblewrap socat`, not yet
-   retried). See "Linux run — attempt 2 blocked" above and `nd/evals/README.md`. Items 1
-   and 2 — the review's highest-severity fixes — still have no machine verification.
-   Install the missing packages, then retry from step 4 of the Linux instructions.
+1. **Run the two git cases on Linux.** ~~on macOS~~ — tried 2026-09-22 and again
+   2026-09-23; git fails inside the macOS sandbox both times. Attempts 1–2 on Ubuntu
+   were blocked preconditions (`~/.ssh` symlink, then missing sandbox backend — both
+   fixed). **Attempt 3, 2026-09-23: real data, split verdict.**
+   `handoff-asks-before-committing` (review item 1, confirm-before-committing) is now
+   **resolved — clean 1.00/5, `git-actually-ran` passing every time.**
+   `handoff-guards-non-git` (review item 2, the non-git guard) surfaced a **likely real
+   defect**: the guard detects "not a git repo" correctly every time but only writes
+   `HANDOFF.md` 2/5 times, scoring *worse* than no plugin at all (Δ −0.15). See "Linux
+   run — attempt 3" above. **Still open: diagnose that defect** (a trace is needed —
+   command is in that section) before touching `handoff/SKILL.md`'s Prerequisite.
 2. ~~Re-run the six single-run cases at `runs: 5` with a Sonnet judge~~ — done
    2026-09-22, all 1.00.
 3. ~~The swaps-table A/B is unresolved~~ — done 2026-09-23: arm 1 (table present, from
@@ -469,6 +496,13 @@ shorter ones. Spent so far this session: **$6.79** across five invocations.
    do when `MEMORY.md` is unreadable. An eval transcript showed the agent improvising
    sensibly (asking rather than clobbering the index), so this is a documentation gap, not
    a defect.
+10. **New, 2026-09-23: `handoff`'s non-git guard likely has a real intermittent bug.**
+    `handoff-guards-non-git` on real Linux (attempt 3, see "Linux run — attempt 3"
+    above): the Prerequisite's `git rev-parse --git-dir` check correctly detects "not a
+    git repo" in all 5 "with" runs, but the skill only goes on to actually write
+    `HANDOFF.md` in 2 of those 5 — worse than the no-plugin baseline (4/5). Not yet
+    diagnosed; a kept-trace re-run is needed first (command in that section) before
+    editing `handoff/SKILL.md`'s Prerequisite. Do not guess at a fix without the trace.
 
 ## Suggested Skills for Next Session
 
