@@ -8,9 +8,10 @@ commit, which adds the handoff itself. Nine commits on `main`, no remote yet.
 > **Update, 2026-09-23 (macOS session) — read this first.**
 > Ran the full two-arm baseline Δ sweep (item 4 — done) and resolved the swaps-table
 > A/B (item 3 — done, table removed). Git cases still fail `git-actually-ran` on macOS,
-> exactly as predicted; items 1 and 2 still rest on code review alone, still need Linux.
-> See "Baseline Δ sweep results" below and `nd/evals/README.md` for the swaps-table
-> writeup.
+> exactly as predicted; items 1 and 2 still rest on code review alone. CI (item 7) is
+> blocked on having no remote (item 5), so exact manual instructions for running the
+> suite on any Linux box are now written up in "Linux run — exact instructions" below —
+> that's the next action, and it has to happen on a Linux machine, not here.
 
 > **Update, 2026-09-22 (macOS session).**
 > The two git cases **cannot run on macOS either**, for a different reason: git itself
@@ -60,6 +61,89 @@ Mean Δ across all 12: **0.14**. Read with care:
   judge-noise pattern, not a regression.
 
 Item 4 is now done. Item 1 remains open — Linux is the only known route (item 7).
+
+## Linux run — exact instructions (prepared 2026-09-23, not yet executed)
+
+CI (item 7) is on hold — no GitHub remote exists yet (item 5), so there's nowhere to
+put a workflow or a secret. This is the manual substitute: run the suite once on any
+Linux box you have (VM, cloud instance, WSL2, spare machine — anything with a real
+Linux kernel, so `git` isn't the Apple `xcrun` shim that breaks it on macOS). Do this
+from that Linux machine, not from here.
+
+**1. Get the repo onto it.** No remote exists, so transfer the working tree directly
+(preserves all commits and history exactly as-is):
+
+```bash
+# On this Mac
+cd /Users/nikolasdemiridis/Personal/Repos
+tar czf /tmp/nikolad-plugins.tar.gz nikolad-plugins
+scp /tmp/nikolad-plugins.tar.gz <user>@<linux-host>:~
+
+# On the Linux machine
+tar xzf nikolad-plugins.tar.gz
+cd nikolad-plugins
+git log --oneline -3   # sanity check: should show 4cfd7a0 at the top
+```
+
+If the Linux target is actually a VM/WSL2 with a filesystem already shared with this
+Mac, skip the transfer and just `cd` to the shared path instead.
+
+**2. Install and authenticate the `claude` CLI.** Same native installer this machine
+used (confirmed: not npm/brew, it's `~/.local/bin/claude` from the install script):
+
+```bash
+curl -fsSL https://claude.ai/install.sh | bash
+claude --version   # compare against 2.1.280 here; a newer version is fine, note it
+```
+
+Then authenticate — run `claude` once and complete whatever login flow it prompts
+(same account/subscription used on this Mac), or export `ANTHROPIC_API_KEY` if that
+machine is meant to run headless off an API key instead.
+
+**3. Pre-flight check — confirm no PATH directory is unreadable** (the Automox-style
+trap that makes every case fail in ~1 second for $0.00; unlikely on a plain Linux box,
+but verify rather than assume):
+
+```bash
+echo "$PATH" | tr ':' '\n' | while read -r d; do
+  [ -n "$d" ] && [ -e "$d" ] && [ ! -r "$d" ] && echo "UNREADABLE $d"
+done
+```
+
+Should print nothing. If it prints anything, stop and fix that first — don't run the
+eval yet.
+
+**4. Run it.** Just the three `requires-bash` cases (the two `handoff` git cases plus
+`herdr-stops-outside-herdr`, which already passed on macOS and doubles as a Bash-sandbox
+sanity check). Default ablation is `with-without`, so this also gets real Δ for the
+git cases for the first time — worth keeping since macOS Δ for these two was
+meaningless:
+
+```bash
+cd nikolad-plugins/nd
+claude plugin eval . --tag requires-bash --scaffold --allow-tools Write Bash \
+  --judge-model sonnet --trust-plugin
+```
+
+`--trust-plugin` skips the interactive first-run trust prompt, which matters if this
+is a headless/SSH session with no TTY to answer it. `--scaffold` runs
+`evals/handoff/asks-before-committing/setup.sh` as you — already reviewed, safe.
+
+**5. What "done" looks like.** Read the printed summary (or
+`nd/evals/results/<timestamp>/aggregate-result.json`) and check specifically that
+`git-actually-ran` **passes** for both `handoff-asks-before-committing` and
+`handoff-guards-non-git` — if it fails, the rest of those cases' verdicts mean
+nothing (same rule as macOS), and something about that Linux box's git still isn't
+working. If `git-actually-ran` passes, items 1 and 2 (the review's highest-severity
+fixes) finally get real machine verification.
+
+**6. Bring the verdict back.** Copy `aggregate-result.json` (and `report.html` if you
+want it) back to this Mac — `scp` in reverse, or paste the per-case scores into chat —
+so this HANDOFF.md can be updated with the real result instead of "prepared, not yet
+executed."
+
+Cost estimate: 3 cases × 5 runs × 2 arms ≈ 30 runs, roughly **$4–9** at the measured
+per-run rates in `nd/evals/README.md`.
 
 ## macOS session results (2026-09-22)
 
@@ -292,6 +376,9 @@ shorter ones. Spent so far this session: **$6.79** across five invocations.
    2026-09-23 (as part of the baseline sweep); git fails inside the macOS sandbox both
    times. Items 1 and 2 — the review's highest-severity fixes — have no machine
    verification until this happens. Trust the result only if `git-actually-ran` passes.
+   **Exact step-by-step instructions are written up** in "Linux run — exact
+   instructions" above (prepared 2026-09-23, not yet executed — needs an actual Linux
+   machine, which this session doesn't have).
 2. ~~Re-run the six single-run cases at `runs: 5` with a Sonnet judge~~ — done
    2026-09-22, all 1.00.
 3. ~~The swaps-table A/B is unresolved~~ — done 2026-09-23: arm 1 (table present, from
