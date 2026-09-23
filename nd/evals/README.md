@@ -241,7 +241,7 @@ The `planted-words-removed` grader targets `rewrite.md`, not the reply, for a re
 failed on a correct rewrite when it read the reply, because the reply legitimately quotes
 the words it replaced. If you retarget it, expect false failures.
 
-## Fixed: `handoff-guards-non-git` had no scaffold, so it tested the wrong thing (2026-09-23)
+## Resolved: `handoff-guards-non-git` had no scaffold, so it tested the wrong thing (2026-09-23)
 
 First real Linux run of this case (`--ablation with-without`, 5 runs) scored a clean
 `git-actually-ran` pass every time, but `handoff-file-created` failed 3 of 5 times — the
@@ -284,10 +284,13 @@ Fixed properly: `setup.sh` now asks git itself where the repo is
 (`git rev-parse --git-dir`) and removes exactly that, looped up to 3 times for
 safety, then verifies with a final `git rev-parse --git-dir` check and **fails loudly**
 (`exit 1`) if a repo is still discoverable, instead of silently producing a broken
-fixture again. **Not yet re-run on Linux to confirm** — that's the next verification
-step. If it fails loudly next time, that's useful — it means something about the
-harness's seeding is different from what's assumed here, not that the scaffold
-should be patched around blindly.
+fixture again.
+
+**Confirmed 2026-09-23 (second re-run): 5/5, 1.00, unanimous.** `git-actually-ran`
+matched `fatal: not a git repository` — the real Prerequisite failure branch, not the
+`Exit code 128` fallback — on every run this time. All five judge votes on
+`flags-uncommitted` were unanimous PASS. Two rounds of scaffold fixes, zero changes to
+`handoff/SKILL.md` — the skill never had a defect here.
 
 ## Cost
 

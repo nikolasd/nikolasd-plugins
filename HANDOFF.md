@@ -10,22 +10,18 @@ harness's real repo root. History was rewritten 2026-09-23 (once) to strip
 nikola**d**-plugins as earlier notes assumed — fix item 6 when touching the
 `repository` fields). Force-pushed; `origin/main` now matches local.
 
-> **Update, 2026-09-23 (latest) — item 1 resolved (PASS); item 2's apparent defect was
-> an eval-case bug, fixed through two rounds, not yet re-verified.** Attempts 1–2 were
-> blocked preconditions (a `~/.ssh` symlink, then a missing sandbox backend — both
-> fixed). **Attempt 3 got real data:** `handoff-asks-before-committing` scored a clean
-> 1.00/5 with `git-actually-ran` passing every time — item 1 is machine-verified.
-> **`handoff-guards-non-git`'s failures were never a skill bug**: round 1, no scaffold
-> meant the harness's default commit-less repo made "not a git repo" untestable, and
-> the model correctly refused to fabricate a handoff for code that didn't exist —
-> fixed with `setup.sh` (`rm -rf .git` + a real `payments/client.py` stub), which
-> helped (1/5 → 3/5 passing) but wasn't enough; round 2, `rm -rf .git` itself missed
-> the harness's actual repo root, so a real repo was still discoverable and the skill
-> correctly fell through to Step 1 (asking to commit untracked work) instead of the
-> guard branch. `setup.sh` now asks git where its repo actually is and removes that,
-> failing loudly if one remains. `handoff/SKILL.md` was never touched. **Next step:
-> re-run on Linux again to confirm.** See "Linux run — attempt 3" below. Also since the
-> last update: a GitHub remote now exists and history was rewritten to strip
+> **Update, 2026-09-23 (latest) — both review items 1 and 2 are now resolved with real
+> Linux machine verification. This closes the loop the whole eval suite was built for.**
+> `handoff-asks-before-committing` scored a clean 1.00/5. `handoff-guards-non-git`'s
+> apparent defect was never a skill bug — it took two rounds of scaffold fixes (round 1:
+> the case had no scaffold at all, so neither "not a git repo" nor the prompt's
+> narrative had any supporting evidence in the sandbox; round 2: the round-1 fix's
+> `rm -rf .git` missed the harness's actual repo root, so a real repo was still
+> discoverable) — and after both, it scored a clean 5/5, 1.00, unanimous, with
+> `git-actually-ran` matching the genuine `fatal: not a git repository` branch every
+> time. `handoff/SKILL.md` itself was never touched — it never had a defect. Full
+> writeup in "Linux run — attempt 3" below and `nd/evals/README.md`. Also since the last
+> update: a GitHub remote now exists and history was rewritten to strip
 > `Co-Authored-By` lines, then force-pushed (see the header above).
 
 > **Update, 2026-09-23 (macOS session) — read this first.**
@@ -85,7 +81,7 @@ Mean Δ across all 12: **0.14**. Read with care:
 
 Item 4 is now done. Item 1 remains open — Linux is the only known route (item 7).
 
-## Linux run — attempt 3: real signal at last (2026-09-23)
+## Linux run — attempt 3: both items resolved (2026-09-23)
 
 **Attempt 1 (Ubuntu): blocked before any real signal** — a symlink inside `~/.ssh`
 stopped the Bash-granting safety check entirely. Fixed (see `nd/evals/README.md` →
@@ -95,13 +91,13 @@ stopped the Bash-granting safety check entirely. Fixed (see `nd/evals/README.md`
 backend, `sudo apt install -y bubblewrap socat` fixed it (see `nd/evals/README.md` →
 "Linux: missing sandbox backend").
 
-**Attempt 3 (same box): git finally ran for real. Mixed result — one win, one new
-defect found.**
+**Attempt 3 (same box): git finally ran for real, and — after two rounds of eval-case
+fixes below — both review items are now resolved.**
 
 | Case | With | Without | Δ | Verdict |
 | :--- | ---: | ---: | ---: | :--- |
 | `handoff-asks-before-committing` | 1.00 (5/5) | 0.80 | +0.20 | **item 1 resolved — PASS** |
-| `handoff-guards-non-git` | 0.55 | 0.70 | **−0.15** | **eval-case bug, fix in progress — see below** |
+| `handoff-guards-non-git` | 1.00 (5/5, after fix) | — | — | **item 2 resolved — PASS** |
 | `herdr-stops-outside-herdr` | 1.00 (5/5) | 0.33 | +0.67 | reconfirms the macOS result |
 
 **Item 1 is resolved.** `git-actually-ran` passed 5/5 in the "with" arm; the
@@ -140,12 +136,20 @@ it... Shall I stage and commit... then write HANDOFF.md?"*), and stopped there w
 on an answer. Correct behaviour for the wrong premise — still an eval-case bug, not a
 `handoff/SKILL.md` bug.
 
-**Fixed properly, not yet re-verified:** `setup.sh` now asks git itself where the repo
-actually is (`git rev-parse --git-dir`) and removes exactly that, looped up to 3 times,
-then **fails loudly** (`exit 1`) if a repo is still discoverable afterward, instead of
-silently producing a broken fixture a third time. Full writeup in `nd/evals/README.md`
-→ "Fixed: `handoff-guards-non-git` had no scaffold". **Next step: re-run on Linux
-again.**
+**Fixed properly:** `setup.sh` now asks git itself where the repo actually is
+(`git rev-parse --git-dir`) and removes exactly that, looped up to 3 times, then
+**fails loudly** (`exit 1`) if a repo is still discoverable afterward, instead of
+silently producing a broken fixture a third time.
+
+**Confirmed 2026-09-23: 5/5, 1.00, unanimous.** `git-actually-ran` matched
+`fatal: not a git repository` — the actual Prerequisite failure branch, not the
+`Exit code 128` fallback — on every run. Item 2 is now resolved with real machine
+verification. Two rounds of scaffold fixes, zero changes to `handoff/SKILL.md` — the
+skill never had a defect. Full writeup in `nd/evals/README.md` → "Resolved:
+`handoff-guards-non-git` had no scaffold".
+
+**Both review items 1 and 2 — the whole reason this eval suite exists — are now
+machine-verified on Linux.** Outstanding item 1 is closed.
 
 CI (item 7) is on hold — no GitHub remote exists yet (item 5), so there's nowhere to
 put a workflow or a secret. This is the manual substitute: run the suite once on any
@@ -468,22 +472,16 @@ shorter ones. Spent so far this session: **$6.79** across five invocations.
 
 ## Outstanding Work
 
-1. **Run the two git cases on Linux.** ~~on macOS~~ — tried 2026-09-22 and again
-   2026-09-23; git fails inside the macOS sandbox both times. Attempts 1–2 on Ubuntu
-   were blocked preconditions (`~/.ssh` symlink, then missing sandbox backend — both
-   fixed). **Attempt 3, 2026-09-23: real data.**
-   `handoff-asks-before-committing` (review item 1, confirm-before-committing) is
-   **resolved — clean 1.00/5, `git-actually-ran` passing every time.**
-   `handoff-guards-non-git` (review item 2, the non-git guard) initially looked like a
-   real defect (Δ −0.15) but a kept trace showed it was an **eval-case bug, not a skill
-   bug**: no scaffold meant the harness's default commit-less git repo made "not a git
-   repo" untestable. First fix (`rm -rf .git` + real stub files) helped (1/5 → 3/5
-   passing) but wasn't reliable — a second trace showed `rm -rf .git` can silently miss
-   the harness's repo root, so `git rev-parse --git-dir` kept succeeding and the skill
-   correctly (for that premise) fell through to Step 1 instead of the guard branch.
-   **Fixed properly** (see "Linux run — attempt 3" above and `nd/evals/README.md`) —
-   `setup.sh` now removes whatever git-dir git itself reports and fails loudly if one
-   is still discoverable. **Still open: re-run on Linux again to confirm.**
+1. ~~Run the two git cases on Linux~~ — **done 2026-09-23.** Both cases now have real
+   machine verification: `handoff-asks-before-committing` (review item 1,
+   confirm-before-committing) scored a clean 1.00/5. `handoff-guards-non-git` (review
+   item 2, the non-git guard) initially looked like a real defect (Δ −0.15) but two
+   rounds of investigation showed it was an **eval-case bug, not a skill bug** — no
+   scaffold, then an unreliable `rm -rf .git` that missed the harness's actual repo
+   root (full story in "Linux run — attempt 3" above and `nd/evals/README.md`). After
+   fixing the scaffold properly, it scored 5/5, 1.00, unanimous, with
+   `git-actually-ran` matching the genuine `fatal: not a git repository` branch.
+   `handoff/SKILL.md` itself was never touched — it never had a defect.
 2. ~~Re-run the six single-run cases at `runs: 5` with a Sonnet judge~~ — done
    2026-09-22, all 1.00.
 3. ~~The swaps-table A/B is unresolved~~ — done 2026-09-23: arm 1 (table present, from
@@ -514,27 +512,28 @@ shorter ones. Spent so far this session: **$6.79** across five invocations.
    exists (item 5, resolved) at `https://github.com/nikolasd/nikolasd-plugins` — note
    the actual name, `nikolasd-plugins`, differs from what was assumed here earlier
    (`nikolad-plugins`). Add the corrected URL to `nd/` and `ty-lsp/` `plugin.json`.
-7. **A Linux CI workflow was offered but not written.** Now the only known route to
-   items 1 and 2. It would also make item 4 routine instead of machine-dependent. `--trust-plugin` exists for unattended runs.
+7. **A Linux CI workflow was offered but not written.** No longer blocking items 1/2
+   (both resolved manually 2026-09-23), but would make item 4-style baseline sweeps
+   routine instead of machine-dependent, and would have caught the two scaffold bugs
+   in `handoff-guards-non-git` automatically instead of needing three manual Linux
+   round-trips. `--trust-plugin` exists for unattended runs.
 8. **`ty-lsp` was never reviewed** — out of scope. It declares MIT and has a valid
    manifest; nothing further checked.
 9. **Minor gap found in `reflecting` but not fixed:** the skill says nothing about what to
    do when `MEMORY.md` is unreadable. An eval transcript showed the agent improvising
    sensibly (asking rather than clobbering the index), so this is a documentation gap, not
    a defect.
-10. `handoff`'s non-git guard "bug" was diagnosed 2026-09-23 as an eval-case bug, not a
-    skill bug, in two rounds: (a) `handoff-guards-non-git` had no `scaffold_script`, so
-    the harness's default commit-less git repo made "not a git repo" untestable, and
-    the prompt described work that didn't exist anywhere in the sandbox — a model that
-    checked for evidence correctly declined to fabricate a handoff. First fix (`rm -rf
-    .git` + a real `payments/client.py` stub) improved but didn't resolve it (1/5 → 3/5
-    passing); (b) `rm -rf .git` itself was unreliable — the harness's repo root doesn't
+10. ~~`handoff`'s non-git guard "bug"~~ — diagnosed 2026-09-23 as an eval-case bug, not
+    a skill bug, in two rounds: (a) `handoff-guards-non-git` had no `scaffold_script`,
+    so the harness's default commit-less git repo made "not a git repo" untestable,
+    and the prompt described work that didn't exist anywhere in the sandbox — a model
+    that checked for evidence correctly declined to fabricate a handoff; (b) the round
+    1 fix's `rm -rf .git` was itself unreliable — the harness's repo root doesn't
     necessarily match the scaffold's own cwd, so it silently missed the real `.git`,
     and the skill correctly fell through to Step 1 (asking to commit untracked work)
     instead of the guard branch. `setup.sh` now removes whatever git-dir git itself
-    reports and fails loudly if one remains. `handoff/SKILL.md` itself was never
-    touched — still no evidence it has a defect. **Not yet re-verified on Linux** —
-    that's the next step.
+    reports and fails loudly if one remains. **Confirmed 2026-09-23: 5/5, 1.00,
+    unanimous.** `handoff/SKILL.md` itself was never touched — it never had a defect.
 
 ## Suggested Skills for Next Session
 
