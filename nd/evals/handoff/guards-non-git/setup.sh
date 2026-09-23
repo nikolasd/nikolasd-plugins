@@ -1,12 +1,26 @@
 #!/usr/bin/env bash
 # The eval harness seeds an empty (commit-less) git repo by default, which
 # makes `git rev-parse --git-dir` succeed rather than fail — the opposite of
-# what this case is meant to test. Remove it so the workspace is genuinely
-# not a git repository, and plant real files matching the prompt's narrative
-# so a model that checks for corroborating evidence finds it, not nothing.
+# what this case is meant to test. `rm -rf .git` isn't reliable here: the
+# seeded repo's root doesn't necessarily match this script's own cwd (git
+# searches upward), so a plain `.git` removal can silently miss it and
+# leave a real, discoverable, commit-less repo in place. Ask git itself
+# where the repo actually is and remove exactly that, looped in case of
+# nesting, until git-dir genuinely fails.
+#
+# Also plants real files matching the prompt's narrative so a model that
+# checks for corroborating evidence finds it, not nothing.
 set -euo pipefail
 
-rm -rf .git
+for _ in 1 2 3; do
+  git_dir=$(git rev-parse --git-dir 2>/dev/null) || break
+  rm -rf "$git_dir"
+done
+
+if git rev-parse --git-dir >/dev/null 2>&1; then
+  echo "setup.sh: a git repo is still discoverable after cleanup — scaffold cannot guarantee a non-git workspace" >&2
+  exit 1
+fi
 
 mkdir -p payments
 

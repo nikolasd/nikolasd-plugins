@@ -263,12 +263,31 @@ succeeded) — the opposite of what "not a git repo" is supposed to test. Runs t
 "passed" before were only exercising the skill's practical response to *zero commits*,
 not to the Prerequisite's actual failure branch.
 
-`setup.sh` now fixes both: `rm -rf .git` so the workspace is genuinely not a git
-repository, and plants a real `payments/client.py` stub matching every detail in the
-prompt (the 200-with-error-body predicate, the 3-attempt cap, the 10s gateway timeout),
-so a model that checks for evidence finds it instead of nothing. Case now requires
-`--scaffold`, same as `asks-before-committing`. **Not yet re-run on Linux to confirm the
-fix** — that's the next verification step.
+`setup.sh` fixed both: `rm -rf .git` for a genuinely non-git workspace, and plants a
+real `payments/client.py` stub matching every detail in the prompt (the
+200-with-error-body predicate, the 3-attempt cap, the 10s gateway timeout). Case now
+requires `--scaffold`, same as `asks-before-committing`.
+
+**First re-run: better (3/5 → passed vs. 1/5 before), but still 2/5 failing, and
+`rm -rf .git` turned out not to be reliable.** A second kept trace showed
+`git rev-parse --git-dir` *still succeeding* after the "fix" — the harness's seeded
+repo's root doesn't necessarily match this script's own cwd (git searches upward for
+`.git`), so a plain `rm -rf .git` can silently miss it. With a real (if commit-less)
+git repo still discoverable, the skill's Prerequisite correctly falls through to
+**Step 1** ("deal with pending work") instead of the "not a git repo" branch, finds
+`payments/client.py` untracked, and asks for confirmation before committing — the
+*intended* behaviour for a case like `asks-before-committing`, but not what
+`guards-non-git` is supposed to be testing. This is not a skill bug either time; it's
+the scaffold not actually producing the precondition it claims to.
+
+Fixed properly: `setup.sh` now asks git itself where the repo is
+(`git rev-parse --git-dir`) and removes exactly that, looped up to 3 times for
+safety, then verifies with a final `git rev-parse --git-dir` check and **fails loudly**
+(`exit 1`) if a repo is still discoverable, instead of silently producing a broken
+fixture again. **Not yet re-run on Linux to confirm** — that's the next verification
+step. If it fails loudly next time, that's useful — it means something about the
+harness's seeding is different from what's assumed here, not that the scaffold
+should be patched around blindly.
 
 ## Cost
 
