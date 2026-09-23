@@ -5,13 +5,61 @@ Repo: `C:\Dev\Repos\nikolad-plugins` (authored on Windows)
 Current HEAD: `df5abbe` Add Basic Memory knowledge base at docs/memory — plus this
 commit, which adds the handoff itself. Nine commits on `main`, no remote yet.
 
-> **Update, 2026-09-22 (macOS session) — read this first.**
+> **Update, 2026-09-23 (macOS session) — read this first.**
+> Ran the full two-arm baseline Δ sweep (item 4 — done) and resolved the swaps-table
+> A/B (item 3 — done, table removed). Git cases still fail `git-actually-ran` on macOS,
+> exactly as predicted; items 1 and 2 still rest on code review alone, still need Linux.
+> See "Baseline Δ sweep results" below and `nd/evals/README.md` for the swaps-table
+> writeup.
+
+> **Update, 2026-09-22 (macOS session).**
 > The two git cases **cannot run on macOS either**, for a different reason: git itself
 > fails inside the eval sandbox (see "macOS session results" below). Items 1 and 2 of the
 > review still rest on code review alone. **Next step: run them on Linux** (CI, item 7).
 > Everything else is now verified at 5 runs with a Sonnet judge. Nothing in the skills
 > is known to be broken. The original Windows-session notes follow, unchanged except
 > where marked.
+
+## Baseline Δ sweep results (2026-09-23)
+
+Full two-arm sweep (`--ablation with-without`, the default once a plugin resolves),
+`--scaffold --allow-tools Write Bash --judge-model sonnet -j 4`. 12 cases, `runs: 5`
+each, both arms: 843s, **$15.61**. Report kept local at
+`nd/evals/results/2026-09-23T08-26-44-583Z/report.html` (not published — run started by
+an agent session, not a person).
+
+| Case | With | Without | Δ | Passed |
+| :--- | ---: | ---: | ---: | :--- |
+| handoff-asks-before-committing | 0.75 | 0.75 | +0.00 | 0/5 — `git-actually-ran` failed every run |
+| handoff-guards-non-git | 0.65 | 0.60 | +0.05 | 0/5 — same |
+| handoff-skips-plain-summary | 1.00 | 1.00 | +0.00 | 5/5 |
+| herdr-powershell-slash-command | 1.00 | 0.87 | +0.13 | 5/5 |
+| herdr-skips-subagent-request | 1.00 | 1.00 | +0.00 | 5/5 |
+| herdr-stops-outside-herdr | 1.00 | 0.53 | +0.47 | 5/5 |
+| plain-language-explains-plainly | 0.87 | 0.33 | +0.53 | 4/5 |
+| plain-language-rewrites-jargon | 1.00 | 0.96 | +0.04 | 5/5 |
+| plain-language-skips-adr | 1.00 | 0.80 | +0.20 | 5/5 |
+| reflecting-asks-before-writing | 0.85 | 0.65 | +0.20 | 2/5 |
+| reflecting-skips-single-fact | 1.00 | 1.00 | +0.00 | 5/5 |
+| reflecting-verifies-claims | 0.80 | 0.73 | +0.07 | 3/5 |
+
+Mean Δ across all 12: **0.14**. Read with care:
+
+- **The two `handoff` git cases are vacuous again**, consistently: `git-actually-ran`
+  failed on all 10 runs (5 per case). Their Δ (+0.00, +0.05) means nothing — same
+  known macOS git-in-sandbox failure as 2026-09-22. Still needs Linux (item 1).
+- **The three near-miss cases correctly show Δ=0.00 at 1.00** —
+  `handoff-skips-plain-summary`, `herdr-skips-subagent-request`,
+  `reflecting-skips-single-fact`. This is the desired result: the skill doesn't fire
+  when it shouldn't, so the plugin contributes nothing there, which is correct.
+- **Strongest real signal:** `herdr-stops-outside-herdr` (+0.47) and
+  `plain-language-explains-plainly` (+0.53) — the plugin clearly changes behaviour
+  over the no-plugin baseline on these.
+- **`reflecting-asks-before-writing` (2/5) and `reflecting-verifies-claims` (3/5)**
+  flipped run-to-run on judge verdicts, not skill behaviour — matches the documented
+  judge-noise pattern, not a regression.
+
+Item 4 is now done. Item 1 remains open — Linux is the only known route (item 7).
 
 ## macOS session results (2026-09-22)
 
@@ -240,20 +288,26 @@ shorter ones. Spent so far this session: **$6.79** across five invocations.
 
 ## Outstanding Work
 
-1. **Run the two git cases on Linux.** ~~on macOS~~ — tried 2026-09-22; git fails
-   inside the macOS sandbox. Items 1 and 2 — the review's highest-severity fixes —
-   have no machine verification until this happens. Trust the result only if
-   `git-actually-ran` passes.
+1. **Run the two git cases on Linux.** ~~on macOS~~ — tried 2026-09-22 and again
+   2026-09-23 (as part of the baseline sweep); git fails inside the macOS sandbox both
+   times. Items 1 and 2 — the review's highest-severity fixes — have no machine
+   verification until this happens. Trust the result only if `git-actually-ran` passes.
 2. ~~Re-run the six single-run cases at `runs: 5` with a Sonnet judge~~ — done
    2026-09-22, all 1.00.
-3. **The swaps-table A/B is unresolved.** `plain-language-rewrites-jargon` exists partly
-   to settle whether the `## Common swaps` section in `writing-plain-language` helps,
-   hurts, or does nothing. Procedure is in `nd/evals/README.md`. One observation favours
-   keeping it: the agent visibly cited the swap list while working. That is one data
-   point, not a result.
-4. **No baseline arm has ever run.** Every run so far used `--ablation none`. The
-   with/without comparison — `Δ`, the plugin's actual contribution — is entirely unmeasured.
-   A full two-arm sweep is ~120 runs, near $20.
+3. ~~The swaps-table A/B is unresolved~~ — done 2026-09-23: arm 1 (table present, from
+   the baseline sweep) and arm 2 (table removed), 5 runs each, Sonnet judge, both
+   **1.00, 5/5** — tied at the grader's ceiling. Per the documented decision rule
+   ("keep only if arm 1 scored higher"), the table did not earn its place and has been
+   **removed** from `writing-plain-language/SKILL.md`. Three of the five planted words
+   were already covered by the recipe's own "Everyday words" bullet; the other two were
+   avoided anyway without the table. Caveat noted in `nd/evals/README.md`: this is a
+   ceiling effect, not proof a swaps table can never help — re-open if a future case
+   plants harder jargon. Full writeup in `nd/evals/README.md` → "Resolved: the Common
+   swaps table doesn't earn its place".
+4. ~~No baseline arm has ever run~~ — done 2026-09-23: full two-arm sweep, mean Δ 0.14,
+   $15.61. See "Baseline Δ sweep results" above. Git cases' Δ is still meaningless
+   (item 1 unresolved); everything else shows either the expected Δ≈0 (near-miss cases)
+   or a clear positive Δ (trigger/applied cases).
 5. **No remote.** ~~Not a git repo~~ — resolved: initialised on `main` with nine
    semantic commits. Still no remote, so nothing is pushed. `git remote add origin
    https://github.com/nikolasd/nikolad-plugins` once it exists.

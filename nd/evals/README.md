@@ -148,27 +148,31 @@ A useful side effect: the trace in the HTML report shows which form actually fir
 which answers the question directly. If it's stable across versions you care about,
 tighten these to the one real form.
 
-## The pending A/B: does the Common swaps table help?
+## Resolved: the Common swaps table doesn't earn its place (2026-09-23)
 
-`plain-language-rewrites-jargon` exists to settle a specific open question. The
+`plain-language-rewrites-jargon` existed to settle a specific open question. The
 skill was rewritten from a prohibition list into a positive recipe, on the grounds
 that prohibitions backfire on output-shaping problems. A "Common swaps" table was
-then added back. Whether that table helps, does nothing, or hurts is untested — the
+then added back. Whether that table helped, did nothing, or hurt was untested — the
 guidance it came from says to micro-test rather than assume.
 
-Early evidence favours keeping it. In the first run the agent's reply cited the swap
-list explicitly — "utilized → runs, leverage → turn on, in order to facilitate → for
-you" — which is the table doing visible work. That is one observation, not a result.
+Ran the documented procedure: arm 1 (table present) from the 2026-09-23 baseline
+sweep, 5 runs, Sonnet judge — **1.00, 5/5**. Arm 2 (table deleted), same command,
+5 runs — **1.00, 5/5**. Tied at the grader's ceiling, so per the decision rule
+("keep it only if arm 1 scored higher") the table does not earn its place, and it
+has been **removed** from `writing-plain-language/SKILL.md`.
 
-Procedure:
+Why the tie isn't surprising: three of the five planted words in the case
+(`utilize`, `facilitate`, `in order to`) are already named as examples in the
+recipe's own "Everyday words" bullet, table or no table. The other two
+(`leverage`, `robust solution`) were avoided anyway in the table-free arm — the
+general "everyday words" + "load-bearing terms" guidance was enough on its own.
 
-1. `claude plugin eval . --case plain-language-rewrites-jargon --ablation none --runs 5 --allow-tools Write --judge-model sonnet`
-   and record the score.
-2. Delete the `## Common swaps` section from `skills/writing-plain-language/SKILL.md`.
-3. Run the same command again and record the score.
-4. Restore the section. Keep it only if arm 1 scored higher.
-
-Five runs per arm, not three, because the effect is expected to be small.
+Caveat: this grader is binary per word (`planted-words-removed`) plus two `llm`
+graders, all at ceiling in both arms — a real small effect could be hiding under
+that ceiling. If a future case plants harder-to-avoid jargon (not already named in
+the recipe text), re-open this question; don't treat this as proof the table can
+never help, only that it added nothing measurable for *this* case.
 
 The `planted-words-removed` grader targets `rewrite.md`, not the reply, for a reason: it
 failed on a correct rewrite when it read the reply, because the reply legitimately quotes
