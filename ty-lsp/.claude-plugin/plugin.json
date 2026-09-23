@@ -11,6 +11,7 @@
   },
   "license": "MIT",
   "keywords": ["python", "lsp", "language-server", "ty", "type-checking", "astral"],
+  "repository": "https://github.com/nikolasd/nikolasd-plugins",
   "lspServers": {
     "python": {
       "command": "ty",

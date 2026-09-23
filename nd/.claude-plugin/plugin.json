@@ -10,5 +10,6 @@
     "url": "https://github.com/nikolasd"
   },
   "license": "MIT",
-  "keywords": ["handoff", "reflection", "plain-language", "writing", "workflow", "herdr", "agents"]
+  "keywords": ["handoff", "reflection", "plain-language", "writing", "workflow", "herdr", "agents"],
+  "repository": "https://github.com/nikolasd/nikolasd-plugins"
 }

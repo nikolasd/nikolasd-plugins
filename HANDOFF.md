@@ -7,8 +7,18 @@ unanimous. History was rewritten 2026-09-23 (once) to strip
 `Co-Authored-By` lines (all-new hashes from that point on; a
 `backup-pre-attribution-strip` tag preserves the old chain locally). Remote is
 `git@github.com:nikolasd/nikolasd-plugins.git` (note: **nikolasd**-plugins, not
-nikola**d**-plugins as earlier notes assumed — fix item 6 when touching the
-`repository` fields). Force-pushed; `origin/main` now matches local.
+nikola**d**-plugins — earlier notes assumed the wrong spelling; both `plugin.json`
+`repository` fields now use the correct one). Force-pushed; `origin/main` now
+matches local.
+
+> **Update, 2026-09-23 (later still) — item 6 done, item 7 dropped.** Added
+> `"repository": "https://github.com/nikolasd/nikolasd-plugins"` to both `nd/` and
+> `ty-lsp/` `plugin.json`; both re-validate clean. Decided not to pursue the Linux CI
+> workflow (item 7) — it would need a `claude` CLI running unattended with real API
+> credentials on a CI runner, which isn't something this assistant can provision or
+> maintain, and it's no longer blocking anything now that items 1/2 are resolved
+> manually. Remaining open items: 8 (`ty-lsp` never reviewed, deliberately
+> out-of-scope) and 9 (minor `reflecting` doc gap, not a defect) — both low-priority.
 
 > **Update, 2026-09-23 (latest) — both review items 1 and 2 are now resolved with real
 > Linux machine verification. This closes the loop the whole eval suite was built for.**
@@ -508,15 +518,16 @@ shorter ones. Spent so far this session: **$6.79** across five invocations.
    - `.gitattributes` forces LF for `*.sh`. Do not remove it: `setup.sh` is executed
      by bash on macOS, and a CRLF checkout breaks its shebang and heredocs — which
      would fail the two `requires-bash` cases for a reason unrelated to what they test.
-6. **`repository` field still omitted** from both `plugin.json` files. The repo now
-   exists (item 5, resolved) at `https://github.com/nikolasd/nikolasd-plugins` — note
-   the actual name, `nikolasd-plugins`, differs from what was assumed here earlier
-   (`nikolad-plugins`). Add the corrected URL to `nd/` and `ty-lsp/` `plugin.json`.
-7. **A Linux CI workflow was offered but not written.** No longer blocking items 1/2
-   (both resolved manually 2026-09-23), but would make item 4-style baseline sweeps
-   routine instead of machine-dependent, and would have caught the two scaffold bugs
-   in `handoff-guards-non-git` automatically instead of needing three manual Linux
-   round-trips. `--trust-plugin` exists for unattended runs.
+6. ~~`repository` field still omitted~~ — done 2026-09-23: added
+   `"repository": "https://github.com/nikolasd/nikolasd-plugins"` to both `nd/` and
+   `ty-lsp/` `plugin.json` (correct name — `nikolasd-plugins`, not the earlier-assumed
+   `nikolad-plugins`). Both manifests re-validated clean with `claude plugin validate`.
+7. **Dropped, 2026-09-23 — not pursuing a Linux CI workflow.** It's no longer blocking
+   anything (items 1/2 were resolved manually) and would need a `claude` CLI running
+   unattended with real API credentials on a CI runner, which isn't something this
+   assistant can provision or maintain going forward. If item-4-style baseline sweeps
+   or automatic scaffold-bug catching become worth the setup cost later, revisit as a
+   fresh decision rather than reopening this line item.
 8. **`ty-lsp` was never reviewed** — out of scope. It declares MIT and has a valid
    manifest; nothing further checked.
 9. **Minor gap found in `reflecting` but not fixed:** the skill says nothing about what to
