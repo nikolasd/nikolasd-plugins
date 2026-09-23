@@ -241,6 +241,35 @@ The `planted-words-removed` grader targets `rewrite.md`, not the reply, for a re
 failed on a correct rewrite when it read the reply, because the reply legitimately quotes
 the words it replaced. If you retarget it, expect false failures.
 
+## Fixed: `handoff-guards-non-git` had no scaffold, so it tested the wrong thing (2026-09-23)
+
+First real Linux run of this case (`--ablation with-without`, 5 runs) scored a clean
+`git-actually-ran` pass every time, but `handoff-file-created` failed 3 of 5 times — the
+skill detected "not a git repo" correctly but didn't go on to write `HANDOFF.md`. Reading
+a kept trace (`--keep-temp`) for a failing run showed this was not a skill defect:
+
+The agent ran the Prerequisite check, then went looking for corroborating evidence of
+the prompt's narrative ("added retry-with-backoff to the payments client...") — `find
+... -iname "*payment*"`, `*retry*`, checked branches and stash — **found nothing**, and
+explicitly declined to write a handoff that references code that doesn't exist:
+*"I don't want to fabricate a HANDOFF.md that references specific files/commits that
+don't exist — that would actively mislead the next session."* Good behaviour, wrong
+test: this case had no `scaffold_script` (unlike `asks-before-committing`), so its
+sandbox contained no files at all matching its own prompt.
+
+A second issue, found while fixing the first: the harness's default sandbox already
+seeds an empty, commit-less git repo (`git rev-parse --git-dir` found a real `.git` and
+succeeded) — the opposite of what "not a git repo" is supposed to test. Runs that
+"passed" before were only exercising the skill's practical response to *zero commits*,
+not to the Prerequisite's actual failure branch.
+
+`setup.sh` now fixes both: `rm -rf .git` so the workspace is genuinely not a git
+repository, and plants a real `payments/client.py` stub matching every detail in the
+prompt (the 200-with-error-body predicate, the 3-attempt cap, the 10s gateway timeout),
+so a model that checks for evidence finds it instead of nothing. Case now requires
+`--scaffold`, same as `asks-before-committing`. **Not yet re-run on Linux to confirm the
+fix** — that's the next verification step.
+
 ## Cost
 
 12 cases × 5 runs × 2 arms = 120 agent runs, each a full `claude` child on your own

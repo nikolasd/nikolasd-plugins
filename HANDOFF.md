@@ -9,16 +9,20 @@ history was rewritten 2026-09-23 to strip `Co-Authored-By` lines (all-new hashes
 nikola**d**-plugins as earlier notes assumed — fix item 6 when touching the
 `repository` fields). Force-pushed; `origin/main` now matches local.
 
-> **Update, 2026-09-23 (latest) — real Linux signal at last: item 1 resolved (PASS),
-> item 2 surfaced a likely real defect.** Attempts 1–2 were blocked preconditions (a
-> `~/.ssh` symlink, then a missing sandbox backend — both fixed). **Attempt 3 got real
-> data:** `handoff-asks-before-committing` scored a clean 1.00/5 with `git-actually-ran`
-> passing every time — item 1 is finally machine-verified. But
-> `handoff-guards-non-git` scored **worse with the plugin than without it** (Δ −0.15):
-> the non-git guard correctly detected "not a git repo" 5/5 times but only wrote
-> `HANDOFF.md` 2/5 times. Not yet diagnosed — needs a trace. See "Linux run — attempt 3"
-> below. Also since the last update: a GitHub remote now exists and history was
-> rewritten to strip `Co-Authored-By` lines, then force-pushed (see the header above).
+> **Update, 2026-09-23 (latest) — item 1 resolved (PASS); item 2's apparent defect was
+> actually an eval-case bug, now fixed, not yet re-verified.** Attempts 1–2 were blocked
+> preconditions (a `~/.ssh` symlink, then a missing sandbox backend — both fixed).
+> **Attempt 3 got real data:** `handoff-asks-before-committing` scored a clean 1.00/5
+> with `git-actually-ran` passing every time — item 1 is machine-verified. **A trace on
+> `handoff-guards-non-git`'s failures showed it wasn't a skill bug**: the case had no
+> scaffold, so the harness's default commit-less repo made "not a git repo" untestable,
+> and the model correctly refused to fabricate a handoff for code (a payments retry
+> client) that didn't exist anywhere in the sandbox — good behaviour, bad fixture. Fixed
+> with a new `setup.sh` (real `.git` removal + real stub files matching the prompt);
+> `handoff/SKILL.md` was never touched. **Next step: re-run on Linux to confirm.** See
+> "Linux run — attempt 3" below. Also since the last update: a GitHub remote now exists
+> and history was rewritten to strip `Co-Authored-By` lines, then force-pushed (see the
+> header above).
 
 > **Update, 2026-09-23 (macOS session) — read this first.**
 > Ran the full two-arm baseline Δ sweep (item 4 — done) and resolved the swaps-table
@@ -100,31 +104,31 @@ defect found.**
 confirm-before-committing behaviour scored a clean unanimous 1.00. This is the real
 verification the whole suite existed to get.
 
-**Item 2 surfaced a real, likely genuine defect — not eval noise.** `git-actually-ran`
-passed all 5 "with" runs (the Prerequisite's `git rev-parse --git-dir` genuinely failed
-and was detected every time), but **3 of 5 "with" runs never wrote `HANDOFF.md` at all**
-(`handoff-file-created` failed; those runs scored 0.25 — only `git-actually-ran`
-passed). The skill's own Prerequisite says *"If it fails, this is not a git repo: skip
-steps 1 and 5, still write HANDOFF.md..."* — 3/5 times it detected the failure
-correctly but stopped short of writing the file anyway. The no-plugin baseline
-created the file more often (4/5), hence the negative Δ. All runs completed
-(non-zero cost, no runner errors), so this reads as a real skill defect, not a
-blocked precondition like attempts 1–2.
+**Item 2 initially looked like a real skill defect — it wasn't. Diagnosed via a kept
+trace, and it's an eval-case bug, not a `handoff/SKILL.md` bug.** Re-running just this
+case (`--ablation none --runs 5 --keep-temp`) reproduced the failure (1 of 5 scored
+0.40, `handoff-file-created` failing) and a second issue (1 of 5 scored 0.80,
+`flags-uncommitted` failing — not yet investigated, lower priority). Reading the 0.40
+run's `out/trace.jsonl`:
 
-**Not yet diagnosed — needs a trace.** Re-run just this case with `--keep-temp` and
-read `out/trace.jsonl` for a 0.25-scoring run to see what the agent did right after the
-failed `git rev-parse` (did it stop and just report the failure instead of continuing
-to step 2? hit `max_turns: 14`? something else?):
+- The Prerequisite check ran correctly and the agent saw the environment had **zero
+  commits**. But `git rev-parse --git-dir` had actually **succeeded** — the harness's
+  default sandbox seeds an empty, commit-less git repo, the opposite of what "not a git
+  repo" is meant to test. `handoff-guards-non-git` had no `scaffold_script` (unlike
+  `asks-before-committing`), so it was never actually creating a non-git workspace.
+- The agent then searched for evidence of the prompt's narrative ("added
+  retry-with-backoff to the payments client...") — `find -iname "*payment*"`, `*retry*`,
+  checked branches and stash — **found nothing**, and explicitly refused to fabricate a
+  handoff: *"I don't want to fabricate a HANDOFF.md that references specific
+  files/commits that don't exist — that would actively mislead the next session."* This
+  is good model behaviour being penalised by a test fixture with no matching evidence.
 
-```bash
-cd nd
-claude plugin eval . --case handoff-guards-non-git --ablation none --runs 5 \
-  --allow-tools Write Bash --judge-model sonnet --keep-temp
-```
-
-Do not edit `handoff/SKILL.md`'s Prerequisite section until a trace confirms the actual
-failure mode — read `superpowers:systematic-debugging` guidance: fix the diagnosed
-cause, not a guess.
+**Fixed, not yet re-verified on Linux:** added `nd/evals/handoff/guards-non-git/setup.sh`
+(`rm -rf .git` for a genuinely non-git workspace, plus a real `payments/client.py` stub
+matching every narrative detail — the 200/error-body predicate, 3-attempt cap, 10s
+timeout) and wired it in via `context: scaffold_script: setup.sh` in `case.yaml`. Case
+now requires `--scaffold`. Full writeup in `nd/evals/README.md` → "Fixed:
+`handoff-guards-non-git` had no scaffold". **Next step: re-run on Linux to confirm.**
 
 CI (item 7) is on hold — no GitHub remote exists yet (item 5), so there's nowhere to
 put a workflow or a secret. This is the manual substitute: run the suite once on any
@@ -450,14 +454,16 @@ shorter ones. Spent so far this session: **$6.79** across five invocations.
 1. **Run the two git cases on Linux.** ~~on macOS~~ — tried 2026-09-22 and again
    2026-09-23; git fails inside the macOS sandbox both times. Attempts 1–2 on Ubuntu
    were blocked preconditions (`~/.ssh` symlink, then missing sandbox backend — both
-   fixed). **Attempt 3, 2026-09-23: real data, split verdict.**
-   `handoff-asks-before-committing` (review item 1, confirm-before-committing) is now
+   fixed). **Attempt 3, 2026-09-23: real data.**
+   `handoff-asks-before-committing` (review item 1, confirm-before-committing) is
    **resolved — clean 1.00/5, `git-actually-ran` passing every time.**
-   `handoff-guards-non-git` (review item 2, the non-git guard) surfaced a **likely real
-   defect**: the guard detects "not a git repo" correctly every time but only writes
-   `HANDOFF.md` 2/5 times, scoring *worse* than no plugin at all (Δ −0.15). See "Linux
-   run — attempt 3" above. **Still open: diagnose that defect** (a trace is needed —
-   command is in that section) before touching `handoff/SKILL.md`'s Prerequisite.
+   `handoff-guards-non-git` (review item 2, the non-git guard) initially looked like a
+   real defect (Δ −0.15) but a kept trace showed it was an **eval-case bug, not a skill
+   bug**: the case had no scaffold, so the harness's default commit-less git repo made
+   "not a git repo" untestable, and the model correctly refused to fabricate a handoff
+   for code that didn't exist in the sandbox. **Fixed** (see "Linux run — attempt 3"
+   above and `nd/evals/README.md`) — added `setup.sh`, case now requires `--scaffold`.
+   **Still open: re-run on Linux to confirm the fix actually works.**
 2. ~~Re-run the six single-run cases at `runs: 5` with a Sonnet judge~~ — done
    2026-09-22, all 1.00.
 3. ~~The swaps-table A/B is unresolved~~ — done 2026-09-23: arm 1 (table present, from
@@ -496,13 +502,15 @@ shorter ones. Spent so far this session: **$6.79** across five invocations.
    do when `MEMORY.md` is unreadable. An eval transcript showed the agent improvising
    sensibly (asking rather than clobbering the index), so this is a documentation gap, not
    a defect.
-10. **New, 2026-09-23: `handoff`'s non-git guard likely has a real intermittent bug.**
-    `handoff-guards-non-git` on real Linux (attempt 3, see "Linux run — attempt 3"
-    above): the Prerequisite's `git rev-parse --git-dir` check correctly detects "not a
-    git repo" in all 5 "with" runs, but the skill only goes on to actually write
-    `HANDOFF.md` in 2 of those 5 — worse than the no-plugin baseline (4/5). Not yet
-    diagnosed; a kept-trace re-run is needed first (command in that section) before
-    editing `handoff/SKILL.md`'s Prerequisite. Do not guess at a fix without the trace.
+10. ~~`handoff`'s non-git guard likely has a real intermittent bug~~ — diagnosed
+    2026-09-23, and it wasn't a skill bug: `handoff-guards-non-git` had no
+    `scaffold_script`, so (a) the harness's default commit-less git repo made "not a
+    git repo" untestable, and (b) the prompt described work (a payments retry client)
+    that didn't exist anywhere in the sandbox, so a model that checked for
+    corroborating evidence correctly declined to fabricate a handoff rather than
+    invent one. Fixed with `nd/evals/handoff/guards-non-git/setup.sh` (removes `.git`,
+    plants a real `payments/client.py` matching the prompt). `handoff/SKILL.md` itself
+    was never touched. **Not yet re-verified on Linux** — that's the next step.
 
 ## Suggested Skills for Next Session
 
