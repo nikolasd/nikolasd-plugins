@@ -1,0 +1,48 @@
+# Changelog
+
+All notable changes to this repository's plugins are documented here.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and each plugin's `version` in its own `plugin.json` follows
+[Semantic Versioning](https://semver.org/).
+
+## [Unreleased]
+
+### Added
+- `README.md`, `CONTRIBUTING.md`, this changelog.
+- `repository` field on both `nd` and `ty-lsp` `plugin.json`.
+
+## [0.1.0] - 2026-09-23
+
+Initial release of both plugins.
+
+### Added
+- `ty-lsp` plugin: Python code intelligence via Astral's `ty` language server.
+- `nd` plugin, four skills: `handoff`, `reflecting`, `spawning-herdr-agents`,
+  `writing-plain-language`.
+- `nd/evals/`: a 12-case eval suite for the four skills (trigger / near-miss /
+  applied per skill), run with `claude plugin eval`.
+- MIT license.
+- Basic Memory knowledge base at `docs/memory/`, version-controlled with the repo.
+
+### Changed
+- `handoff`: added a git-repo Prerequisite check, a confirm-before-committing step for
+  pending work, a non-git guard, a mistakes table, and a completion checklist.
+- `reflecting`: removed frontmatter overrides (model/effort/allowed-tools), narrowed to
+  a single note destination.
+- `spawning-herdr-agents`: added PowerShell variants, tightened the trigger
+  description.
+- `writing-plain-language`: rewritten from an always-on prohibition list into a
+  request-triggered skill built on a positive recipe. A "Common swaps" table added
+  during the rewrite was later removed after an eval A/B showed it added no
+  measurable benefit over the recipe's own "Everyday words" guidance.
+
+### Fixed
+- `handoff-guards-non-git` (eval case): the case initially had no scaffold, so neither
+  its "not a git repo" premise nor its prompt's narrative had any supporting evidence
+  in the sandbox — a model that checked for evidence correctly declined to fabricate a
+  handoff. A first scaffold fix (`rm -rf .git` plus stub files matching the prompt)
+  improved but didn't fully resolve it, because the harness's seeded git repo's root
+  doesn't necessarily match the scaffold script's own working directory. The scaffold
+  now asks git where its repo actually is and removes exactly that, verified with a
+  clean 5/5 run on Linux. `handoff/SKILL.md` itself needed no changes for this.
