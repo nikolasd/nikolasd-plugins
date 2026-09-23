@@ -72,10 +72,3 @@ release cadences actually diverge).
    fails loudly if it can't find a matching `## [X.Y.Z]` heading — that's a sign step 1
    was skipped or the version number doesn't match, not something to work around in
    the workflow.
-
-## Basic Memory
-
-This repo's Basic Memory project is rooted at `docs/memory/` inside the checkout, so
-notes travel with the repo. `.claude/settings.local.json` (gitignored) holds the local
-path mapping and does not travel — run `/basic-memory:bm-setup` on a new machine to
-recreate it.

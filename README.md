@@ -60,7 +60,6 @@ nd/                                # Personal Skills plugin
   evals/                          # eval suite, run with `claude plugin eval`
 ty-lsp/                           # ty Language Server plugin
   .claude-plugin/plugin.json
-docs/memory/                      # Basic Memory knowledge base for this repo
 ```
 
 ## Contributing

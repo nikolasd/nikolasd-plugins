@@ -2,6 +2,9 @@
 # which points at absolute paths that differ per machine)
 .claude/settings.local.json
 
+# Basic Memory knowledge base — personal working notes, not repo content.
+docs/memory/
+
 # Eval run output — regenerated on every run, and large.
 # Also covered by nd/evals/.gitignore; kept here so it is visible from the root.
 nd/evals/results/
