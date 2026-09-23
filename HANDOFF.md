@@ -2,8 +2,8 @@
 
 Date: 2026-09-22
 Repo: `C:\Dev\Repos\nikolad-plugins` (authored on Windows)
-Current HEAD: `e2c4017` Fix handoff-guards-non-git properly: rm -rf .git missed the
-harness's real repo root. History was rewritten 2026-09-23 (once) to strip
+Current HEAD: `5591249` Confirm handoff-guards-non-git fix on Linux: 5/5, 1.00,
+unanimous. History was rewritten 2026-09-23 (once) to strip
 `Co-Authored-By` lines (all-new hashes from that point on; a
 `backup-pre-attribution-strip` tag preserves the old chain locally). Remote is
 `git@github.com:nikolasd/nikolasd-plugins.git` (note: **nikolasd**-plugins, not
