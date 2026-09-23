@@ -3,12 +3,20 @@ name: handoff-guards-non-git
 description: >
   The workspace is not a git repo. The skill's Prerequisite says to skip the two
   commit steps, still write HANDOFF.md, and tell the user it is uncommitted.
-  Regression test for the missing git guard.
+  Regression test for the missing git guard. Requires --scaffold: the harness
+  seeds an empty commit-less repo by default, which makes `git rev-parse
+  --git-dir` succeed rather than fail; setup.sh removes it and plants real
+  files matching the prompt so a model that checks for corroborating evidence
+  finds it instead of nothing (2026-09-23: a run without this scaffold
+  correctly detected no matching code and asked before writing anything,
+  rather than writing HANDOFF.md — good model behaviour, bad test fixture).
 tags: [handoff, requires-bash]
 runs: 5
 expected_outcome: >
   Writes HANDOFF.md, does not claim to have committed it, and says explicitly
   that the file is uncommitted because this is not a git repository.
+context:
+  scaffold_script: setup.sh
 execution:
   max_turns: 14
   allowed_tools: [Read, Glob, Grep, Skill, Write, Bash]
@@ -25,6 +33,19 @@ graders:
     type: tool_used
     tool: Skill
     input_match: '"skill"\s*:\s*"(?:[\w-]+:)?handoff"'
+
+  # Positive control. If git itself is broken, "skip the commit steps" looks
+  # identical to a working guard, so require git's own verdict in the trace. Match
+  # only strings git prints — the agent's reply is also in the trace and may well
+  # say "not a git repository" itself. With the scaffold, `git rev-parse --git-dir`
+  # itself prints "fatal: not a git repository"; Exit 128 is a fallback for other
+  # git subcommands the agent may chain in (e.g. `git log` on a bare/empty repo
+  # prints a different message but still exits 128). The macOS xcrun failure is
+  # exit 72, unrelated to this grader.
+  - name: git-actually-ran
+    type: regex
+    target: trace
+    pattern: 'fatal: not a git repository|Exit code 128'
 
   - name: handoff-file-created
     type: file_exists

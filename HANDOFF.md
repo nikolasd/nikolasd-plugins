@@ -2,16 +2,314 @@
 
 Date: 2026-09-22
 Repo: `C:\Dev\Repos\nikolad-plugins` (authored on Windows)
-Current HEAD: `df5abbe` Add Basic Memory knowledge base at docs/memory — plus this
-commit, which adds the handoff itself. Nine commits on `main`, no remote yet.
+Current HEAD: `5591249` Confirm handoff-guards-non-git fix on Linux: 5/5, 1.00,
+unanimous. History was rewritten 2026-09-23 (once) to strip
+`Co-Authored-By` lines (all-new hashes from that point on; a
+`backup-pre-attribution-strip` tag preserves the old chain locally). Remote is
+`git@github.com:nikolasd/nikolasd-plugins.git` (note: **nikolasd**-plugins, not
+nikola**d**-plugins — earlier notes assumed the wrong spelling; both `plugin.json`
+`repository` fields now use the correct one). Force-pushed; `origin/main` now
+matches local.
 
-> **Next session's focus: finish the eval runs on macOS.**
-> Ten of twelve eval cases have already been run and pass. Two cannot run on the Windows
-> machine this was authored on, for an environment reason that macOS should not share.
-> Six more have only weak single-run evidence and should be re-run properly. The
-> **Testing Notes** section below is the one to read first — it has the exact commands,
-> the precondition to check before trusting anything, and which results are already good.
-> Nothing in the skills themselves is known to be broken.
+> **Update, 2026-09-23 (later still) — item 6 done, item 7 dropped.** Added
+> `"repository": "https://github.com/nikolasd/nikolasd-plugins"` to both `nd/` and
+> `ty-lsp/` `plugin.json`; both re-validate clean. Decided not to pursue the Linux CI
+> workflow (item 7) — it would need a `claude` CLI running unattended with real API
+> credentials on a CI runner, which isn't something this assistant can provision or
+> maintain, and it's no longer blocking anything now that items 1/2 are resolved
+> manually. Remaining open items: 8 (`ty-lsp` never reviewed, deliberately
+> out-of-scope) and 9 (minor `reflecting` doc gap, not a defect) — both low-priority.
+
+> **Update, 2026-09-23 (latest) — both review items 1 and 2 are now resolved with real
+> Linux machine verification. This closes the loop the whole eval suite was built for.**
+> `handoff-asks-before-committing` scored a clean 1.00/5. `handoff-guards-non-git`'s
+> apparent defect was never a skill bug — it took two rounds of scaffold fixes (round 1:
+> the case had no scaffold at all, so neither "not a git repo" nor the prompt's
+> narrative had any supporting evidence in the sandbox; round 2: the round-1 fix's
+> `rm -rf .git` missed the harness's actual repo root, so a real repo was still
+> discoverable) — and after both, it scored a clean 5/5, 1.00, unanimous, with
+> `git-actually-ran` matching the genuine `fatal: not a git repository` branch every
+> time. `handoff/SKILL.md` itself was never touched — it never had a defect. Full
+> writeup in "Linux run — attempt 3" below and `nd/evals/README.md`. Also since the last
+> update: a GitHub remote now exists and history was rewritten to strip
+> `Co-Authored-By` lines, then force-pushed (see the header above).
+
+> **Update, 2026-09-23 (macOS session) — read this first.**
+> Ran the full two-arm baseline Δ sweep (item 4 — done) and resolved the swaps-table
+> A/B (item 3 — done, table removed). Git cases still fail `git-actually-ran` on macOS,
+> exactly as predicted; items 1 and 2 still rest on code review alone. CI (item 7) is
+> blocked on having no remote (item 5), so exact manual instructions for running the
+> suite on any Linux box are now written up in "Linux run — exact instructions" below —
+> that's the next action, and it has to happen on a Linux machine, not here.
+
+> **Update, 2026-09-22 (macOS session).**
+> The two git cases **cannot run on macOS either**, for a different reason: git itself
+> fails inside the eval sandbox (see "macOS session results" below). Items 1 and 2 of the
+> review still rest on code review alone. **Next step: run them on Linux** (CI, item 7).
+> Everything else is now verified at 5 runs with a Sonnet judge. Nothing in the skills
+> is known to be broken. The original Windows-session notes follow, unchanged except
+> where marked.
+
+## Baseline Δ sweep results (2026-09-23)
+
+Full two-arm sweep (`--ablation with-without`, the default once a plugin resolves),
+`--scaffold --allow-tools Write Bash --judge-model sonnet -j 4`. 12 cases, `runs: 5`
+each, both arms: 843s, **$15.61**. Report kept local at
+`nd/evals/results/2026-09-23T08-26-44-583Z/report.html` (not published — run started by
+an agent session, not a person).
+
+| Case | With | Without | Δ | Passed |
+| :--- | ---: | ---: | ---: | :--- |
+| handoff-asks-before-committing | 0.75 | 0.75 | +0.00 | 0/5 — `git-actually-ran` failed every run |
+| handoff-guards-non-git | 0.65 | 0.60 | +0.05 | 0/5 — same |
+| handoff-skips-plain-summary | 1.00 | 1.00 | +0.00 | 5/5 |
+| herdr-powershell-slash-command | 1.00 | 0.87 | +0.13 | 5/5 |
+| herdr-skips-subagent-request | 1.00 | 1.00 | +0.00 | 5/5 |
+| herdr-stops-outside-herdr | 1.00 | 0.53 | +0.47 | 5/5 |
+| plain-language-explains-plainly | 0.87 | 0.33 | +0.53 | 4/5 |
+| plain-language-rewrites-jargon | 1.00 | 0.96 | +0.04 | 5/5 |
+| plain-language-skips-adr | 1.00 | 0.80 | +0.20 | 5/5 |
+| reflecting-asks-before-writing | 0.85 | 0.65 | +0.20 | 2/5 |
+| reflecting-skips-single-fact | 1.00 | 1.00 | +0.00 | 5/5 |
+| reflecting-verifies-claims | 0.80 | 0.73 | +0.07 | 3/5 |
+
+Mean Δ across all 12: **0.14**. Read with care:
+
+- **The two `handoff` git cases are vacuous again**, consistently: `git-actually-ran`
+  failed on all 10 runs (5 per case). Their Δ (+0.00, +0.05) means nothing — same
+  known macOS git-in-sandbox failure as 2026-09-22. Still needs Linux (item 1).
+- **The three near-miss cases correctly show Δ=0.00 at 1.00** —
+  `handoff-skips-plain-summary`, `herdr-skips-subagent-request`,
+  `reflecting-skips-single-fact`. This is the desired result: the skill doesn't fire
+  when it shouldn't, so the plugin contributes nothing there, which is correct.
+- **Strongest real signal:** `herdr-stops-outside-herdr` (+0.47) and
+  `plain-language-explains-plainly` (+0.53) — the plugin clearly changes behaviour
+  over the no-plugin baseline on these.
+- **`reflecting-asks-before-writing` (2/5) and `reflecting-verifies-claims` (3/5)**
+  flipped run-to-run on judge verdicts, not skill behaviour — matches the documented
+  judge-noise pattern, not a regression.
+
+Item 4 is now done. Item 1 remains open — Linux is the only known route (item 7).
+
+## Linux run — attempt 3: both items resolved (2026-09-23)
+
+**Attempt 1 (Ubuntu): blocked before any real signal** — a symlink inside `~/.ssh`
+stopped the Bash-granting safety check entirely. Fixed (see `nd/evals/README.md` →
+"Linux: a symlink inside `~/.ssh` blocks it too").
+
+**Attempt 2 (same box): blocked by a different precondition** — missing sandbox
+backend, `sudo apt install -y bubblewrap socat` fixed it (see `nd/evals/README.md` →
+"Linux: missing sandbox backend").
+
+**Attempt 3 (same box): git finally ran for real, and — after two rounds of eval-case
+fixes below — both review items are now resolved.**
+
+| Case | With | Without | Δ | Verdict |
+| :--- | ---: | ---: | ---: | :--- |
+| `handoff-asks-before-committing` | 1.00 (5/5) | 0.80 | +0.20 | **item 1 resolved — PASS** |
+| `handoff-guards-non-git` | 1.00 (5/5, after fix) | — | — | **item 2 resolved — PASS** |
+| `herdr-stops-outside-herdr` | 1.00 (5/5) | 0.33 | +0.67 | reconfirms the macOS result |
+
+**Item 1 is resolved.** `git-actually-ran` passed 5/5 in the "with" arm; the
+confirm-before-committing behaviour scored a clean unanimous 1.00. This is the real
+verification the whole suite existed to get.
+
+**Item 2 initially looked like a real skill defect — it wasn't. Diagnosed via a kept
+trace, and it's an eval-case bug, not a `handoff/SKILL.md` bug.** Re-running just this
+case (`--ablation none --runs 5 --keep-temp`) reproduced the failure (1 of 5 scored
+0.40, `handoff-file-created` failing) and a second issue (1 of 5 scored 0.80,
+`flags-uncommitted` failing — not yet investigated, lower priority). Reading the 0.40
+run's `out/trace.jsonl`:
+
+- The Prerequisite check ran correctly and the agent saw the environment had **zero
+  commits**. But `git rev-parse --git-dir` had actually **succeeded** — the harness's
+  default sandbox seeds an empty, commit-less git repo, the opposite of what "not a git
+  repo" is meant to test. `handoff-guards-non-git` had no `scaffold_script` (unlike
+  `asks-before-committing`), so it was never actually creating a non-git workspace.
+- The agent then searched for evidence of the prompt's narrative ("added
+  retry-with-backoff to the payments client...") — `find -iname "*payment*"`, `*retry*`,
+  checked branches and stash — **found nothing**, and explicitly refused to fabricate a
+  handoff: *"I don't want to fabricate a HANDOFF.md that references specific
+  files/commits that don't exist — that would actively mislead the next session."* This
+  is good model behaviour being penalised by a test fixture with no matching evidence.
+
+**First fix attempt (added `setup.sh` with `rm -rf .git` + a real `payments/client.py`
+stub) helped but wasn't enough.** Re-run on Linux: 3/5 passed (up from 1/5 before), but
+2/5 still failed. **A second kept trace showed `rm -rf .git` doesn't reliably work** —
+`git rev-parse --git-dir` still succeeded, because the harness's seeded repo's root
+doesn't necessarily match the scaffold script's own cwd (git searches upward), so a
+plain `.git` removal can silently miss it. With a real (commit-less) repo still
+discoverable, the skill's Prerequisite correctly fell through to **Step 1** instead of
+the "not a git repo" branch — found `payments/client.py` untracked, asked for
+confirmation before committing (line: *"I'd like to commit this work so HEAD reflects
+it... Shall I stage and commit... then write HANDOFF.md?"*), and stopped there waiting
+on an answer. Correct behaviour for the wrong premise — still an eval-case bug, not a
+`handoff/SKILL.md` bug.
+
+**Fixed properly:** `setup.sh` now asks git itself where the repo actually is
+(`git rev-parse --git-dir`) and removes exactly that, looped up to 3 times, then
+**fails loudly** (`exit 1`) if a repo is still discoverable afterward, instead of
+silently producing a broken fixture a third time.
+
+**Confirmed 2026-09-23: 5/5, 1.00, unanimous.** `git-actually-ran` matched
+`fatal: not a git repository` — the actual Prerequisite failure branch, not the
+`Exit code 128` fallback — on every run. Item 2 is now resolved with real machine
+verification. Two rounds of scaffold fixes, zero changes to `handoff/SKILL.md` — the
+skill never had a defect. Full writeup in `nd/evals/README.md` → "Resolved:
+`handoff-guards-non-git` had no scaffold".
+
+**Both review items 1 and 2 — the whole reason this eval suite exists — are now
+machine-verified on Linux.** Outstanding item 1 is closed.
+
+CI (item 7) is on hold — no GitHub remote exists yet (item 5), so there's nowhere to
+put a workflow or a secret. This is the manual substitute: run the suite once on any
+Linux box you have (VM, cloud instance, WSL2, spare machine — anything with a real
+Linux kernel, so `git` isn't the Apple `xcrun` shim that breaks it on macOS). Do this
+from that Linux machine, not from here.
+
+**1. Get the repo onto it.** No remote exists, so transfer the working tree directly
+(preserves all commits and history exactly as-is):
+
+```bash
+# On this Mac
+cd /Users/nikolasdemiridis/Personal/Repos
+tar czf /tmp/nikolad-plugins.tar.gz nikolad-plugins
+scp /tmp/nikolad-plugins.tar.gz <user>@<linux-host>:~
+
+# On the Linux machine
+tar xzf nikolad-plugins.tar.gz
+cd nikolad-plugins
+git log --oneline -3   # sanity check: should show 4cfd7a0 at the top
+```
+
+If the Linux target is actually a VM/WSL2 with a filesystem already shared with this
+Mac, skip the transfer and just `cd` to the shared path instead.
+
+**2. Install and authenticate the `claude` CLI.** Same native installer this machine
+used (confirmed: not npm/brew, it's `~/.local/bin/claude` from the install script):
+
+```bash
+curl -fsSL https://claude.ai/install.sh | bash
+claude --version   # compare against 2.1.280 here; a newer version is fine, note it
+```
+
+Then authenticate — run `claude` once and complete whatever login flow it prompts
+(same account/subscription used on this Mac), or export `ANTHROPIC_API_KEY` if that
+machine is meant to run headless off an API key instead.
+
+**3. Pre-flight checks — two of them, both learned the hard way.**
+
+PATH readability (the Automox-style trap):
+
+```bash
+echo "$PATH" | tr ':' '\n' | while read -r d; do
+  [ -n "$d" ] && [ -e "$d" ] && [ ! -r "$d" ] && echo "UNREADABLE $d"
+done
+```
+
+No symlinks inside `~/.ssh` (the trap attempt 1 hit):
+
+```bash
+find ~/.ssh -maxdepth 3 -type l -ls
+```
+
+Sandbox backend installed (the trap attempt 2 hit):
+
+```bash
+command -v bwrap >/dev/null && command -v socat >/dev/null && echo OK || echo "MISSING — sudo apt install -y bubblewrap socat"
+```
+
+All three should come back clean (first two print nothing, third prints `OK`). If any
+fail, stop and fix that first — see `nd/evals/README.md` for the two fixes already
+found. Don't run the eval yet.
+
+**4. Run it.** Just the three `requires-bash` cases (the two `handoff` git cases plus
+`herdr-stops-outside-herdr`, which already passed on macOS and doubles as a Bash-sandbox
+sanity check). Default ablation is `with-without`, so this also gets real Δ for the
+git cases for the first time — worth keeping since macOS Δ for these two was
+meaningless:
+
+```bash
+cd nikolad-plugins/nd
+claude plugin eval . --tag requires-bash --scaffold --allow-tools Write Bash \
+  --judge-model sonnet --trust-plugin
+```
+
+`--trust-plugin` skips the interactive first-run trust prompt, which matters if this
+is a headless/SSH session with no TTY to answer it. `--scaffold` runs
+`evals/handoff/asks-before-committing/setup.sh` as you — already reviewed, safe.
+
+**5. What "done" looks like.** Read the printed summary (or
+`nd/evals/results/<timestamp>/aggregate-result.json`) and check specifically that
+`git-actually-ran` **passes** for both `handoff-asks-before-committing` and
+`handoff-guards-non-git` — if it fails, the rest of those cases' verdicts mean
+nothing (same rule as macOS), and something about that Linux box's git still isn't
+working. If `git-actually-ran` passes, items 1 and 2 (the review's highest-severity
+fixes) finally get real machine verification.
+
+**6. Bring the verdict back.** Copy `aggregate-result.json` (and `report.html` if you
+want it) back to this Mac — `scp` in reverse, or paste the per-case scores into chat —
+so this HANDOFF.md can be updated with the real result instead of "prepared, not yet
+executed."
+
+Cost estimate: 3 cases × 5 runs × 2 arms ≈ 30 runs, roughly **$4–9** at the measured
+per-run rates in `nd/evals/README.md`.
+
+## macOS session results (2026-09-22)
+
+Claude Code 2.1.280 on macOS (Darwin 27). Spent ≈ $8.60.
+
+**The git cases were vacuous again.** The PATH-readability precondition passed and both
+cases scored 1.00 over 20 runs, but kept traces showed every `git` call failing with exit
+72: `/usr/bin/git` is Apple's `xcrun` shim, it writes a cache under `/var/folders/…/T/`,
+and the sandbox denies it. The "never ran `git add -A`" graders passed because git never
+ran. Workarounds tried and ruled out (PATH prepend, a `git` symlink earlier in PATH,
+`xcrun_nocache`, `TMPDIR`) are listed in `nd/evals/README.md` → "macOS: Bash runs, but git
+does not". The sandbox shell resolves `git` to `/usr/bin/git` no matter what PATH says.
+
+Weak signal only: in every broken-git transcript read, the agent never tried to commit
+around the failure — it inspected `.git` directly and left changes uncommitted.
+
+**Positive controls added, so this can't pass silently again.** Each Bash-dependent case
+now has a grader that fails unless the shell really did its job:
+
+| Case | New grader | Checks |
+| :--- | :--- | :--- |
+| `handoff-asks-before-committing` | `git-actually-ran` | trace contains `?? scratch-secrets.env` or `to include in what will be committed` |
+| `handoff-guards-non-git` | `git-actually-ran` | trace contains `fatal: not a git repository` or `Exit code 128` |
+| `herdr-stops-outside-herdr` | `checks-herdr-env` | a Bash call mentions `HERDR_ENV` |
+
+The git patterns are strings only git prints, because `target: trace` also covers the
+agent's replies and the HANDOFF.md it writes. (A first draft used `Untracked files:` and
+`not a git repository`, which an agent could write itself.)
+
+Verified: the cases load and both git cases score 0.80 on macOS with `git-actually-ran`
+failing (earlier draft patterns; the final ones were not re-run through the runner).
+The final patterns match real host `git status` / `git rev-parse` output and none of 18
+kept broken-git traces or the skill body. The herdr control passes with Bash and fails
+without it. **Unverified:** the runner matching real git output inside a sandbox — first
+Linux run.
+
+**`herdr-stops-outside-herdr` had the same trap and is now fixed.** It allowed Bash but
+wasn't tagged `requires-bash`, and the documented command granted only `Write` — so every
+earlier 1.00 came from an agent with no shell reporting "I can't run commands". Re-run
+without Bash: 0.80, 3 of 5 runs failing (one agent sent a helper subagent, which the judge
+read as "an agent was started"). Re-run **with** Bash: **1.00, 5/5**, each run executing
+the `HERDR_ENV` check, getting "not in herdr", and stopping. Now tagged `requires-bash`.
+
+**The re-runs, all 5 runs, Sonnet judge, `--ablation none`, all 1.00:**
+`plain-language-explains-plainly`, `plain-language-skips-adr`,
+`herdr-powershell-slash-command`, `herdr-skips-subagent-request`,
+`handoff-skips-plain-summary`, `herdr-stops-outside-herdr` (with Bash).
+
+**Tooling gotcha:** `--case` is not repeatable — given twice, only the last one runs.
+`--tag` is. Noted in the README.
+
+**Still unverified:** the two git cases (Linux needed), the swaps-table A/B (item 3), and
+the with/without baseline (item 4). Note the first macOS run defaulted to both arms and
+reported Δ 0.00 for the git cases — meaningless, since git never ran in either arm.
+
+**Not done:** Basic Memory is not set up on this Mac (`/basic-memory:bm-setup`).
 
 ## What Was Built This Session
 
@@ -130,11 +428,11 @@ nd/evals/                        # new — whole suite
 Run from `nd/`. Full detail in `nd/evals/README.md`.
 
 ```bash
-# The 10 cases that run anywhere
-claude plugin eval . --allow-tools Write --judge-model sonnet -j 4 \
-  --tag handoff --tag reflecting --tag herdr --tag plain-language
+# Superseded 2026-09-22 — see nd/evals/README.md "Run it". In short:
+# all 12 where Bash works (git cases additionally need Linux):
+claude plugin eval . --scaffold --allow-tools Write Bash --judge-model sonnet -j 4
 
-# The two blocked on Windows — the point of the macOS session
+# The three requires-bash cases (2 git + herdr-stops-outside-herdr)
 claude plugin eval . --tag requires-bash --scaffold --allow-tools Write Bash --judge-model sonnet
 
 claude plugin validate .        # manifest only, not behaviour
@@ -159,6 +457,8 @@ there**, so verify rather than assume. If it fails, the symptom is every case sc
 first; `--scaffold` runs author-supplied bash as you. Expected: both **1.00**, with
 `never-adds-everything` and `never-stages-the-secrets-file` passing because `git add -A`
 genuinely never ran, and the judge confirming it asked before committing.
+*(2026-09-22: now applies to **Linux**, not macOS. It counts only if
+`git-actually-ran` passes — without it, 1.00 is exactly the vacuous result seen twice.)*
 
 **Step 3 — re-run these six properly.** They scored 1.00 but only at `runs: 1` with a
 Haiku judge, which the flip table above shows is not evidence:
@@ -182,36 +482,69 @@ shorter ones. Spent so far this session: **$6.79** across five invocations.
 
 ## Outstanding Work
 
-1. **Run the two `requires-bash` cases on macOS.** Items 1 and 2 — the review's
-   highest-severity fixes — have no machine verification until this happens.
-2. **Re-run the six single-run cases at `runs: 5` with a Sonnet judge** (~$4).
-3. **The swaps-table A/B is unresolved.** `plain-language-rewrites-jargon` exists partly
-   to settle whether the `## Common swaps` section in `writing-plain-language` helps,
-   hurts, or does nothing. Procedure is in `nd/evals/README.md`. One observation favours
-   keeping it: the agent visibly cited the swap list while working. That is one data
-   point, not a result.
-4. **No baseline arm has ever run.** Every run so far used `--ablation none`. The
-   with/without comparison — `Δ`, the plugin's actual contribution — is entirely unmeasured.
-   A full two-arm sweep is ~120 runs, near $20.
-5. **No remote.** ~~Not a git repo~~ — resolved: initialised on `main` with nine
-   semantic commits. Still no remote, so nothing is pushed. `git remote add origin
-   https://github.com/nikolasd/nikolad-plugins` once it exists.
+1. ~~Run the two git cases on Linux~~ — **done 2026-09-23.** Both cases now have real
+   machine verification: `handoff-asks-before-committing` (review item 1,
+   confirm-before-committing) scored a clean 1.00/5. `handoff-guards-non-git` (review
+   item 2, the non-git guard) initially looked like a real defect (Δ −0.15) but two
+   rounds of investigation showed it was an **eval-case bug, not a skill bug** — no
+   scaffold, then an unreliable `rm -rf .git` that missed the harness's actual repo
+   root (full story in "Linux run — attempt 3" above and `nd/evals/README.md`). After
+   fixing the scaffold properly, it scored 5/5, 1.00, unanimous, with
+   `git-actually-ran` matching the genuine `fatal: not a git repository` branch.
+   `handoff/SKILL.md` itself was never touched — it never had a defect.
+2. ~~Re-run the six single-run cases at `runs: 5` with a Sonnet judge~~ — done
+   2026-09-22, all 1.00.
+3. ~~The swaps-table A/B is unresolved~~ — done 2026-09-23: arm 1 (table present, from
+   the baseline sweep) and arm 2 (table removed), 5 runs each, Sonnet judge, both
+   **1.00, 5/5** — tied at the grader's ceiling. Per the documented decision rule
+   ("keep only if arm 1 scored higher"), the table did not earn its place and has been
+   **removed** from `writing-plain-language/SKILL.md`. Three of the five planted words
+   were already covered by the recipe's own "Everyday words" bullet; the other two were
+   avoided anyway without the table. Caveat noted in `nd/evals/README.md`: this is a
+   ceiling effect, not proof a swaps table can never help — re-open if a future case
+   plants harder jargon. Full writeup in `nd/evals/README.md` → "Resolved: the Common
+   swaps table doesn't earn its place".
+4. ~~No baseline arm has ever run~~ — done 2026-09-23: full two-arm sweep, mean Δ 0.14,
+   $15.61. See "Baseline Δ sweep results" above. Git cases' Δ is still meaningless
+   (item 1 unresolved); everything else shows either the expected Δ≈0 (near-miss cases)
+   or a clear positive Δ (trigger/applied cases).
+5. ~~No remote~~ — resolved 2026-09-23: `origin` is `git@github.com:nikolasd/
+   nikolasd-plugins.git` (note the actual name — `nikolasd-plugins`, not
+   `nikolad-plugins`). History was rewritten the same day to strip `Co-Authored-By`
+   lines and force-pushed; `origin/main` matches local. A `backup-pre-attribution-strip`
+   tag keeps the old (attributed) chain around locally, not pushed.
    - Git identity is set **repo-local only** to `Nikolas Demiridis
      <nikolas@demiridis.gr>`, taken from the plugin manifests. Amend if wrong.
    - `.gitattributes` forces LF for `*.sh`. Do not remove it: `setup.sh` is executed
      by bash on macOS, and a CRLF checkout breaks its shebang and heredocs — which
      would fail the two `requires-bash` cases for a reason unrelated to what they test.
-6. **`repository` field deliberately omitted** from both `plugin.json` files. The repo
-   does not exist yet; the author confirmed the URL will be
-   `https://github.com/nikolasd/nikolad-plugins`. Add it to `nd/` and `ty-lsp/` when real.
-7. **A Linux CI workflow was offered but not written.** It would make items 1, 2 and 4
-   routine instead of machine-dependent. `--trust-plugin` exists for unattended runs.
+6. ~~`repository` field still omitted~~ — done 2026-09-23: added
+   `"repository": "https://github.com/nikolasd/nikolasd-plugins"` to both `nd/` and
+   `ty-lsp/` `plugin.json` (correct name — `nikolasd-plugins`, not the earlier-assumed
+   `nikolad-plugins`). Both manifests re-validated clean with `claude plugin validate`.
+7. **Dropped, 2026-09-23 — not pursuing a Linux CI workflow.** It's no longer blocking
+   anything (items 1/2 were resolved manually) and would need a `claude` CLI running
+   unattended with real API credentials on a CI runner, which isn't something this
+   assistant can provision or maintain going forward. If item-4-style baseline sweeps
+   or automatic scaffold-bug catching become worth the setup cost later, revisit as a
+   fresh decision rather than reopening this line item.
 8. **`ty-lsp` was never reviewed** — out of scope. It declares MIT and has a valid
    manifest; nothing further checked.
 9. **Minor gap found in `reflecting` but not fixed:** the skill says nothing about what to
    do when `MEMORY.md` is unreadable. An eval transcript showed the agent improvising
    sensibly (asking rather than clobbering the index), so this is a documentation gap, not
    a defect.
+10. ~~`handoff`'s non-git guard "bug"~~ — diagnosed 2026-09-23 as an eval-case bug, not
+    a skill bug, in two rounds: (a) `handoff-guards-non-git` had no `scaffold_script`,
+    so the harness's default commit-less git repo made "not a git repo" untestable,
+    and the prompt described work that didn't exist anywhere in the sandbox — a model
+    that checked for evidence correctly declined to fabricate a handoff; (b) the round
+    1 fix's `rm -rf .git` was itself unreliable — the harness's repo root doesn't
+    necessarily match the scaffold's own cwd, so it silently missed the real `.git`,
+    and the skill correctly fell through to Step 1 (asking to commit untracked work)
+    instead of the guard branch. `setup.sh` now removes whatever git-dir git itself
+    reports and fails loudly if one remains. **Confirmed 2026-09-23: 5/5, 1.00,
+    unanimous.** `handoff/SKILL.md` itself was never touched — it never had a defect.
 
 ## Suggested Skills for Next Session
 

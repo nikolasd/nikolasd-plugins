@@ -37,16 +37,7 @@ To test whether a term is load-bearing, drop it and reread the sentence. If it s
 
 The good version drops "latency reduction", "edge node" and "origin offload" as headline jargon. It keeps "CDN" — that term is load-bearing — and defines it once.
 
-## Common swaps
-
-| Reach for | Write instead |
-|---|---|
-| utilize, leverage | use |
-| facilitate | help |
-| in order to | to |
-| robust solution | name the actual property — fast, tested, handles retries |
-
-Two habits the swaps above won't catch:
+Two habits the recipe above won't catch:
 
 - Naming a framework, pattern, or technique when a plain description says the same thing.
 - Treating "this is a technical topic" as licence for technical wording throughout, instead of keeping only the load-bearing terms technical.
