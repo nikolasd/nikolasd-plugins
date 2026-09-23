@@ -2,8 +2,9 @@
 
 Date: 2026-09-22
 Repo: `C:\Dev\Repos\nikolad-plugins` (authored on Windows)
-Current HEAD: `0e2a3f9` HANDOFF: write exact instructions for the Linux eval run —
-history was rewritten 2026-09-23 to strip `Co-Authored-By` lines (all-new hashes; a
+Current HEAD: `e2c4017` Fix handoff-guards-non-git properly: rm -rf .git missed the
+harness's real repo root. History was rewritten 2026-09-23 (once) to strip
+`Co-Authored-By` lines (all-new hashes from that point on; a
 `backup-pre-attribution-strip` tag preserves the old chain locally). Remote is
 `git@github.com:nikolasd/nikolasd-plugins.git` (note: **nikolasd**-plugins, not
 nikola**d**-plugins as earlier notes assumed — fix item 6 when touching the
