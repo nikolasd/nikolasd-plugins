@@ -147,7 +147,32 @@ find ~/.ssh -type f -name 'id_*' ! -name '*.pub' -exec chmod 600 {} \;
 ```
 
 Verify no symlinks remain (`find ~/.ssh -maxdepth 3 -type l` prints nothing), then
-re-run. This has not yet been verified fixed — first attempt just hit this wall.
+re-run. **Verified fixed 2026-09-23**: same Ubuntu box, second attempt, this precondition
+no longer fired — but see the next section for what it hit instead.
+
+### Linux: missing sandbox backend (`bubblewrap`/`socat`)
+
+A fourth blocked precondition, hit immediately after fixing the `~/.ssh` symlink above,
+on the same Ubuntu box. Every run in every arm errors out with:
+
+> A shell tool (Bash or PowerShell) was granted but this machine cannot confine it (no
+> sandbox backend on this platform, or it is not installed), so the run was refused
+> rather than run unconfined … sandbox required but unavailable: sandbox is enabled but
+> dependencies are missing: bubblewrap (bwrap) not installed, socat not installed
+
+Unlike the previous three, this one doesn't fail clean at $0.00 in ~1s — the agent
+still burns a few cents per run before the refusal, and grader scores on those runs are
+noise (`git-actually-ran` failed on every run here too, because git never got the
+chance to run). Don't read anything into the specific numbers a broken run like this
+produces.
+
+Fix, Ubuntu/Debian:
+
+```bash
+sudo apt update && sudo apt install -y bubblewrap socat
+```
+
+Then re-run. Not yet verified fixed — this is the next thing to try.
 
 ### The positive control
 

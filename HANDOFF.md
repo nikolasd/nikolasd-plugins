@@ -9,15 +9,15 @@ history was rewritten 2026-09-23 to strip `Co-Authored-By` lines (all-new hashes
 nikola**d**-plugins as earlier notes assumed — fix item 6 when touching the
 `repository` fields). Force-pushed; `origin/main` now matches local.
 
-> **Update, 2026-09-23 (later) — an actual Linux attempt happened, and it's blocked.**
-> First Linux run (Ubuntu): all 3 `requires-bash` cases failed at $0.00/~1s, both arms —
-> not a plugin result, a *third* blocked-precondition, this time a symlink inside
-> `~/.ssh` that stops the Bash-granting safety check from running at all. Diagnosis and
-> fix are in `nd/evals/README.md` → "Linux: a symlink inside `~/.ssh` blocks it too", and
-> in "Linux run — attempt 1 blocked" below. **Item 1 is still open** — nothing about
-> `git-actually-ran` has been verified yet. Also since the last update: a GitHub remote
-> now exists and history was rewritten to strip `Co-Authored-By` lines, then
-> force-pushed (see the header above).
+> **Update, 2026-09-23 (later) — two Linux attempts now, both blocked, neither a plugin
+> result.** Attempt 1 (Ubuntu): a symlink inside `~/.ssh` blocked the Bash-granting
+> safety check entirely (fixed). Attempt 2, same box: missing sandbox backend
+> (`bubblewrap`/`socat` not installed) blocked every run instead. Fix is
+> `apt install bubblewrap socat`, not yet retried. Diagnosis and fixes for both are in
+> `nd/evals/README.md` and in "Linux run — attempt 2 blocked" below. **Item 1 is still
+> open** — nothing about `git-actually-ran` has been verified yet. Also since the last
+> update: a GitHub remote now exists and history was rewritten to strip
+> `Co-Authored-By` lines, then force-pushed (see the header above).
 
 > **Update, 2026-09-23 (macOS session) — read this first.**
 > Ran the full two-arm baseline Δ sweep (item 4 — done) and resolved the swaps-table
@@ -76,21 +76,31 @@ Mean Δ across all 12: **0.14**. Read with care:
 
 Item 4 is now done. Item 1 remains open — Linux is the only known route (item 7).
 
-## Linux run — attempt 1 blocked (2026-09-23), retry instructions below
+## Linux run — attempt 2 blocked (2026-09-23), retry instructions below
 
-**First attempt (Ubuntu, 2026-09-23): blocked before any real signal, same shape as
-the Windows and macOS blocks — all 3 cases, both arms, 0.00/$0.00/~1s.** A *third*,
-Linux-specific blocked precondition, not the git/xcrun one: a symlink inside `~/.ssh`
-stops the Bash-granting safety check from running at all —
+**Attempt 1 (Ubuntu): blocked before any real signal**, all 3 cases, both arms,
+0.00/$0.00/~1s. A symlink inside `~/.ssh` stopped the Bash-granting safety check from
+running at all. Diagnosis and fix in `nd/evals/README.md` → "Linux: a symlink inside
+`~/.ssh` blocks it too". **Fixed and verified** — attempt 2 got past this one.
 
-> the SSH (~/.ssh) credential store on this machine holds a symbolic link inside it, so
-> the Bash sandbox cannot reliably exclude it — a Bash-granting evaluation cannot run
-> here
+**Attempt 2 (same box, same day): blocked by a different precondition.** Every run
+errored with:
 
-Full diagnosis and fix (find the symlink, dereference it) is now in
-`nd/evals/README.md` → "Linux: a symlink inside `~/.ssh` blocks it too". **Item 1 is
-still open** — this attempt verified nothing about `git-actually-ran`. Once `~/.ssh`
-is fixed on that box, retry from step 4 below.
+> A shell tool (Bash or PowerShell) was granted but this machine cannot confine it (no
+> sandbox backend on this platform, or it is not installed) … dependencies are missing:
+> bubblewrap (bwrap) not installed, socat not installed
+
+Fix:
+
+```bash
+sudo apt update && sudo apt install -y bubblewrap socat
+```
+
+Full details in `nd/evals/README.md` → "Linux: missing sandbox backend
+(`bubblewrap`/`socat`)". **Item 1 is still open** — neither attempt has produced a
+valid `git-actually-ran` result yet; the scores attempt 2 printed (0.70, 0.65, 0.33…)
+are noise from refused runs, not signal. Once `bubblewrap`/`socat` are installed,
+retry from step 4 below.
 
 CI (item 7) is on hold — no GitHub remote exists yet (item 5), so there's nowhere to
 put a workflow or a secret. This is the manual substitute: run the suite once on any
@@ -138,15 +148,21 @@ echo "$PATH" | tr ':' '\n' | while read -r d; do
 done
 ```
 
-No symlinks inside `~/.ssh` (the trap attempt 1 actually hit — see "Linux run —
-attempt 1 blocked" above and `nd/evals/README.md` for the fix):
+No symlinks inside `~/.ssh` (the trap attempt 1 hit):
 
 ```bash
 find ~/.ssh -maxdepth 3 -type l -ls
 ```
 
-Both should print nothing. If either prints anything, stop and fix that first — don't
-run the eval yet.
+Sandbox backend installed (the trap attempt 2 hit):
+
+```bash
+command -v bwrap >/dev/null && command -v socat >/dev/null && echo OK || echo "MISSING — sudo apt install -y bubblewrap socat"
+```
+
+All three should come back clean (first two print nothing, third prints `OK`). If any
+fail, stop and fix that first — see `nd/evals/README.md` for the two fixes already
+found. Don't run the eval yet.
 
 **4. Run it.** Just the three `requires-bash` cases (the two `handoff` git cases plus
 `herdr-stops-outside-herdr`, which already passed on macOS and doubles as a Bash-sandbox
@@ -408,13 +424,13 @@ shorter ones. Spent so far this session: **$6.79** across five invocations.
 ## Outstanding Work
 
 1. **Run the two git cases on Linux.** Still open. ~~on macOS~~ — tried 2026-09-22 and
-   again 2026-09-23; git fails inside the macOS sandbox both times. **First real Linux
-   attempt, 2026-09-23: also blocked**, before any signal — a symlink inside `~/.ssh`
-   on that Ubuntu box trips the Bash-granting safety check (third distinct
-   blocked-precondition, see "Linux run — attempt 1 blocked" above and
-   `nd/evals/README.md`). Items 1 and 2 — the review's highest-severity fixes — still
-   have no machine verification. Fix the symlink per the README, then retry from step 4
-   of the Linux instructions.
+   again 2026-09-23; git fails inside the macOS sandbox both times. **Two real Linux
+   attempts, 2026-09-23, both blocked before any signal:** attempt 1 hit a `~/.ssh`
+   symlink (fixed); attempt 2, same box, hit a missing sandbox backend
+   (`bubblewrap`/`socat` not installed — `sudo apt install -y bubblewrap socat`, not yet
+   retried). See "Linux run — attempt 2 blocked" above and `nd/evals/README.md`. Items 1
+   and 2 — the review's highest-severity fixes — still have no machine verification.
+   Install the missing packages, then retry from step 4 of the Linux instructions.
 2. ~~Re-run the six single-run cases at `runs: 5` with a Sonnet judge~~ — done
    2026-09-22, all 1.00.
 3. ~~The swaps-table A/B is unresolved~~ — done 2026-09-23: arm 1 (table present, from
