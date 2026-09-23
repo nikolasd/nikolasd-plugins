@@ -8,6 +8,10 @@ and each plugin's `version` in its own `plugin.json` follows
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-09-23
+
+No plugin behaviour changed — repository packaging and tooling only.
+
 ### Added
 - `README.md`, `CONTRIBUTING.md`, this changelog.
 - `repository` field on both `nd` and `ty-lsp` `plugin.json`.

@@ -1,5 +1,6 @@
 {
   "name": "nikolad-plugins",
+  "description": "Personal Claude Code plugins: workflow skills (handoff, reflection, plain-language writing, Herdr agent control) and a ty language server integration for Python.",
   "owner": {
     "name": "Nikolas Demiridis"
   },

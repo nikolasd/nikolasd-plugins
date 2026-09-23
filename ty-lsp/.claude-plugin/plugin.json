@@ -2,7 +2,7 @@
   "$schema": "https://anthropic.com/claude-code/plugin.schema.json",
   "name": "ty-lsp",
   "displayName": "ty Language Server",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Python code intelligence via Astral's ty language server",
   "author": {
     "name": "Nikolas Demiridis",
