@@ -1,0 +1,50 @@
+schema_version: "1.1"
+name: architect-skips-direct-implementation
+description: >
+  Near-miss. A plain coding request with no design decision and no peer-session
+  framing must not pull in the architect skill, which is explicit that it's not
+  for implementing code directly. Requires --scaffold: without a real signup
+  form on disk, a model correctly asks where the code lives instead of
+  implementing, which isn't the near-miss behaviour this case tests (same
+  shape as handoff-guards-non-git's original bug).
+tags: [architect, near-miss]
+runs: 5
+expected_outcome: >
+  Implements or offers to implement the validator directly. Does not invoke the
+  architect skill and does not frame this as needing a plan or a delegated engineer.
+context:
+  scaffold_script: setup.sh
+execution:
+  max_turns: 8
+  allowed_tools: [Read, Glob, Grep, Skill, Write]
+  prompt: |
+    Add a regex-based email validator to the signup form so empty or malformed
+    addresses are rejected before we hit the database.
+graders:
+  - name: architect-skill-not-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?architect"'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: engineer-skill-not-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?engineer"'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: implements-directly
+    type: llm
+    criteria: |
+      This is a small, self-contained coding task with no architecture decision and
+      no mention of any peer session.
+
+      PASS if the response implements the validator directly (code, a diff, or a
+      concrete offer to write it now).
+
+      FAIL if the response treats this as needing a plan, an ADR, a design review, or
+      a delegated engineer before any code gets written.

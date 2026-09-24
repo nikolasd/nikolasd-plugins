@@ -1,0 +1,36 @@
+schema_version: "1.1"
+name: architect-considers-design
+description: >
+  Trigger case. Design-level work phrased naturally ("walk me through the options"),
+  no explicit "/nd:architect" command, checks the description's own trigger
+  conditions land without needing the slash form.
+tags: [architect]
+runs: 5
+expected_outcome: >
+  Loads the architect skill and responds as the planner: lays out options or asks
+  clarifying questions, without writing implementation code itself.
+execution:
+  max_turns: 8
+  allowed_tools: [Read, Glob, Grep, Skill]
+  prompt: |
+    You're the architect for this project. We need to move background job
+    processing off cron and onto a proper queue. Walk me through the options
+    before we commit to anything.
+graders:
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?architect"'
+
+  - name: acts-as-planner
+    type: llm
+    weight: 2
+    criteria: |
+      The user asked to be walked through options before committing to anything.
+
+      PASS if the response lays out multiple approaches or trade-offs, or asks
+      clarifying questions to narrow the design space, rather than jumping straight
+      to a single implementation.
+
+      FAIL if the response writes or presents implementation code, a diff, or a
+      single unquestioned solution as if already decided.

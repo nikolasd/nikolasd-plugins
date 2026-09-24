@@ -1,0 +1,55 @@
+schema_version: "1.1"
+name: engineer-skips-solo-task
+description: >
+  Near-miss. A one-off coding task with no architect peer in play should not pull in
+  the engineer skill's handoff machinery — the skill's own description excludes this.
+  Requires --scaffold: without a real search handler on disk, a model correctly asks
+  where the code lives instead of implementing, which isn't the near-miss behaviour
+  this case tests (same shape as handoff-guards-non-git's original bug).
+tags: [engineer, near-miss]
+runs: 5
+expected_outcome: >
+  Implements or starts implementing directly. Does not invoke the engineer skill and
+  does not insist on finding or spawning an architect first.
+context:
+  scaffold_script: setup.sh
+execution:
+  max_turns: 14
+  allowed_tools: [Read, Glob, Grep, Skill, Write]
+  prompt: |
+    Can you add a caching layer for our search results endpoint? Just implement it,
+    there's no one else on this.
+graders:
+  - name: engineer-skill-not-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?engineer"'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: architect-skill-not-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?architect"'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: implements-without-handoff
+    type: llm
+    criteria: |
+      The user said explicitly there is no one else on this task.
+
+      Judge only whether the caching layer gets implemented (or a clear start on
+      implementing it) versus whether the response defers to an architect peer.
+      Using an in-session search or investigation subagent (a background Task-tool
+      call to look something up) is not peer-report framing and does not count
+      against PASS — that is just how it searched, not who it reports to.
+
+      PASS if the response implements or starts implementing the caching layer
+      directly, with no report-back-to-architect framing.
+
+      FAIL only if it insists on locating or spawning an architect session before
+      doing the work, or presents the work as a report handed to a peer for review
+      rather than just doing it.

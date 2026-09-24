@@ -20,7 +20,7 @@ session workflow.
 | `architect` | `/nd:architect` | Plans, reviews and validates changes, and delegates implementation to a separate engineer session spawned via Herdr. Every decision stays with the user. |
 | `engineer` | `/nd:engineer` | Implements tasks from a separate architect session with TDD and spec verification, and reports back with evidence. |
 
-Backed by a 12-case eval suite (`nd/evals/`) run with `claude plugin eval` — see
+Backed by an 18-case eval suite (`nd/evals/`) run with `claude plugin eval` — see
 [`nd/evals/README.md`](nd/evals/README.md) for how to run it, known
 machine-specific gotchas (macOS git sandboxing, Linux sandbox dependencies), and
 past findings.

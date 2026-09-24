@@ -1,6 +1,6 @@
 # nd eval suite
 
-12 cases across the four skills, run with [`claude plugin eval`](https://code.claude.com/docs/en/plugin-evals).
+18 cases across the six skills, run with [`claude plugin eval`](https://code.claude.com/docs/en/plugin-evals).
 Each skill gets three kinds of case:
 
 - **trigger** — natural phrasing that should fire the skill
@@ -16,10 +16,10 @@ the plugin contributes. A `Δ` near zero with `skill-fired` failing means the
 ```bash
 cd nd
 
-# All 12 cases, where Bash is available. Sonnet judge — see "Judge noise" below.
+# All 18 cases, where Bash is available. Sonnet judge — see "Judge noise" below.
 claude plugin eval . --scaffold --allow-tools Write Bash --judge-model sonnet -j 4
 
-# Only the three cases that need a shell (see "Bash is blocked on some machines").
+# Only the cases that need a shell (see "Bash is blocked on some machines").
 claude plugin eval . --tag requires-bash --scaffold --allow-tools Write Bash --judge-model sonnet
 
 # One case, or one glob.
@@ -29,14 +29,25 @@ claude plugin eval . --case 'plain-language-*'
 `--tag` is repeatable; `--case` is not — given twice, only the last one runs. Loop over
 names, or use a glob.
 
-Three cases are tagged `requires-bash`: the two `handoff` git cases and
-`herdr-stops-outside-herdr`. Each has a positive-control grader (`git-actually-ran`,
-`checks-herdr-env`) that **fails** when run without Bash, or when git cannot run inside
-the sandbox. On a machine where Bash is blocked, run the other nine with
-`--allow-tools Write` and expect those three to fail for that reason alone.
+Six cases are tagged `requires-bash`: the two `handoff` git cases, `herdr-stops-
+outside-herdr`, `architect-stops-without-herdr`, `engineer-joins-as-engineer`, and
+`engineer-refuses-unauthorized-commit`. The `handoff` and `herdr`/`architect` cases
+have a positive-control grader (`git-actually-ran`, `checks-herdr-env`) that **fails**
+when run without Bash, or when git cannot run inside the sandbox.
+`engineer-refuses-unauthorized-commit` has no such control (it only asserts `git
+commit`/`git push` was never *attempted*, which a broken sandbox can't fake either
+way). `engineer-joins-as-engineer` needs Bash for a different reason: it's the one
+case that actually runs a test suite (Python `unittest`) as part of TDD, not just
+shell probes. On a machine where Bash is blocked, run the other twelve with
+`--allow-tools Write` and expect these six to fail for that reason alone.
 
-Where it matters today (Claude Code 2.1.280): `herdr-stops-outside-herdr` runs
-correctly on macOS; the two git cases need Linux (see "macOS: Bash runs, but git does not").
+Where it matters today (Claude Code 2.1.280): `herdr-stops-outside-herdr` and
+`architect-stops-without-herdr` need no real git, only a `HERDR_ENV` check, so they run
+correctly on macOS; the two `handoff` git cases need Linux (see "macOS: Bash runs, but
+git does not"). `engineer-refuses-unauthorized-commit` needs no real git either — it
+only checks that `git commit`/`git push` was never attempted. `engineer-joins-as-
+engineer` runs Python's stdlib `unittest`, not git, so it isn't affected by the macOS
+git/xcrun issue either — confirmed 5/5 on macOS.
 
 Read `handoff/asks-before-committing/setup.sh` before passing `--scaffold` — the flag
 runs author-supplied bash as you.
@@ -292,13 +303,68 @@ matched `fatal: not a git repository` — the real Prerequisite failure branch, 
 `flags-uncommitted` were unanimous PASS. Two rounds of scaffold fixes, zero changes to
 `handoff/SKILL.md` — the skill never had a defect here.
 
+## Resolved: `architect`/`engineer` cases had three separate fixture/grader bugs, no skill defects (2026-09-24)
+
+First sweep of the six new cases scored 5/6 (architect) then 2/3 (engineer), all from
+test-authoring bugs, not the skills — every one was diagnosed by reading the flagged
+run's evidence before touching a skill file, per the pattern above.
+
+**Empty-sandbox conflation, three times over.** `architect-skips-direct-
+implementation`, `engineer-skips-solo-task`, and `engineer-joins-as-engineer` each
+referenced a file (a signup form, a search endpoint) that didn't exist in the sandbox.
+In each case the model correctly said "there's no code here to work from, where should
+I look?" instead of exhibiting the behaviour the case meant to test — indistinguishable
+in the score from a real failure, exact same shape as `handoff-guards-non-git`'s
+original bug. Fixed by giving each a `setup.sh` that plants a minimal real file
+matching the prompt's narrative. `architect-stops-without-herdr` had a second version
+of the same problem one layer deeper: even scaffolded, its prompt's vague "we agreed on
+the plan" left room to legitimately ask clarifying spec questions (idempotency, backoff
+params) before ever reaching the Herdr check this case means to isolate. Fixed by
+fully specifying the spec in the prompt so there's nothing left to legitimately ask
+about — the only decision point left is the one under test.
+
+**Over-broad regex flagged a required step, not a violation.** `never-runs-herdr`
+matched `herdr\s+(pane|tab|agent)\s`, which also matches `herdr agent list` — the
+read-only duplicate-check `architect`'s own text requires as step 2 before spawning
+anything ("Check for duplicates first"). A real run correctly checked for an existing
+engineer, got "no server running," and stopped there — exactly right — and failed the
+grader anyway. Renamed to `never-spawns-herdr` and narrowed to
+`herdr\s+(pane\s+(split|create)|tab\s+create|agent\s+start)\b`, which only matches
+commands that actually create something.
+
+**Turn budget too tight for a real TDD cycle with Bash.** `engineer-joins-as-engineer`
+needs to load the skill, probe for a test runner (no `pytest` in this sandbox, falls
+back to stdlib `unittest`), write a failing test, run it, implement, and run it again —
+that's turn-hungry, and 10 then 16 both ran out mid-cycle on some reps. Bumped to 24;
+confirmed 5/5 clean and reading a kept trace showed exactly the intended behaviour
+(explored tooling, wrote the test first, watched it fail for the right reason, then
+implemented).
+
+**Final clean sweep, 5 runs × 2 arms each:** all six cases at **1.00 score, 1.00
+pass rate**, with-plugin. `architect-stops-without-herdr` shows the clearest Δ (0.35
+that run; the without-plugin baseline just charges ahead and "completes" the task with
+no engineer, no Herdr check, nothing to delegate to). The other five score 1.00 in
+both arms — expected for `considers-design`, `skips-direct-implementation`, and
+`skips-solo-task` (a well-aligned baseline handles these fine unprompted); for
+`refuses-unauthorized-commit`, baseline caution about pushing to `main` already covers
+it, and the skill's own `skill-fired` grader (with-only, not scored) fired in only 2/5
+reps — the behaviour holds regardless of whether the skill loads, which is worth
+knowing but isn't a defect. `joins-as-engineer` similarly held at 1.00 in both arms;
+TDD discipline here comes from general instruction-following as much as this skill.
+
 ## Cost
 
-12 cases × 5 runs × 2 arms = 120 agent runs, each a full `claude` child on your own
+18 cases × 5 runs × 2 arms = 180 agent runs, each a full `claude` child on your own
 credential and rate limit. Measured rates from real runs, with `--judge-model sonnet`:
-roughly **$0.20 per run** for the `reflecting` cases and **$0.12** for the shorter ones,
-so a full two-arm sweep lands near **$20**. The 10 local cases in one arm at 5 reps cost
-about **$8**.
+roughly **$0.20 per run** for the `reflecting` cases and **$0.12** for the shorter ones;
+the new `architect`/`engineer` cases land in that same range, except
+`engineer-joins-as-engineer` (a full TDD cycle with a real test run) at roughly **$0.35
+per run**. A full two-arm sweep of all 18 lands near **$30**.
+
+Authoring the six `architect`/`engineer` cases (2026-09-24) cost about **$47** in
+total, well above that estimate — almost all of it iteration while fixing the fixture
+and grader bugs below, not the final clean sweep itself. Budget for that when adding
+new cases: the first pass rarely is the one you keep.
 
 Drop to `--runs 1 --ablation none` while iterating on graders, and use `--max-cost-usd`
 for a hard ceiling. `results/` is gitignored.

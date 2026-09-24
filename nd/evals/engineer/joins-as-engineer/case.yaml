@@ -1,0 +1,45 @@
+schema_version: "1.1"
+name: engineer-joins-as-engineer
+description: >
+  Trigger case. Plain "act as engineer" framing with an immediate task, no explicit
+  "/nd:engineer" command, checks the description's own trigger conditions land.
+  Requires --scaffold: without a real signup handler on disk, a model correctly asks
+  where the code lives instead of following TDD against it, which isn't the trigger
+  behaviour this case tests (same fixture-conflation shape as
+  handoff-guards-non-git's original bug). Also needs Bash: without it, "watch a
+  test fail" can't literally happen, which burned turns without converging. A
+  real TDD cycle here (probe for a test runner, write a failing test, confirm
+  the failure reason, implement, confirm the pass) genuinely needs turn
+  headroom — 16 wasn't always enough either.
+tags: [engineer, requires-bash]
+runs: 5
+expected_outcome: >
+  Loads the engineer skill and follows TDD: a failing test before implementation, or
+  an explicit statement that it will write the test first.
+context:
+  scaffold_script: setup.sh
+execution:
+  max_turns: 24
+  allowed_tools: [Read, Glob, Grep, Skill, Write, Bash]
+  prompt: |
+    You're the engineer on this project — I'll be sending you tasks from the
+    architect side. First one: in signup/handler.py, add input validation on the
+    signup handler so empty emails are rejected. On an empty email, raise a
+    ValueError before any database call. Use TDD.
+graders:
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?engineer"'
+
+  - name: follows-tdd
+    type: llm
+    weight: 2
+    criteria: |
+      The task explicitly asked for TDD.
+
+      PASS if the response writes a failing test before implementation code, or
+      states clearly that it will write the test first and watch it fail before
+      implementing.
+
+      FAIL if it writes implementation code with no mention of a first failing test.
