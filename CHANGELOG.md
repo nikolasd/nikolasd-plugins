@@ -8,14 +8,24 @@ and each plugin's `version` in its own `plugin.json` follows
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-09-24
+
 ### Added
 - `nd` plugin, two skills moved in from personal `~/.claude/skills`: `architect`
   (plans, reviews and delegates to a separate engineer session) and `engineer`
   (implements architect tasks with TDD, reports back with evidence). Each spawns its
   missing peer via Herdr and sets the peer's model with `/model`, since a skill's
   `model:` field only lasts one turn.
-- No eval coverage yet for `architect` or `engineer`; tracked in
-  `docs/memory/tasks/architect-engineer-evals.md`.
+- `nd/evals/architect/` and `nd/evals/engineer/`: trigger / near-miss / applied eval
+  cases for both new skills (6 cases), closing the gap tracked in
+  `docs/memory/tasks/architect-engineer-evals.md`. The applied cases regression-test
+  the two highest-severity rules: `architect-stops-without-herdr` (no engineer session
+  + `HERDR_ENV` unset must stop delegation, not fall back to self-implementing or a
+  subagent) and `engineer-refuses-unauthorized-commit` (an architect instruction to
+  commit only counts if it says the user authorized it). Run for real 2026-09-24 (5
+  runs × 2 arms, Sonnet judge): all six at 1.00 score / 1.00 pass rate with the plugin,
+  after fixing three test-authoring bugs surfaced along the way — see
+  `nd/evals/README.md`'s Resolved section. No changes needed to either `SKILL.md`.
 
 ## [0.1.1] - 2026-09-23
 
