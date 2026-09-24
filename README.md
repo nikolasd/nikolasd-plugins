@@ -8,14 +8,17 @@ and a Python language server integration.
 ### `nd` — Personal Skills
 
 Personal workflow skills for session handoff, session reflection, plain-language
-writing, and spawning/controlling agents via Herdr.
+writing, spawning/controlling agents via Herdr, and a paired architect/engineer
+session workflow.
 
 | Skill | Command | What it does |
 | :--- | :--- | :--- |
 | `handoff` | `/nd:handoff` | Produces a `HANDOFF.md` so a fresh agent can continue the work without the current conversation. |
 | `reflecting` | `/nd:reflecting` | Consolidates learnings from a session into project notes after a significant conversation, refactor, or rule change. |
-| `spawning-herdr-agents` | `/nd:spawning-herdr-agents` | Spawns, runs, and controls other coding-agent sessions via Herdr — panes, tabs, and agent sessions. |
+| `spawning-herdr-agents` | `/nd:herdr` | Spawns, runs, and controls other coding-agent sessions via Herdr — panes, tabs, and agent sessions. |
 | `writing-plain-language` | `/nd:writing-plain-language` | Rewrites jargon-heavy text in plain language for a non-specialist reader. |
+| `architect` | `/nd:architect` | Plans, reviews and validates changes, and delegates implementation to a separate engineer session spawned via Herdr. Every decision stays with the user. |
+| `engineer` | `/nd:engineer` | Implements tasks from a separate architect session with TDD and spec verification, and reports back with evidence. |
 
 Backed by a 12-case eval suite (`nd/evals/`) run with `claude plugin eval` — see
 [`nd/evals/README.md`](nd/evals/README.md) for how to run it, known

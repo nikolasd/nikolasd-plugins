@@ -1,6 +1,6 @@
 {
   "name": "nikolad-plugins",
-  "description": "Personal Claude Code plugins: workflow skills (handoff, reflection, plain-language writing, Herdr agent control) and a ty language server integration for Python.",
+  "description": "Personal Claude Code plugins: workflow skills (handoff, reflection, plain-language writing, Herdr agent control, architect/engineer pairing) and a ty language server integration for Python.",
   "owner": {
     "name": "Nikolas Demiridis"
   },
@@ -13,7 +13,7 @@
     {
       "name": "nd",
       "source": "./nd",
-      "description": "Personal workflow skills: session handoff, session reflection, plain-language writing style, and spawning/controlling agents via Herdr"
+      "description": "Personal workflow skills: session handoff, session reflection, plain-language writing style, spawning/controlling agents via Herdr, and paired architect/engineer sessions"
     }
   ]
 }

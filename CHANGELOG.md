@@ -8,6 +8,15 @@ and each plugin's `version` in its own `plugin.json` follows
 
 ## [Unreleased]
 
+### Added
+- `nd` plugin, two skills moved in from personal `~/.claude/skills`: `architect`
+  (plans, reviews and delegates to a separate engineer session) and `engineer`
+  (implements architect tasks with TDD, reports back with evidence). Each spawns its
+  missing peer via Herdr and sets the peer's model with `/model`, since a skill's
+  `model:` field only lasts one turn.
+- No eval coverage yet for `architect` or `engineer`; tracked in
+  `docs/memory/tasks/architect-engineer-evals.md`.
+
 ## [0.1.1] - 2026-09-23
 
 No plugin behaviour changed — repository packaging and tooling only.
