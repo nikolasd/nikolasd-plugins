@@ -1,0 +1,37 @@
+schema_version: "1.1"
+name: disciplined-delivery-tests-first
+description: >
+  Applied, coding-start trigger. A plain coding request that doesn't mention tests
+  or TDD. The skill applies from the start of a coding task, so it should load and
+  a failing test should be written before orders.py is changed. Requires
+  --scaffold: without orders.py and its existing test file, a model correctly asks
+  where the code lives. No Bash on purpose, so it runs where Bash is blocked; the
+  check looks only at edit order, so a test that couldn't be run still counts.
+tags: [disciplined-delivery]
+runs: 5
+expected_outcome: >
+  Loads the disciplined-delivery skill, writes a test for the cap before editing
+  orders.py, then implements the cap.
+context:
+  scaffold_script: setup.sh
+execution:
+  max_turns: 16
+  allowed_tools: [Read, Glob, Grep, Skill, Write, Edit]
+  prompt: |
+    In orders.py, cap page_size at 100 in list_orders — callers passing more than
+    100 should get 100 items per page at most.
+graders:
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?(?:delivery|disciplined-delivery)"'
+
+  # Edit order, read from the trace: an Edit/Write of test_orders.py, then a later
+  # Edit/Write of orders.py. An llm judge was tried first and failed 3 of 4 runs
+  # whose edits were in the right order: it judged the final reply, not the order.
+  # Known gap: orders.py -> test -> orders.py also matches.
+  - name: test-before-implementation
+    type: regex
+    target: trace
+    weight: 2
+    pattern: '"name":"(?:Edit|Write)","input":\{[^}]*?"file_path":"[^"]*test_orders\.py"[\s\S]*"name":"(?:Edit|Write)","input":\{[^}]*?"file_path":"[^"]*[\\/]orders\.py"'

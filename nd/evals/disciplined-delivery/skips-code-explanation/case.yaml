@@ -1,0 +1,41 @@
+schema_version: "1.1"
+name: disciplined-delivery-skips-code-explanation
+description: >
+  Near-miss. A read-only question about existing code: no coding task, no "done",
+  status, or git language. The skill fires when a coding task starts, so it must not
+  also fire just because code is being read. Requires --scaffold: without utils.py
+  on disk, a model correctly asks where the code is.
+tags: [disciplined-delivery, near-miss]
+runs: 5
+expected_outcome: >
+  Explains how the receipt line is formatted. Does not invoke the
+  disciplined-delivery skill and changes no files.
+context:
+  scaffold_script: setup.sh
+execution:
+  max_turns: 8
+  allowed_tools: [Read, Glob, Grep, Skill]
+  prompt: |
+    Walk me through how utils.py turns a price in cents into a receipt line.
+graders:
+  - name: disciplined-delivery-not-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?(?:delivery|disciplined-delivery)"'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: explains-the-code
+    type: llm
+    criteria: |
+      utils.py has `fmt`, which divides cents by 100 and formats to two decimals
+      with a dollar sign, and `receipt_line`, which joins a name and the formatted
+      price as "name: $x.xx".
+
+      Ignore length and formatting.
+
+      PASS if the response explains that flow correctly.
+
+      FAIL if it misdescribes the code, or proposes a plan or changes instead of
+      explaining.

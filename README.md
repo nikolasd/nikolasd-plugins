@@ -22,7 +22,7 @@ verified changes with per-action approval gates.
 | `engineer` | `/nd:engineer` | Implements tasks from a separate architect session with TDD and spec verification, and reports back with evidence. |
 | `disciplined-delivery` | `/nd:disciplined-delivery` | Research-before-code, test-first implementation, the definition of "fully implemented," adversarial self-review, honest reporting, and per-action git approval gates. |
 
-Backed by an 18-case eval suite (`nd/evals/`) run with `claude plugin eval` — see
+Backed by a 22-case eval suite (`nd/evals/`) run with `claude plugin eval` — see
 [`nd/evals/README.md`](nd/evals/README.md) for how to run it, known
 machine-specific gotchas (macOS git sandboxing, Linux sandbox dependencies), and
 past findings.

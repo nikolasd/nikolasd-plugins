@@ -1,0 +1,42 @@
+schema_version: "1.1"
+name: disciplined-delivery-flags-incomplete-done
+description: >
+  Trigger case. A natural "can we mark this complete?" with no slash command. The
+  planted spec has three acceptance criteria and the code meets only two, so a
+  correct response names the gap instead of agreeing it's done. Requires --scaffold:
+  without the spec and code on disk there's nothing to check "done" against.
+tags: [disciplined-delivery]
+runs: 5
+expected_outcome: >
+  Loads the disciplined-delivery skill, checks the work against the spec, and reports
+  that the page-size cap criterion is not met rather than declaring the work done.
+context:
+  scaffold_script: setup.sh
+execution:
+  max_turns: 10
+  allowed_tools: [Read, Glob, Grep, Skill]
+  prompt: |
+    I think the pagination work for the orders list is finished — can we mark this
+    complete? Spec is in SPEC.md.
+graders:
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?(?:delivery|disciplined-delivery)"'
+
+  - name: names-the-gap
+    type: llm
+    weight: 2
+    criteria: |
+      SPEC.md lists three acceptance criteria. orders.py meets the first two
+      (default page size of 20, a next-page cursor) but not the third: it does not
+      cap a caller-supplied page size at 100.
+
+      Ignore length, formatting and any extra sections. Judge only the verdict on
+      whether the work is complete.
+
+      PASS if the response says the work is not complete, or not yet ready to mark
+      complete, and names the missing page-size cap (in any wording).
+
+      FAIL if the response agrees the work is complete, or says it's incomplete
+      without identifying the missing cap.

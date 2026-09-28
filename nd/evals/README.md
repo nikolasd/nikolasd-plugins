@@ -1,6 +1,6 @@
 # nd eval suite
 
-18 cases across the six skills, run with [`claude plugin eval`](https://code.claude.com/docs/en/plugin-evals).
+22 cases across the seven skills, run with [`claude plugin eval`](https://code.claude.com/docs/en/plugin-evals).
 Each skill gets three kinds of case:
 
 - **trigger** — natural phrasing that should fire the skill
@@ -16,8 +16,8 @@ the plugin contributes. A `Δ` near zero with `skill-fired` failing means the
 ```bash
 cd nd
 
-# All 18 cases, where Bash is available. Sonnet judge — see "Judge noise" below.
-claude plugin eval . --scaffold --allow-tools Write Bash --judge-model sonnet -j 4
+# All 22 cases, where Bash is available. Sonnet judge — see "Judge noise" below.
+claude plugin eval . --scaffold --allow-tools Write Edit Bash --judge-model sonnet -j 4
 
 # Only the cases that need a shell (see "Bash is blocked on some machines").
 claude plugin eval . --tag requires-bash --scaffold --allow-tools Write Bash --judge-model sonnet
@@ -29,17 +29,18 @@ claude plugin eval . --case 'plain-language-*'
 `--tag` is repeatable; `--case` is not — given twice, only the last one runs. Loop over
 names, or use a glob.
 
-Six cases are tagged `requires-bash`: the two `handoff` git cases, `herdr-stops-
-outside-herdr`, `architect-stops-without-herdr`, `engineer-joins-as-engineer`, and
-`engineer-refuses-unauthorized-commit`. The `handoff` and `herdr`/`architect` cases
+Seven cases are tagged `requires-bash`: the two `handoff` git cases, `herdr-stops-
+outside-herdr`, `architect-stops-without-herdr`, `engineer-joins-as-engineer`,
+`engineer-refuses-unauthorized-commit`, and `disciplined-delivery-shows-before-
+committing`. The `handoff`, `herdr`/`architect` and `disciplined-delivery` cases
 have a positive-control grader (`git-actually-ran`, `checks-herdr-env`) that **fails**
 when run without Bash, or when git cannot run inside the sandbox.
 `engineer-refuses-unauthorized-commit` has no such control (it only asserts `git
 commit`/`git push` was never *attempted*, which a broken sandbox can't fake either
 way). `engineer-joins-as-engineer` needs Bash for a different reason: it's the one
 case that actually runs a test suite (Python `unittest`) as part of TDD, not just
-shell probes. On a machine where Bash is blocked, run the other twelve with
-`--allow-tools Write` and expect these six to fail for that reason alone.
+shell probes. On a machine where Bash is blocked, run the other fifteen with
+`--allow-tools Write Edit` and expect these seven to fail for that reason alone.
 
 Where it matters today (Claude Code 2.1.280): `herdr-stops-outside-herdr` and
 `architect-stops-without-herdr` need no real git, only a `HERDR_ENV` check, so they run
@@ -354,12 +355,14 @@ TDD discipline here comes from general instruction-following as much as this ski
 
 ## Cost
 
-18 cases × 5 runs × 2 arms = 180 agent runs, each a full `claude` child on your own
+22 cases × 5 runs × 2 arms = 220 agent runs, each a full `claude` child on your own
 credential and rate limit. Measured rates from real runs, with `--judge-model sonnet`:
 roughly **$0.20 per run** for the `reflecting` cases and **$0.12** for the shorter ones;
 the new `architect`/`engineer` cases land in that same range, except
 `engineer-joins-as-engineer` (a full TDD cycle with a real test run) at roughly **$0.35
-per run**. A full two-arm sweep of all 18 lands near **$30**.
+per run**. A full two-arm sweep of the original 18 lands near **$30**. The three
+`disciplined-delivery` cases run so far land at roughly **$0.07–0.22 per run**
+(2026-09-28); `shows-before-committing` hasn't been run yet, so its cost isn't measured.
 
 Authoring the six `architect`/`engineer` cases (2026-09-24) cost about **$47** in
 total, well above that estimate — almost all of it iteration while fixing the fixture
