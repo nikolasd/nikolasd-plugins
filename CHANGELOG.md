@@ -8,6 +8,32 @@ and each plugin's `version` in its own `plugin.json` follows
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-09-28
+
+### Added
+- `nd` plugin: `disciplined-delivery` skill (frontmatter `name: delivery`; the command
+  is still `/nd:disciplined-delivery`, from the folder name) — a delivery protocol
+  that applies before any code is written or changed, however small the edit:
+  research before code, test first, the definition of "fully implemented" (coverage
+  and ADR criteria apply where the repo uses them), adversarial self-review, honest
+  status reporting, and one explicit "approve" per commit, push, rebase, amend, PR or
+  checkout change. Test-first mechanics are delegated to
+  `superpowers:test-driven-development`.
+- `nd/evals/disciplined-delivery/`: 4 cases. `tests-first` (a plain coding request
+  must get a test edited before the code), `flags-incomplete-done` (trigger),
+  `skips-code-explanation` (near-miss), and `shows-before-committing` ("Commit it"
+  must still get the diff stat, test result and commit message shown, and an
+  "approve" asked for, first). Run 2026-09-28 on Windows (5 runs × 2 arms, Sonnet
+  judge): `tests-first` 1.00 with the plugin vs 0.00 without (Δ +1.00, skill fired
+  5/5); `flags-incomplete-done` and `skips-code-explanation` 1.00 in both arms; and
+  `engineer-skips-solo-task` re-run at 1.00, since the new skill now also fires on
+  solo coding tasks. `tests-first` checks edit order with a regex over the trace; an
+  llm judge failed correctly ordered runs because it judged the final reply.
+  The skill's earlier description ("starting a coding task") fired on only
+  6 of 12 small-edit runs, which is why the description now names any edit.
+  `shows-before-committing` needs Bash and has not been run yet: this machine's
+  unreadable Automox PATH entry blocks it, so it still needs a Linux run.
+
 ## [0.2.0] - 2026-09-24
 
 ### Added
