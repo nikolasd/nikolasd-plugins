@@ -8,8 +8,9 @@ and a Python language server integration.
 ### `nd` — Personal Skills
 
 Personal workflow skills for session handoff, session reflection, plain-language
-writing, spawning/controlling agents via Herdr, and a paired architect/engineer
-session workflow.
+writing, spawning/controlling agents via Herdr, a paired architect/engineer
+session workflow, and a disciplined-delivery protocol for test-first, fully
+verified changes with per-action approval gates.
 
 | Skill | Command | What it does |
 | :--- | :--- | :--- |
@@ -19,6 +20,7 @@ session workflow.
 | `writing-plain-language` | `/nd:writing-plain-language` | Rewrites jargon-heavy text in plain language for a non-specialist reader. |
 | `architect` | `/nd:architect` | Plans, reviews and validates changes, and delegates implementation to a separate engineer session spawned via Herdr. Every decision stays with the user. |
 | `engineer` | `/nd:engineer` | Implements tasks from a separate architect session with TDD and spec verification, and reports back with evidence. |
+| `disciplined-delivery` | `/nd:disciplined-delivery` | Research-before-code, test-first implementation, the definition of "fully implemented," adversarial self-review, honest reporting, and per-action git approval gates. |
 
 Backed by an 18-case eval suite (`nd/evals/`) run with `claude plugin eval` — see
 [`nd/evals/README.md`](nd/evals/README.md) for how to run it, known

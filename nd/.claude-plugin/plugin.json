@@ -3,13 +3,13 @@
   "name": "nd",
   "displayName": "Personal Skills",
   "version": "0.2.0",
-  "description": "Personal workflow skills: session handoff, session reflection, plain-language writing style, spawning/controlling agents via Herdr, and paired architect/engineer sessions",
+  "description": "Personal workflow skills: session handoff, session reflection, plain-language writing style, spawning/controlling agents via Herdr, paired architect/engineer sessions, and a disciplined-delivery protocol for test-first, fully verified changes with per-action approval gates",
   "author": {
     "name": "Nikolas Demiridis",
     "email": "nikolas@demiridis.gr",
     "url": "https://github.com/nikolasd"
   },
   "license": "MIT",
-  "keywords": ["handoff", "reflection", "plain-language", "writing", "workflow", "herdr", "agents", "architect", "engineer"],
+  "keywords": ["handoff", "reflection", "plain-language", "writing", "workflow", "herdr", "agents", "architect", "engineer", "disciplined-delivery", "tdd", "verification"],
   "repository": "https://github.com/nikolasd/nikolasd-plugins"
 }
