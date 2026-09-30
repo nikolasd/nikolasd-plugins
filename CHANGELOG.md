@@ -8,6 +8,8 @@ and each plugin's `version` in its own `plugin.json` follows
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-01
+
 ### Added
 - `pm` plugin (0.1.0): project-management skills for Jira and Confluence, using the
   official Atlassian MCP server (registered as `atlassian`). All six skills run only
