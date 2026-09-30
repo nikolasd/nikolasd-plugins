@@ -1,4 +1,4 @@
-# nikolad-plugins
+# nikolasd-plugins
 
 A [Claude Code](https://code.claude.com) plugin marketplace: personal workflow skills
 and a Python language server integration.
@@ -29,6 +29,22 @@ Backed by a 26-case eval suite (`nd/evals/`) run with `claude plugin eval` — s
 machine-specific gotchas (macOS git sandboxing, Linux sandbox dependencies), and
 past findings.
 
+### `pm` — Project Delivery Toolkit
+
+Project-management skills for Jira and Confluence, via the official Atlassian MCP
+server: a guided Epic-to-Story authoring pipeline and per-repository Solution Design
+Document authoring, each grounded in the actual codebase. Originally created by Mark
+Ransome. See [`pm/README.md`](pm/README.md).
+
+| Skill | Command | What it does |
+| :--- | :--- | :--- |
+| `epic` | `/pm:epic` | Step 1: business-level Q&A that creates a new Jira Epic with High Level Requirements. |
+| `ui-mockups` | `/pm:ui-mockups` | Step 1.5 (optional): screen mockups for business review, written back into the Epic. |
+| `epic-refine` | `/pm:epic-refine` | Step 2: technical Q&A that reads the codebase and completes the Epic. |
+| `story` | `/pm:story` | Step 3: generates one Jira Story at a time from the Epic's story table. |
+| `story-from-document` | `/pm:story-from-document` | Builds or promotes a single verified Jira Story, with sub-tasks and dependency links, without an Epic. |
+| `authoring-sdd` | `/pm:sdd` | Creates or refreshes one living Solution Design Document per repository. |
+
 ### `ty-lsp` — ty Language Server
 
 Python code intelligence via Astral's [`ty`](https://github.com/astral-sh/ty)
@@ -42,29 +58,33 @@ Add this marketplace in Claude Code:
 /plugin marketplace add nikolasd/nikolasd-plugins
 ```
 
-Then install a plugin (the marketplace's own identifier is `nikolad-plugins`, distinct
-from the GitHub repo name `nikolasd-plugins`):
+Then install a plugin (the marketplace's identifier, `nikolasd-plugins`, is the same as
+the GitHub repo name):
 
 ```
-/plugin install nd@nikolad-plugins
-/plugin install ty-lsp@nikolad-plugins
+/plugin install nd@nikolasd-plugins
+/plugin install pm@nikolasd-plugins
+/plugin install ty-lsp@nikolasd-plugins
 ```
 
 For local development, install straight from a checkout instead:
 
 ```
-/plugin marketplace add /path/to/nikolad-plugins
+/plugin marketplace add /path/to/nikolasd-plugins
 ```
 
 ## Repository layout
 
 ```
-.claude-plugin/marketplace.json   # marketplace manifest — registers both plugins
+.claude-plugin/marketplace.json   # marketplace manifest — registers all plugins
 .github/workflows/                # manifest validation (every push) + release-on-tag
 nd/                                # Personal Skills plugin
   .claude-plugin/plugin.json
   skills/<skill-name>/SKILL.md
   evals/                          # eval suite, run with `claude plugin eval`
+pm/                                # Project Delivery Toolkit plugin
+  .claude-plugin/plugin.json
+  skills/<skill-name>/SKILL.md
 ty-lsp/                           # ty Language Server plugin
   .claude-plugin/plugin.json
 ```

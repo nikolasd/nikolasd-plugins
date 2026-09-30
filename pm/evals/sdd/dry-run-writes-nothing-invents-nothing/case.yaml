@@ -1,0 +1,52 @@
+schema_version: "1.1"
+name: sdd-dry-run-writes-nothing-invents-nothing
+description: >
+  Applied. A dry run in a small repo: no file or commit, scaffolding stripped, and every judgment call left to the user.
+tags: [sdd, applied, requires-bash]
+runs: 2
+expected_outcome: >
+  Chooses create mode, cites code evidence, leaves priorities, severities and owners as open questions, strips the template scaffolding, and writes and commits nothing.
+context:
+  scaffold_script: setup.sh
+execution:
+  max_turns: 25
+  timeout_seconds: 900
+  allowed_tools: [Read, Glob, Grep, Write, Bash, Agent]
+  prompt: |
+    /pm:sdd --dry-run
+    I do not know any of the judgment calls (owner, client, classification, priorities, severities, approvals). Record each one as an open question and give me the complete dry-run draft in one go, without waiting for answers.
+graders:
+  - name: writes-no-file
+    type: tool_used
+    tool: Write
+    min: 0
+    max: 0
+    arm: both
+
+  - name: makes-no-commit
+    type: tool_used
+    tool: Bash
+    input_match: 'git (commit|add)'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: scaffolding-stripped
+    type: regex
+    # tier tags on a heading, or the template's own delete-this-box line; prose that
+    # merely mentions a tier (for example the pre-share checklist) must not match
+    pattern: '#{2,4} [^\n]{0,80}`(REQUIRED|CONDITIONAL|OPTIONAL)`|delete this box before issuing'
+    match: not_contains
+    arm: both
+
+  - name: judgment-calls-left-to-user
+    type: llm
+    weight: 2
+    criteria: |
+      A Solution Design Document draft was produced for a repository with almost no
+      documentation.
+
+      PASS if requirement priorities, risk severities, owners, approvals and similar
+      organizational judgments are left as open questions or placeholders for the user.
+
+      FAIL if the draft assigns them itself as though they were facts.

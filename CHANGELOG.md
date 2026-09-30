@@ -8,6 +8,54 @@ and each plugin's `version` in its own `plugin.json` follows
 
 ## [Unreleased]
 
+### Added
+- `pm` plugin (0.1.0): project-management skills for Jira and Confluence, using the
+  official Atlassian MCP server (registered as `atlassian`). All six skills run only
+  when invoked, because each can write to Jira, Confluence or git, and each asks
+  for explicit confirmation of a full draft before it writes anything.
+  - `epic`, `ui-mockups`, `epic-refine` and `story`: a staged Epic-to-Story
+    pipeline. `epic` turns a business-level Q&A (optionally seeded from a PRD)
+    into a high-level Epic; `ui-mockups` optionally adds screens for business
+    review; `epic-refine` adds technical detail grounded in code the agent has
+    read; `story` creates one Story at a time from the Epic's story table. The
+    Epic's maturity is tracked by a state line and a label, and each skill
+    updates the Epic in one write, carrying existing labels forward.
+  - `story-from-document`: builds a verified Story from a source document or
+    brief, or promotes an existing Story in place (keeping the original text),
+    with sub-tasks and dependency links. It checks claims against the real
+    repositories with `file:line` evidence, never duplicates sub-tasks or links
+    from an earlier run, and supports `--dry-run`, which writes nothing anywhere
+    (Jira, Confluence or claude.ai).
+  - `sdd` (`/pm:sdd`): creates or refreshes one living Solution Design Document per
+    repository, grounded in the code, as a local markdown file and a Confluence
+    page kept in sync. It detects hand edits on either side by page version and
+    uncommitted changes, adopts an existing page with the standard title, preserves
+    every ID on updates, and commits only the paths it names after one
+    confirmation that lists every side effect. The bundled template and authoring
+    guide are organisation-neutral, and either can be replaced with your own (a
+    file or a Confluence page). The guide is split by Part and loaded per Part; its
+    fictional examples are never copied into a document, and template text cannot
+    override the skill's rules.
+- `pm` configuration: two plugin options (`site`, `points_scale`) plus an optional
+  per-project `.claude/pm.json` (`project_key`, `repos_root`, `sdd_template`,
+  `sdd_guide`, `sdd_space`, `sdd_parent_id`), resolved by `pm/scripts/config.sh` and
+  injected into every skill. Project-file values are format-checked, and invalid
+  ones are ignored. Anything not configured is asked for, with an offer to save it.
+- `pm` mockups: each screen is rendered to a PNG by Chrome, Edge, Chromium or
+  Brave on macOS, Linux or Windows (`PM_BROWSER` selects one), falling back to a
+  private Claude Design canvas (after asking, and never during a dry run), then to
+  HTML files only.
+- `pm` quality checks: an eval suite in `pm/evals/` (ten cases; see its README for
+  what it can and cannot cover and for how they were calibrated), and deterministic
+  tests for the configuration loader and the `sdd` repository-context script,
+  `pm/tests/`, which run in CI.
+
+### Changed
+- The marketplace identifier is now `nikolasd-plugins` (it was misspelled
+  `nikolad-plugins`) and matches the GitHub repo name. If you added the marketplace
+  under the old name, remove it and add it again; plugins install as
+  `nd@nikolasd-plugins`, `pm@nikolasd-plugins` and `ty-lsp@nikolasd-plugins`.
+
 ## [0.4.0] - 2026-10-01
 
 ### Added

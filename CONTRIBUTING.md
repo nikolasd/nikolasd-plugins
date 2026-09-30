@@ -27,9 +27,8 @@ including ones made in future sessions by an AI assistant.
 
 1. `<plugin-name>/.claude-plugin/plugin.json` — include `name`, `displayName`,
    `version`, `description`, `author`, `license`, `keywords`, and `repository`
-   (`https://github.com/nikolasd/nikolasd-plugins` — the marketplace's own identifier
-   in `.claude-plugin/marketplace.json` is `nikolad-plugins`, a separate string, don't
-   conflate the two).
+   (`https://github.com/nikolasd/nikolasd-plugins`, which is also the marketplace's
+   `name` in `.claude-plugin/marketplace.json`).
 2. Register it in `.claude-plugin/marketplace.json` with a relative `source` path.
 3. Run `claude plugin validate <plugin-dir>` before committing.
 4. Add a row to the plugin table in `README.md`.

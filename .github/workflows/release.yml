@@ -28,6 +28,7 @@ jobs:
         run: |
           claude plugin validate . --strict
           claude plugin validate nd --strict
+          claude plugin validate pm --strict
           claude plugin validate ty-lsp --strict
 
       - name: Extract this version's CHANGELOG section

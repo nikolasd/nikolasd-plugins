@@ -1,6 +1,6 @@
 {
-  "name": "nikolad-plugins",
-  "description": "Personal Claude Code plugins: workflow skills (handoff, reflection, plain-language writing, Herdr agent control, architect/engineer pairing, disciplined delivery, code-grounded onboarding docs) and a ty language server integration for Python.",
+  "name": "nikolasd-plugins",
+  "description": "Personal Claude Code plugins: workflow skills (handoff, reflection, plain-language writing, Herdr agent control, architect/engineer pairing, disciplined delivery, code-grounded onboarding docs), Jira and Confluence project-delivery skills, and a ty language server integration for Python.",
   "owner": {
     "name": "Nikolas Demiridis"
   },
@@ -14,6 +14,11 @@
       "name": "nd",
       "source": "./nd",
       "description": "Personal workflow skills: session handoff, session reflection, plain-language writing style, spawning/controlling agents via Herdr, paired architect/engineer sessions, and a disciplined-delivery protocol for test-first, fully verified changes with per-action approval gates, and a code-grounded onboarding-documentation workflow"
+    },
+    {
+      "name": "pm",
+      "source": "./pm",
+      "description": "Project-management skills: Jira Epic and Story authoring pipeline and per-repository Solution Design Document authoring"
     }
   ]
 }

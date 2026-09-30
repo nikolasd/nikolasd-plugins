@@ -1,0 +1,40 @@
+schema_version: "1.1"
+name: sdd-update-preserves-ids
+description: >
+  Applied. Refreshing an existing document: IDs are permanent, a retired requirement keeps its row, and new items take the next free number.
+tags: [sdd, applied, requires-bash]
+runs: 2
+expected_outcome: >
+  Keeps FR-01, FR-02 (Retired) and FR-03 exactly, and numbers any new requirement FR-04 or higher.
+context:
+  scaffold_script: setup.sh
+execution:
+  max_turns: 25
+  timeout_seconds: 900
+  allowed_tools: [Read, Glob, Grep, Write, Bash, Agent]
+  prompt: |
+    /pm:sdd --dry-run
+    I do not know any of the judgment calls (owner, client, classification, priorities, severities, approvals). Record each one as an open question and give me the complete dry-run draft in one go, without waiting for answers.
+graders:
+  - name: keeps-retired-requirement
+    type: regex
+    pattern: 'FR-02[^\n]*Retired'
+
+  - name: never-renumbers
+    type: llm
+    weight: 2
+    criteria: |
+      The existing document has FR-01 (Met), FR-02 (Retired) and FR-03 (In build).
+
+      PASS if the draft keeps all three IDs with the same meaning, keeps FR-02 as a
+      Retired row, and gives any new requirement an ID of FR-04 or higher.
+
+      FAIL if any ID is renumbered, reused for a different requirement, or FR-02 is
+      deleted.
+
+  - name: writes-nothing
+    type: tool_used
+    tool: Write
+    min: 0
+    max: 0
+    arm: both

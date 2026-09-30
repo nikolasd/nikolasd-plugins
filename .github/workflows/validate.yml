@@ -28,5 +28,14 @@ jobs:
       - name: Validate nd plugin
         run: claude plugin validate nd --strict
 
+      - name: Validate pm plugin
+        run: claude plugin validate pm --strict
+
+      - name: Test pm configuration loader
+        run: sh pm/tests/test-config.sh
+
+      - name: Test pm repository-context script
+        run: sh pm/tests/test-repo-context.sh
+
       - name: Validate ty-lsp plugin
         run: claude plugin validate ty-lsp --strict

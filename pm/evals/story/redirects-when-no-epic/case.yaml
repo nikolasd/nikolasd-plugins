@@ -1,0 +1,32 @@
+schema_version: "1.1"
+name: story-redirects-when-no-epic
+description: >
+  Near-miss. A request with no parent Epic belongs to story-from-document; the skill must redirect rather than generate a story.
+tags: [story, near-miss]
+runs: 3
+expected_outcome: >
+  Points the user to story-from-document and does not generate a Story.
+execution:
+  max_turns: 5
+  allowed_tools: [Read, Glob, Grep, Write, Bash]
+  prompt: |
+    /pm:story
+    I have a Confluence page that describes a change to our login flow. There is no Epic. Please create a Jira story from it.
+graders:
+  - name: no-createjiraissue
+    type: tool_used
+    tool: mcp__atlassian__createJiraIssue
+    min: 0
+    max: 0
+    arm: both
+
+  - name: redirects
+    type: llm
+    weight: 2
+    criteria: |
+      PASS if the assistant says this skill works from an existing Epic's story table and
+      points the user to the story-from-document skill (or /pm:story-from-document) for a
+      one-off Story from a document.
+
+      FAIL if it proceeds to generate a Story, or asks for an Epic key without mentioning
+      the alternative.

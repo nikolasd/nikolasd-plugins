@@ -1,0 +1,36 @@
+{
+  "$schema": "https://anthropic.com/claude-code/plugin.schema.json",
+  "name": "pm",
+  "displayName": "Project Delivery Toolkit",
+  "version": "0.1.0",
+  "description": "Project-management skills: guided Q&A workflows for creating Jira Epics and Stories, and per-repository Solution Design Document authoring grounded in the codebase.",
+  "author": {
+    "name": "Nikolas Demiridis",
+    "email": "nikolas@demiridis.gr",
+    "url": "https://github.com/nikolasd"
+  },
+  "license": "MIT",
+  "keywords": [
+    "project-management",
+    "jira",
+    "confluence",
+    "epics",
+    "architecture",
+    "solution-design"
+  ],
+  "repository": "https://github.com/nikolasd/nikolasd-plugins",
+  "userConfig": {
+    "site": {
+      "type": "string",
+      "title": "Atlassian site",
+      "description": "Hostname of your Atlassian site, for example acme.atlassian.net. Used to pick the right site when several are accessible and to build issue links. Leave blank to be asked when needed.",
+      "required": false
+    },
+    "points_scale": {
+      "type": "string",
+      "title": "Story point scale",
+      "description": "Comma-separated story point values, for example 1, 2, 3, 5, 8, 13. Leave blank to use that Fibonacci default.",
+      "required": false
+    }
+  }
+}

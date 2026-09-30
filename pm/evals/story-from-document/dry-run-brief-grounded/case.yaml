@@ -1,0 +1,59 @@
+schema_version: "1.1"
+name: story-from-document-dry-run-brief-grounded
+description: >
+  Applied. A written brief in a small repo with --dry-run: the skill must verify against real lines, draft without sub-tasks for a single-PR change, put judgment calls to the user, and write nothing.
+tags: [story-from-document, applied, requires-bash]
+runs: 3
+expected_outcome: >
+  Declares create mode, cites real file:line evidence from app/cache.py, proposes no sub-tasks, lists open points for the user, and stops at the dry-run boundary.
+context:
+  scaffold_script: setup.sh
+execution:
+  max_turns: 20
+  allowed_tools: [Read, Glob, Grep, Write, Bash, Agent]
+  prompt: |
+    /pm:story-from-document --dry-run "The group membership cache in app/cache.py expires every user at the next local midnight, so a membership change can take up to a day to show up. Make the expiry a configurable TTL in settings so changes are picked up sooner."
+graders:
+  - name: no-createjiraissue
+    type: tool_used
+    tool: mcp__atlassian__createJiraIssue
+    min: 0
+    max: 0
+    arm: both
+  - name: no-editjiraissue
+    type: tool_used
+    tool: mcp__atlassian__editJiraIssue
+    min: 0
+    max: 0
+    arm: both
+  - name: no-createissuelink
+    type: tool_used
+    tool: mcp__atlassian__createIssueLink
+    min: 0
+    max: 0
+    arm: both
+
+  - name: cites-real-lines
+    type: regex
+    target: trace
+    pattern: 'app/cache\.py:(1[1-3]|2[0-3])'
+
+  - name: no-subtasks-for-single-pr
+    type: llm
+    weight: 2
+    criteria: |
+      The change touches one repository and fits one pull request.
+
+      PASS if the draft proposes no sub-tasks and keeps implementation detail in the Story
+      (for example Technical Notes).
+
+      FAIL if it proposes one or more sub-tasks.
+
+  - name: judgment-calls-surfaced
+    type: llm
+    criteria: |
+      PASS if choices that belong to the user (for example the default TTL, how invalid
+      values are handled, the persona, or an Epic to attach to) are listed for the user to
+      confirm.
+
+      FAIL if they are silently decided, or the draft claims to have created anything.

@@ -1,0 +1,27 @@
+{
+  "skill_name": "story-from-document",
+  "notes": "Hand-run scenarios, not wired to any harness. All run with --dry-run: the skill must stop at the Phase 4 review gate and output the Story body, every sub-task body, and the dependency map as text. No Jira writes during testing. Baseline = same prompt with no skill. Replace each <PLACEHOLDER> with a real value from your own environment before running: <CONFLUENCE_PAGE_URL> and <PAGE_TITLE> need a page that proposes one change spanning a shared library and at least one consumer application, and that makes at least one claim you cannot confirm from the code alone (an authorisation behaviour, for example); <LIBRARY_REPO>, <APP_REPO> and <RETRIEVAL_REPO> are local repositories that page touches (the third only verifies one claim); <BRIEF_FILE_OR_SYMBOL> is a real hard-coded value in <APP_REPO> that could be made configurable.",
+  "evals": [
+    {
+      "id": 0,
+      "name": "confluence-multi-repo-dry-run",
+      "prompt": "Use the story-from-document skill to create a Jira story from this Confluence page: <CONFLUENCE_PAGE_URL> . Investigate its claims against the local repos <LIBRARY_REPO> and <APP_REPO> (and confirm the retrieval or filtering claim against <RETRIEVAL_REPO>). This is a --dry-run: produce the draft Story body, every sub-task body, and the dependency map only. Do not create anything in Jira.",
+      "expected_output": "A high-level prose Story Context plus a low-level 'Claude Planning Hints' layer; a sub-task breakdown split by repo (library-side change, consumer dependency bump, consumer-side change, any backfill or migration, end-to-end check) with at least one spike for the claim that cannot be verified from the code; a Blocks dependency map showing cross-repo sequencing (publish library, then bump consumers, then consumer-side work) and any external prerequisite ticket; claims verified with file:line evidence; and a clean stop at the dry-run boundary with nothing written to Jira.",
+      "files": []
+    },
+    {
+      "id": 1,
+      "name": "brief-single-repo-dry-run",
+      "prompt": "I want a standalone story from this brief: 'The <BRIEF_FILE_OR_SYMBOL> value is hard-coded in <APP_REPO>; make it configurable via settings so changes are picked up sooner.' Investigate the brief against the <APP_REPO> repo to confirm where the value is set, then draft a Story with sub-tasks and a dependency map. Dry-run only, do not create anything in Jira.",
+      "expected_output": "The skill reads the brief (no Confluence call needed), investigates <APP_REPO> to confirm the location of the hard-coded value with file:line evidence, and drafts a small Story (likely one or two sub-tasks) with a human-readable Context, a Claude Planning Hints layer, a definition of done that names the repo's own test or lint command, and a clean dry-run stop. Should not over-engineer a multi-repo breakdown for a single-repo change.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "trigger-casual-phrasing-dry-run",
+      "prompt": "Can you turn the <PAGE_TITLE> page in Confluence into a Jira story with subtasks and dependency links? Check its recommendations against our code first, and don't write anything to Jira yet, just show me the draft.",
+      "expected_output": "The skill triggers on casual phrasing without the source being a clean locator, resolves the Confluence page (by title via CQL if needed), runs the investigation, and produces the same draft-only output and clean stop. Tests triggering and source resolution from a title rather than a URL.",
+      "files": []
+    }
+  ]
+}
