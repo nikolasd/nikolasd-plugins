@@ -8,6 +8,58 @@ and each plugin's `version` in its own `plugin.json` follows
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-01
+
+### Added
+- `nd` plugin: `onboarding` skill (frontmatter `name: onboard`; the command is
+  `/nd:onboarding`, from the folder name), moved in from personal
+  `~/.claude/skills` — a workflow for producing a code-grounded onboarding
+  documentation set (C4 context/containers/components, engineering, AI design,
+  infrastructure, deployment, ownership map, fork-style ONBOARDING) for any repo,
+  with a three-layer `common/` + per-track layout when the repo holds several
+  discrete products. Ships `checker.py` (citation/dangling-path/mermaid/link/
+  track-leak acceptance gate with `--layout`, `--track NAME:REGEX`, `--ai-doc`,
+  `--agents-doc`), `briefs.md` (subagent and reviewer briefs) and
+  `objective-template.md` (goal-mode objective). What was verified, and how, is in
+  the next entry and in `nd/evals/README.md`.
+- `nd` plugin: `onboarding` now runs outside the original harness (subagent and
+  goal-tool fallbacks, explicit phase order, an inventory step before briefing) and
+  `checker.py` enforces the code-only rule: it fails inadmissible citations (README,
+  CLAUDE.md, `docs/`, `reference/`) outside an "Existing in-repo prose" section, line
+  and symbol anchors that don't exist, TODO/TBD placeholders, and ONBOARDING entries
+  that mention a sibling without linking it; paths match case-exactly, and MIME
+  types, `~`/`@` strings and `path:func()` anchors are handled. Agents now report in
+  fixed plain-text headings instead of JSON. The minimum-citations rule now counts
+  unique citations (path plus anchor) rather than unique files, and the rules say a
+  file the docs call absent is named in plain text. `SKILL.md` gained a workflow
+  checklist, a Python preflight (an unrun gate is reported NOT RUN, never PASS), a
+  "running short" rule, and a verification-depth choice (`full` or `targeted`); track
+  detection and gate details moved to `tracks.md` and `gate.md`. Reviewers are
+  capped by group size, work alone (no helper agents) and must return a report with a
+  `Covered` line, after a real run showed one oversized reviewer stall, spawn helpers
+  that applied nothing, and leave the orchestrator to reconcile about 35 findings.
+  The checker now also keeps the README exemption open across sub-headings, counts
+  route-group paths like `src/app/(auth)/login/page.tsx` and bare `*.config.*` files,
+  ignores symbols that occur only in comment lines, and `gate.md` has a failure-to-action
+  table, a definition of "fails twice", and an always-pass-`--root` rule. The brief
+  tells writers to backtick a file only when citing its real path and to write "to-do
+  comments" instead of the literal placeholder words; in a mixed repo `agents.md`
+  covers agents and workloads, and the reviewer count for tracked repos is stated
+  (and marked unmeasured).
+  84 tests in `tests/onboarding/` (the checker, plus consistency tests that tie the
+  brief, `gate.md` and `SKILL.md` to the checker).
+  Evidence, with its limits: 4 eval cases. The trigger case fires on natural phrasing
+  (5/5 with the plugin); its Δ +1.00 is structural, since a baseline cannot load a skill
+  it lacks. The near-miss does not over-fire. The applied case passes but does not
+  discriminate from a baseline (Δ 0.00). The full-workflow case is one run each on two
+  real repos, both single-layout Next.js apps: the second finished (score 0.82, 10 agents,
+  824 claims checked and 68 corrected by the agents' own count) and its output passes the
+  checker when run afterwards, but its final-report grader was skipped, not passed, and
+  the agent had no shell to run the checker itself. That run used a repo about eight times
+  smaller than the one where a reviewer stalled, so it does not show the review-group cap
+  fixes that stall. The tracked layout, round-2 fixes, `targeted` depth and Haiku/Opus
+  have not been exercised by an agent.
+
 ## [0.3.0] - 2026-09-28
 
 ### Added
