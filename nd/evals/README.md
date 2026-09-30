@@ -1,6 +1,6 @@
 # nd eval suite
 
-22 cases across the seven skills, run with [`claude plugin eval`](https://code.claude.com/docs/en/plugin-evals).
+26 cases across the eight skills, run with [`claude plugin eval`](https://code.claude.com/docs/en/plugin-evals).
 Each skill gets three kinds of case:
 
 - **trigger** — natural phrasing that should fire the skill
@@ -16,7 +16,9 @@ the plugin contributes. A `Δ` near zero with `skill-fired` failing means the
 ```bash
 cd nd
 
-# All 22 cases, where Bash is available. Sonnet judge — see "Judge noise" below.
+# All 26 cases. `onboarding-full-workflow-on-target-repo` fails its scaffold unless
+# EVAL_TARGET_REPO is set, and costs about $36 if it is. Run where Bash is available.
+# Sonnet judge — see "Judge noise" below.
 claude plugin eval . --scaffold --allow-tools Write Edit Bash --judge-model sonnet -j 4
 
 # Only the cases that need a shell (see "Bash is blocked on some machines").
@@ -39,7 +41,7 @@ when run without Bash, or when git cannot run inside the sandbox.
 commit`/`git push` was never *attempted*, which a broken sandbox can't fake either
 way). `engineer-joins-as-engineer` needs Bash for a different reason: it's the one
 case that actually runs a test suite (Python `unittest`) as part of TDD, not just
-shell probes. On a machine where Bash is blocked, run the other fifteen with
+shell probes. On a machine where Bash is blocked, run the other eighteen with
 `--allow-tools Write Edit` and expect these seven to fail for that reason alone.
 
 Where it matters today (Claude Code 2.1.280): `herdr-stops-outside-herdr` and
@@ -353,9 +355,97 @@ reps — the behaviour holds regardless of whether the skill loads, which is wor
 knowing but isn't a defect. `joins-as-engineer` similarly held at 1.00 in both arms;
 TDD discipline here comes from general instruction-following as much as this skill.
 
+## The `onboarding` cases (run 2026-09-30)
+
+| Case | With | Without | Δ | Cost (10 runs) |
+| :--- | :--- | :--- | :--- | :--- |
+| `fires-on-onboarding-request` | 1.00 | 0.00 | +1.00 | $0.96 |
+| `skips-single-doc-edit` | 1.00 | 1.00 | 0.00 | $0.73 |
+| `refuses-readme-as-evidence` | 1.00 | 1.00 | 0.00 | $4.04 |
+
+The trigger case's Δ is structural: its only grader asks whether the skill loaded, and a
+baseline has no skill to load, so read it as "fires on natural phrasing, 5/5 with the plugin",
+not as proof of quality. The near-miss correctly shows no
+over-firing (a baseline also does a one-line edit, so Δ 0 is expected). The applied case
+does **not** discriminate: a baseline also trusts the code over a contradicting README on
+a three-file repo, so it only shows the skill doesn't break that behaviour. The skill
+costs about 3-4x more per run there ($0.52-0.65 vs $0.16).
+
+Scaffold cases need a real `bash` first on `PATH`. On Windows `bash` can resolve to WSL
+with no distro installed (`execvpe(/bin/bash) failed`, $0.00 per run): put Git Bash
+(for example `scoop\apps\git\current\bin`) first. `--case` globs take `*` only, not
+character classes.
+
+### `full-workflow-on-target-repo` (expensive, tagged `expensive`)
+
+End to end on a real repo: `setup.sh` copies the tracked files at HEAD of
+`$EVAL_TARGET_REPO` (or the path in a gitignored `target-repo.path`) into the sandbox.
+No `Bash` is granted, because a Bash grant is refused on machines with an unreadable
+`PATH` directory, so the run cannot execute `checker.py`: **the checker's verdict is not
+graded. Run it yourself on the kept workspace** (`--keep-temp`, then
+`python nd/skills/onboarding/checker.py <ws>/docs/onboarding --layout single --root <ws>`).
+
+First run (before the review-group and reviewer changes below), against a ~1,600-tracked-file Next.js app: 22 subagents (inventory, 4
+writers, principal, 4 reviewers, verification and re-review agents, a scoped review of
+the orchestrator's edits), 8 docs written in the single layout, no writes outside
+`docs/onboarding/`. **$35.90 and it hit the 2,700 s timeout** in the finalize step,
+before the final report, so the report grader was never judged. `--max-cost-usd` cannot
+cap a single-run case (it is checked only before a run starts), so the real bounds are
+`timeout_seconds` and `max_turns` (200 is the maximum). The checker on the kept output
+found 0 inadmissible citations, 0 bad line/symbol anchors and 0 placeholders across about
+1,500 citations, and two gate findings that were checker or rule bugs, fixed since:
+unique *files* were counted instead of unique citations (a 12-file deploy surface with 92
+citations failed the minimum), and `` `.env.example` `` written in backticks to say the
+file does not exist read as a dangling path. A rerun needs a higher `timeout_seconds`
+(3,600 is the maximum) and would cost at least as much, or a smaller repo.
+
+What the trace showed about the review pass: the reviewer covering `engineering.md` and
+`runtime-design.md` (about 100 KB together) stalled and returned a one-line status
+shaped like a system instruction. It had started its own helper agents, which found about
+35 real errors but only reported them. The orchestrator ignored the instruction-like
+text, dispatched replacement reviewers and reconciled the leftovers itself (it reports,
+for example, 15 edits on `runtime-design.md` alone), which is where the roughly dozen extra
+agents came from. The trace does not separate subagent tool calls from the orchestrator's,
+so its 168 total edits include the reviewers' own and say nothing about orchestrator load on
+their own. The reviewers did find real
+mistakes (for example a doc claiming image tags are never overwritten when they are stamped to
+the minute), at 15-18 corrections per doc. The skill now caps review groups by size,
+forbids reviewer helpers and requires a report with a `Covered` line.
+
+Second run (same case, after those changes), against a 207-tracked-file Next.js prototype
+with no backend, CI or Docker: **score 0.82, $21.62, 1,637 s, no timeout.** 10 agents
+(4 writers, principal, 5 reviewers, all at full depth) against 22 before: no stalled
+reviewer, no replacement, no helpers, every reviewer report ended with `Covered: all`
+(824 claims checked in total, 68 corrected, about 8%, inside the skill's 5-10% expectation).
+Eight of nine graders passed. The ninth, `honest-final-report`, was **skipped, not failed**:
+`--max-cost-usd 15` was below the real spend and the runner skips judge-scored graders once
+the ceiling is crossed. Don't set a ceiling below the expected spend on a one-run case.
+Reading the final report by hand against that grader's criteria: it says the checker was not
+run, gives the command, does not claim a PASS, and reports claims checked (824) and
+corrections (68). That is my reading, not a scored result. `checker.py` run afterwards on the
+kept workspace (`--layout single --ai-doc runtime-design.md`) printed **PASS**, exit 0, 0
+dangling paths, 38 citations in the smallest doc (`deployment.md`). The agents correctly
+chose `runtime-design.md` (the repo has no real AI) and wrote a doc for a repo with no CI or
+Docker without inventing one. Cost did not scale with repo size: about one eighth of the
+files cost about 60% as much, because full-depth review scales with claims, not files.
+
+Limits of that comparison: the two runs used different repos, and this one was about eight
+times smaller, so its docs may never have reached the size that stalled the first run's
+reviewer. "No stall after the changes" is therefore not evidence that the group-size cap
+fixed it. Both repos were single-layout; the tracked layout has only unit tests. The
+"824 claims checked, 68 corrected" figures are the reviewers' own counts (the skill itself
+says self-reports are not verification); the independent check is the checker run above,
+which tests that cited things exist, not that the claims are true.
+
+The checker is covered by `tests/onboarding/test_checker.py`:
+
+```bash
+python -m unittest discover -s tests/onboarding -v
+```
+
 ## Cost
 
-22 cases × 5 runs × 2 arms = 220 agent runs, each a full `claude` child on your own
+25 cases × 5 runs × 2 arms = 250 agent runs, each a full `claude` child on your own
 credential and rate limit. Measured rates from real runs, with `--judge-model sonnet`:
 roughly **$0.20 per run** for the `reflecting` cases and **$0.12** for the shorter ones;
 the new `architect`/`engineer` cases land in that same range, except

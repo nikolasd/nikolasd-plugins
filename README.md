@@ -9,8 +9,9 @@ and a Python language server integration.
 
 Personal workflow skills for session handoff, session reflection, plain-language
 writing, spawning/controlling agents via Herdr, a paired architect/engineer
-session workflow, and a disciplined-delivery protocol for test-first, fully
-verified changes with per-action approval gates.
+session workflow, a disciplined-delivery protocol for test-first, fully
+verified changes with per-action approval gates, and a code-grounded
+onboarding-documentation workflow.
 
 | Skill | Command | What it does |
 | :--- | :--- | :--- |
@@ -21,8 +22,9 @@ verified changes with per-action approval gates.
 | `architect` | `/nd:architect` | Plans, reviews and validates changes, and delegates implementation to a separate engineer session spawned via Herdr. Every decision stays with the user. |
 | `engineer` | `/nd:engineer` | Implements tasks from a separate architect session with TDD and spec verification, and reports back with evidence. |
 | `disciplined-delivery` | `/nd:disciplined-delivery` | Research-before-code, test-first implementation, the definition of "fully implemented," adversarial self-review, honest reporting, and per-action git approval gates. |
+| `onboarding` | `/nd:onboarding` | Produces a 360° onboarding doc set (C4, engineering, AI design, infra/deploy, ownership) grounded on code only, via specialist subagents, a bundled acceptance checker, and a mandatory verify-and-fix review pass. |
 
-Backed by a 22-case eval suite (`nd/evals/`) run with `claude plugin eval` — see
+Backed by a 26-case eval suite (`nd/evals/`) run with `claude plugin eval` — see
 [`nd/evals/README.md`](nd/evals/README.md) for how to run it, known
 machine-specific gotchas (macOS git sandboxing, Linux sandbox dependencies), and
 past findings.

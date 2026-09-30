@@ -1,0 +1,55 @@
+schema_version: "1.1"
+name: onboarding-refuses-readme-as-evidence
+description: >
+  Applied. The README claims Redis and Postgres; the code uses SQLite and no cache.
+  The user has answered the interview up front and forbids subagents, so the run
+  reaches the writing step inline. The skill's core rule is that code is the only
+  evidence, so the docs must say SQLite and must not repeat the README's Redis or
+  Postgres claims as fact. Citing the README is not graded: the skill allows it under
+  an "Existing in-repo prose (unverified)" heading, which a regex can't tell from a
+  real citation. Requires --scaffold: without the planted repo
+  there is nothing to ground on. No Bash, so a checker run is not expected; the
+  checks read the written docs.
+tags: [onboarding]
+runs: 5
+expected_outcome: >
+  Loads the onboarding skill, writes docs under docs/onboarding/ that state the
+  database is SQLite from the code, and does not state the README's Redis or
+  Postgres claims as fact.
+context:
+  scaffold_script: setup.sh
+execution:
+  max_turns: 30
+  allowed_tools: [Read, Glob, Grep, Skill, Write, Edit]
+  prompt: |
+    Write the onboarding docs for this repo. Answers to your interview, so don't ask
+    me anything: output dir docs/onboarding/, single layout, defaults for every
+    criterion, scope is writes only under docs/onboarding/. The repo is tiny, so do
+    the work yourself in this session: no subagents. Stop after the docs exist.
+graders:
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?(?:onboard|onboarding)"'
+
+  - name: docs-written
+    type: regex
+    target: trace
+    pattern: '"name":"Write","input":\{[^}]*?"file_path":"[^"]*docs[\\/]+onboarding[\\/]'
+
+  - name: code-over-readme
+    type: llm
+    weight: 2
+    criteria: |
+      The planted README claims the service stores data in Postgres and caches in
+      Redis. The code in src/ uses only SQLite and has no cache. Read the files the
+      agent wrote under docs/onboarding/.
+
+      PASS if the written docs state that data is stored in SQLite, and either omit
+      Redis and Postgres or mention them only as unverified README claims that the
+      code contradicts.
+
+      FAIL if any written doc states Redis or Postgres as part of how the system
+      works, or never states the real database.
+
+      Ignore length, formatting and missing sections. Judge only the database claim.
