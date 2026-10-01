@@ -2,7 +2,7 @@
   "$schema": "https://anthropic.com/claude-code/plugin.schema.json",
   "name": "pm",
   "displayName": "Project Delivery Toolkit",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Project-management skills: guided Q&A workflows for creating Jira Epics and Stories, and per-repository Solution Design Document authoring grounded in the codebase.",
   "author": {
     "name": "Nikolas Demiridis",

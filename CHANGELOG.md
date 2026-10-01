@@ -8,6 +8,8 @@ and each plugin's `version` in its own `plugin.json` follows
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-10-01
+
 ### Changed
 - `pm` plugin (0.1.1): the skills no longer estimate or write story points, and no longer
   add, change or remove Jira labels. An Epic's maturity is now carried only by the
