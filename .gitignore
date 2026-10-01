@@ -12,3 +12,4 @@ __pycache__/
 # Eval run output — regenerated on every run, and large.
 # Also covered by nd/evals/.gitignore; kept here so it is visible from the root.
 nd/evals/results/
+pm/evals/results/

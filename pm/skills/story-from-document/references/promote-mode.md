@@ -17,7 +17,7 @@ Call `mcp__atlassian__getJiraIssue` for the story key with
 omits sub-tasks, issue links and custom fields, and this step needs all of them.
 Capture and hold:
 
-- The current body, summary, labels, and story points.
+- The current body and summary.
 - The issue type (see the rules below).
 - The **parent**. Record whether the story already belongs to an Epic, because
   this decides whether you offer Epic attachment later (Phase 4). If it already

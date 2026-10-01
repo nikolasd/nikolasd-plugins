@@ -25,12 +25,6 @@
       "title": "Atlassian site",
       "description": "Hostname of your Atlassian site, for example acme.atlassian.net. Used to pick the right site when several are accessible and to build issue links. Leave blank to be asked when needed.",
       "required": false
-    },
-    "points_scale": {
-      "type": "string",
-      "title": "Story point scale",
-      "description": "Comma-separated story point values, for example 1, 2, 3, 5, 8, 13. Leave blank to use that Fibonacci default.",
-      "required": false
     }
   }
 }

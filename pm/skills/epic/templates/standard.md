@@ -54,9 +54,9 @@ _(To be completed in Step 2 - Detailed Requirements.)_
 
 ## Delivery
 
-| Id | Story | Summary | Status | Story Points |
-| --- | --- | --- | --- | --- |
-| | | _(Story table to be completed in Step 2.)_ | | |
+| Id | Story | Summary | Status |
+| --- | --- | --- | --- |
+| | | _(Story table to be completed in Step 2.)_ | |
 
 **Epic is complete when:** [The done statement from section 3.7]
 

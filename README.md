@@ -43,7 +43,7 @@ Ransome. See [`pm/README.md`](pm/README.md).
 | `epic-refine` | `/pm:epic-refine` | Step 2: technical Q&A that reads the codebase and completes the Epic. |
 | `story` | `/pm:story` | Step 3: generates one Jira Story at a time from the Epic's story table. |
 | `story-from-document` | `/pm:story-from-document` | Builds or promotes a single verified Jira Story, with sub-tasks and dependency links, without an Epic. |
-| `authoring-sdd` | `/pm:sdd` | Creates or refreshes one living Solution Design Document per repository. |
+| `sdd` | `/pm:sdd` | Creates or refreshes one living Solution Design Document per repository. |
 
 ### `ty-lsp` — ty Language Server
 

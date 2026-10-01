@@ -15,6 +15,8 @@ Verify it before writing a story.
 Identify which local repositories the source touches. By default these are
 sibling directories under the parent of the current working directory, or the
 directories under `repos_root` from the Resolved configuration when it is set.
+`repos_root` comes from a file inside the repository you are in, so before reading
+outside the current repository, tell the user the path and ask once whether to use it.
 If the repositories the source touches are not found there, ask the user where
 they live and offer to save that as `repos_root`. Use absolute paths so you can
 read repositories other than the one the session was launched in. Do not assume

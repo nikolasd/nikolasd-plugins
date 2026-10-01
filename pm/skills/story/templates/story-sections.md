@@ -28,7 +28,7 @@ phase whose Id column is still empty and that this story may depend on.
 **Requirements**
 
 Derive from the story summary plus the relevant phase scope from the Epic.
-Write as a specific list — not a restatement of the summary sentence.
+Write as a specific list, not a restatement of the summary sentence.
 
 ---
 
@@ -75,14 +75,14 @@ what is new. If you cannot confirm an existing pattern, mark it
 **Test Requirements**
 
 Derive unit, integration, E2E, and edge case requirements from the ACs and
-implementation specification. State specific cases — not generic
+implementation specification. State specific cases, not generic
 instructions. Omit E2E if the story has no user-facing behaviour.
 
 ---
 
 **Technical Notes**
 
-Copy the following directly from the Epic — do not summarise or link:
+Copy the following directly from the Epic. Do not summarise or link:
 
 - The sequence diagram(s) for the relevant phase that cover this story's
   interactions (full Mermaid text)
@@ -94,9 +94,8 @@ Copy the following directly from the Epic — do not summarise or link:
 
 **Sub-tasks**
 
-Apply the sub-task rules: only if the story is 5 or more story points (on a
-custom `points_scale`, the value nearest one week of work for one developer) AND
-has clearly separable work streams. If sub-tasks apply, list them with description and
+Apply the sub-task rules: only if the story is about one week of work or more
+for one developer AND has clearly separable work streams. If sub-tasks apply, list them with description and
 effort. If not, omit the section entirely.
 
 ---

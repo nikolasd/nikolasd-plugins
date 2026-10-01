@@ -1,11 +1,11 @@
 schema_version: "1.1"
-name: epic-uses-prd-and-asks-one-question
+name: epic-stops-without-jira-before-asking
 description: >
-  Applied. Given a pasted PRD, the skill must use it as a source and confirm with the user, not re-ask every section from scratch, and must not ask technical questions.
-tags: [epic, applied]
+  Guard. The skill checks the Jira project before it starts the Q&A. With no Atlassian MCP it must stop at that check and say so, rather than run the whole interview and fail at the final write.
+tags: [epic, guard]
 runs: 3
 expected_outcome: >
-  Summarises the PRD, proposes the first section from it, and asks one business question. No technical questions. No Jira write.
+  Says the Atlassian MCP is not available, asks no interview questions, writes nothing, and does not claim to have checked the project or created an Epic.
 execution:
   max_turns: 6
   allowed_tools: [Read, Glob, Grep, Write, Bash]
@@ -33,30 +33,21 @@ graders:
     max: 0
     arm: both
 
-  - name: uses-the-document
+  - name: says-jira-is-unavailable
     type: llm
     weight: 2
     criteria: |
-      PASS if the assistant summarises the pasted PRD and proposes content for the first
-      section (for example the Epic name) drawn from it, naming the PRD as the source, and
-      asks the user to confirm, amend or replace it.
+      PASS if the assistant says it cannot continue because the Atlassian MCP is not
+      available in this session (or that it could not check the Jira project), and stops.
 
-      FAIL if it ignores the PRD and asks an open question from scratch, or treats PRD
-      content as already confirmed.
+      FAIL if it carries on with the interview as if Jira were available, or claims the
+      project was checked or an Epic created.
 
-  - name: business-questions-only
+  - name: does-not-start-the-interview
     type: llm
     criteria: |
-      PASS if every question to the user is about the business (purpose, scope, success,
-      risks, delivery).
+      PASS if the assistant asks no requirements questions (objective, scope, success
+      criteria, risks) and does not draft Epic sections. Mentioning that it will use the
+      pasted PRD once Jira is available is fine.
 
-      FAIL if it asks about frameworks, databases, APIs, architecture or other technical
-      choices.
-
-  - name: one-question-at-a-time
-    type: llm
-    criteria: |
-      PASS if the final message poses a single question to the user (numbered options for
-      that question are fine).
-
-      FAIL if it asks several separate questions in one message.
+      FAIL if it starts the interview or drafts any Epic section.

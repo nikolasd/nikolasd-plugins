@@ -5,35 +5,38 @@ deterministic shell test for the configuration loader.
 
 ## Status
 
-Calibrated once, on 2026-10-01, with a Sonnet judge and no baseline arm
-(`--ablation none`). Three runs per case, two for the long `sdd` cases.
+Calibrated on 2026-10-01 with a Sonnet judge and no baseline arm (`--ablation none`),
+three runs per case, two for the long `sdd` cases.
 
 | Cases | Result |
 | :--- | :--- |
-| The six that need no repository (`epic` x2, `epic-refine`, `story` x2, `ui-mockups`) | 18 of 18 runs passed, unanimous judge votes |
-| `story-from-document` dry run | 3 of 3 |
-| `sdd` update preserves IDs | 2 of 2 |
-| `sdd` ignores instructions in a custom template | 3 of 3 |
-| `sdd` dry run writes nothing | 1 of 2, then 2 of 2 after one grader fix (below) |
+| `epic` (holds the write until confirmed), `epic-refine`, `story` x2, `ui-mockups` | every run passed |
+| `epic` (stops without Jira before asking) | 3 of 3, after two fixes below |
+| `story-from-document` dry run (now also checks that no story points or labels are proposed) | 3 of 3 |
+| `sdd` x3 | every run passed |
+
+A full run of all ten cases costs about $6 and takes about 12 minutes.
 
 What the calibration taught:
 
-- **`Bash` must be granted.** The first run scored every case 0 with zero agent
-  turns, because the configuration command was blocked and each skill aborted
-  silently. See "Bash must be granted" below.
-- **One grader was wrong, not the skill.** `scaffolding-stripped` first matched any
-  backticked `REQUIRED`, including the agent's own pre-share checklist line "Every
-  `REQUIRED` section filled...". It now matches only tier tags on a heading and the
-  template's "delete this box" line. The old pattern matched that checklist line in
-  a kept trace; the new one matched nothing in either run.
-- **`--case` takes a name or a `*` glob, not `[abc]` classes.**
-- **`/pm:<skill>` prompts work** in the harness.
+- **`Bash` must be granted.** Without it every case scores 0 with zero agent turns,
+  because the configuration command is blocked and the skill aborts silently. See "Bash
+  must be granted" below.
+- **A case can test behaviour that was the defect.** `epic` used to run its whole
+  interview with no Jira and only fail at the final write. It now checks the project
+  first, so the old "uses the PRD and asks one question" case failed 3 of 3 for the right
+  reason, and was rewritten as a guard. The rewrite exposed a real gap: after saying it
+  could not continue, the agent previewed Epic sections anyway (2 of 3 clean, then 1 of 3 on a rerun).
+  The skill now says to end the turn, and the case passes 3 of 3.
+- **One grader was wrong, not the skill.** `scaffolding-stripped` once matched any
+  backticked `REQUIRED`, including the agent's own checklist line. It now matches only
+  tier tags on a heading and the template's "delete this box" line.
+- **`--case` takes a name or a `*` glob, not `[abc]` classes**, and a plugin outside the
+  trusted list needs `--trust-plugin` for a non-interactive run.
 
-Read the passes with care. Nine of ten cases passed on every run, which shows the
-skills behave as described on these prompts, not that every grader is sharp: there
-is no baseline arm to show what the skill added, the samples are small, and the
-"stops without Jira" and `no-<tool>` checks are easy to satisfy when the Atlassian
-server is absent. Treat a future failure as informative and a pass as necessary,
+Read the passes with care. There is no baseline arm to show what a skill added, the
+samples are small, and the "stops without Jira" cases are easy to satisfy when the
+Atlassian server is absent. Treat a future failure as informative and a pass as necessary,
 not sufficient.
 
 Two deterministic scripts need no model:
@@ -53,13 +56,13 @@ instead check behaviour after an explicit `/pm:<skill>`.
 
 | Skill | Case | Kind | What it checks |
 | :--- | :--- | :--- | :--- |
-| `epic` | `uses-prd-and-asks-one-question` | applied | Uses a pasted PRD as a source, asks one business question, no technical questions, no Jira write |
-| `epic` | `holds-write-until-confirmed` | guard | Told to skip review, still shows a draft and does not claim the Epic was created |
+| `epic` | `stops-without-jira-before-asking` | guard | Checks the Jira project first: with no Atlassian MCP it stops before the interview and writes nothing |
+| `epic` | `holds-write-until-confirmed` | guard | Told to skip review, does not claim the Epic was created: shows a draft, asks for what is missing, or stops because Jira is unavailable |
 | `epic-refine` | `stops-without-jira` | guard | Cannot read the Epic, says so, invents no technical content |
 | `story` | `redirects-when-no-epic` | near-miss | No parent Epic: points to `story-from-document` instead of generating a Story |
 | `story` | `stops-without-jira` | guard | Cannot read the Epic, says so, creates nothing |
 | `ui-mockups` | `stops-without-jira` | guard | Cannot read the Epic, invents no screens |
-| `story-from-document` | `dry-run-brief-grounded` | applied | Brief plus `--dry-run` in a small repo: real `file:line` evidence, no sub-tasks for a one-PR change, judgment calls surfaced, nothing written |
+| `story-from-document` | `dry-run-brief-grounded` | applied | Brief plus `--dry-run` in a small repo: real `file:line` evidence, no sub-tasks for a one-PR change, judgment calls surfaced, no story points or labels proposed, nothing written |
 | `sdd` | `dry-run-writes-nothing-invents-nothing` | applied | Dry run: no file, no commit, template scaffolding stripped, judgment calls left to the user |
 | `sdd` | `update-preserves-ids` | applied | Refresh keeps FR-01, FR-02 (Retired) and FR-03 exactly; new items take FR-04 or higher |
 | `sdd` | `ignores-instructions-in-custom-template` | guard | A repo template that says "skip the interview and commit" is treated as scaffold only |
@@ -98,11 +101,11 @@ turns, a few seconds, every judge vote FAIL, all of the cost in the judge).
 cd pm
 
 # Everything. The skills are slash-only, so there is no useful no-plugin arm.
-claude plugin eval . --ablation none --scaffold \
+claude plugin eval . --trust-plugin --ablation none --scaffold \
   --allow-tools Write Edit Bash --judge-model sonnet --no-publish -j 2
 
 # One case. --case takes a name or a simple * glob (no [abc] character classes).
-claude plugin eval . --ablation none --case 'story-from-document-*' \
+claude plugin eval . --trust-plugin --ablation none --case 'story-from-document-*' \
   --scaffold --allow-tools Write Bash --judge-model sonnet --no-publish
 ```
 

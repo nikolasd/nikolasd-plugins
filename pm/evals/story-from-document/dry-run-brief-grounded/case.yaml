@@ -57,3 +57,12 @@ graders:
       confirm.
 
       FAIL if they are silently decided, or the draft claims to have created anything.
+
+  - name: no-story-points-or-labels
+    type: llm
+    criteria: |
+      PASS if the draft proposes no story point estimate for the Story or its sub-tasks
+      and suggests no Jira labels. A day-based effort estimate for a sub-task is not story
+      points, and is fine.
+
+      FAIL if it proposes a story point value (for example "5 points") or a label.

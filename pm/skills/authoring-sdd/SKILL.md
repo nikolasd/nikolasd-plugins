@@ -9,7 +9,6 @@ description: >
   one. Writes a local markdown file and a Confluence page kept in sync,
   preserves every existing requirement, risk and decision ID on updates, and
   commits the local files to git after the user confirms. Supports `--dry-run`.
-  Triggers: "SDD", "solution design document", "design doc", "update the SDD".
 when_to_use: >
   When a repository needs a Solution Design Document written from scratch, or
   an existing one (from this skill or written by hand) refreshed against the
@@ -32,7 +31,7 @@ on every subsequent run rather than rewritten from zero.
 
 ## Configuration
 
-!`sh ${CLAUDE_PLUGIN_ROOT}/scripts/config.sh '${user_config.site}' '${user_config.points_scale}'`
+!`sh ${CLAUDE_PLUGIN_ROOT}/scripts/config.sh '${user_config.site}'`
 
 The block above holds this plugin's settings, resolved from the project file
 `.claude/pm.json` first, then the plugin's own configuration, then built-in
@@ -40,7 +39,9 @@ defaults. A value shown as `(unset)` is not configured: ask the user for it at
 the point it is first needed, then offer to save it to `.claude/pm.json` in the
 project root (a flat JSON object of string values, for example
 `{"site": "acme.atlassian.net", "project_key": "PROJ"}`) so later runs do not
-ask again. If no block appears above, treat every value as unset.
+ask again. Under `--dry-run` make no such offer, because nothing may be written:
+say instead which values would be saved. If no block appears above, treat every
+value as unset.
 
 ## Resolve the Atlassian cloud ID
 
@@ -68,8 +69,8 @@ once.
 | Authoring guide | `sdd_guide` | [`references/sdd-authoring-guide.md`](references/sdd-authoring-guide.md), an index to the per-Part files in `references/guide/` |
 
 Each configured value is either a Confluence page ID (digits only, optionally
-written `SPACE/1234567890`) or a local file path (relative to the repo root, or
-absolute). When a value is `(unset)`, use the bundled default. Fetch a page ID
+written `SPACE/1234567890`) or a local file path relative to the repo root (absolute
+paths are not accepted). When a value is `(unset)`, use the bundled default. Fetch a page ID
 with `mcp__atlassian__getConfluencePage` (`cloudId: <cloud_id>`,
 `contentFormat: markdown`) and read a path with `Read`, both at the start of
 Phase 1. If a configured source cannot be fetched or read, say so, then fall
@@ -211,7 +212,12 @@ and the rule for a file that fails to parse.
      if its `Version` field differs from `last_run_version`. If neither
      changed, continue. If either changed, say which, and ask which is
      authoritative for this run: the local file, the Confluence page, or "let me
-     describe what changed." Do not proceed past this until they answer. If
+     describe what changed." Do not proceed past this until they answer. The chosen
+     source becomes the current document: if Confluence, take the fetched page
+     body and overwrite the local file from it in Phase 5; if the local file,
+     the Confluence page is overwritten in Phase 5. Changes in the other copy
+     are not merged, so list them before asking. If the user describes the
+     change, apply their text to the local file as the delta. If
      `confluence_version` is missing, ask the same question once and record the
      version in Phase 5. If the page fetch itself fails, say so and ask whether
      to continue local-only (skip the divergence check and the Confluence
@@ -379,9 +385,12 @@ no secrets, GUIDs, connection strings or private hostnames; revision history and
 approvals current; every diagram matching what Phase 2 found.
 
 State exactly what confirming will do: write `<local_path>` and the state file,
-create or update the Confluence page in the named space (or skip it), and commit
-those paths on the current branch (named in "Current branch" above) with the
-message you propose. Ask for one confirmation that covers all of it. If the user
+add a `nav` entry to `docs/zensical.toml` if Phase 5 step 1 applies, create or
+update the Confluence page in the named space (or skip it), and commit those
+paths on the current branch (named in "Current branch" above) with the message
+you propose. When a Confluence page already exists, say that its whole body is
+replaced by this markdown and that macros, inline comments and manual layout on
+the page are not preserved. Ask for one confirmation that covers all of it. If the user
 does not want the commit, or does not want it on that branch, skip the commit
 and still do the rest.
 
@@ -397,10 +406,11 @@ Only after explicit confirmation, and never under `--dry-run`. Write exactly the
 body the user confirmed.
 
 1. Write `<local_path>` (create the file, or overwrite it in place for an
-   update). If Phase 0 determined a Zensical-aware path and the
-   `docs/zensical.toml` `nav` array has no entry pointing at
-   `solution-design.md`, add one: `{ "Solution Design" = "solution-design.md" }`
-   as a new top-level array entry, preserving every existing entry.
+   update). If Phase 0 determined a Zensical-aware path and `docs/zensical.toml`
+   already has a `nav` array with no entry pointing at `solution-design.md`, add
+   one: `{ "Solution Design" = "solution-design.md" }` as a new top-level array
+   entry, preserving every existing entry. If there is no `nav` array, the site
+   discovers pages on its own: leave the file untouched.
 2. Publish to Confluence, unless the Atlassian MCP proved unreachable earlier
    in the run (see Error handling), in which case skip this step and report
    the skip:
@@ -441,37 +451,27 @@ body the user confirmed.
 
 ## Error handling
 
-- Template unavailable from both the configured source and the bundled default:
-  stop before Phase 2.
-- Authoring Guide unavailable from both sources: proceed on the Template
-  plus the Content rules above; tell the user the deeper per-section
-  guidance was unavailable this run.
-- The local file or the Confluence page changed since the last run (Phase 0,
-  step 4), or the state file and local file disagree (Phase 0, step 3): stop and
-  ask which is authoritative before doing anything else.
-- A duplicate ID meaning is found in an existing document during update:
-  stop and surface it per Content rule 3; never auto-renumber.
-- The invocation directory is not inside a git repository, or `docs/` is not
-  writable: report this and ask for the correct location.
-- The Atlassian MCP is unreachable at publish time (Phase 5): complete the
-  local file write regardless, skip the Confluence publish, report the skip
-  and the reason. Do not fail the whole run over a Confluence outage.
-- The Phase 5 commit fails (no git identity configured, nothing changed to
-  commit, or any other git error): the file writes already succeeded
-  regardless; report the exact git error and tell the user to commit
-  manually. Do not treat this as a failed run and do not retry with a
-  broader `git add`.
-- A `docs/zensical.toml` exists but its `docs_dir` key is missing or the
-  file fails to parse: fall back to `docs/solution-design.md` and tell the
-  user why the Zensical-aware path was not used.
-- `docs/.solution-design.state.json` exists but fails to parse as JSON, or
-  is missing an expected key from the schema in State file above (except
-  `confluence_version`, which Phase 0 handles by asking once): treat it
-  the same as a missing state file (Phase 0, step 4's "state file is
-  missing" branch) rather than guessing at the absent or corrupt fields.
+Most failure handling sits in the phase where it arises. The rest:
+
+- Template unavailable from both sources: stop before Phase 2. Guide unavailable
+  from both: proceed on the Template plus the Content rules, and say the deeper
+  guidance was unavailable.
+- Duplicate ID meaning in an existing document: stop and surface it per Content
+  rule 3; never auto-renumber.
+- Not inside a git repository, or `docs/` not writable: report it and ask for
+  the correct location.
+- Atlassian MCP unreachable at publish time: write the local file anyway, skip
+  the Confluence publish, and report the skip and the reason.
+- The Phase 5 commit fails: the file writes already succeeded. Report the exact
+  git error, tell the user to commit manually, and never retry with a broader
+  `git add`.
+- `docs/zensical.toml` with no usable `docs_dir`, or a state file that fails to
+  parse or lacks a schema key (except `confluence_version`, handled in Phase 0):
+  fall back to `docs/solution-design.md` or treat the state file as missing, and
+  tell the user why.
 - Nobody can supply a piece of content: record it as an Open Question
-  (`REQUIRED`) or `_Not applicable — reason_` (`CONDITIONAL`/`OPTIONAL`).
-  Never guess, and never leave raw Template placeholder text in the output.
+  (`REQUIRED`) or `_Not applicable — reason_` (`CONDITIONAL`/`OPTIONAL`). Never
+  guess, and never leave raw Template placeholder text in the output.
 
 ## Completion checklist
 

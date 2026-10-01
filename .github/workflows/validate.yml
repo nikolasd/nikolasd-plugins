@@ -37,5 +37,20 @@ jobs:
       - name: Test pm repository-context script
         run: sh pm/tests/test-repo-context.sh
 
+      - name: Check every pm skill loads the configuration
+        run: |
+          status=0
+          q="'"
+          inject="!\`sh \${CLAUDE_PLUGIN_ROOT}/scripts/config.sh ${q}\${user_config.site}${q}\`"
+          for f in pm/skills/*/SKILL.md; do
+            grep -Fxq -- "$inject" "$f" \
+              || { echo "$f: missing the exact configuration injection line"; status=1; }
+            grep -Fq '"Bash(sh ${CLAUDE_PLUGIN_ROOT}/scripts/config.sh *)"' "$f" \
+              || { echo "$f: no allowed-tools rule for config.sh"; status=1; }
+            ! grep -q 'points_scale' "$f" \
+              || { echo "$f: still mentions the removed points_scale option"; status=1; }
+          done
+          exit "$status"
+
       - name: Validate ty-lsp plugin
         run: claude plugin validate ty-lsp --strict

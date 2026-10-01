@@ -92,7 +92,6 @@ the built-in default.
 | Option | Meaning | Default |
 |---|---|---|
 | `site` | Your Atlassian site hostname, for example `acme.atlassian.net`. Picks the right site when several are accessible and builds issue links. | asked when needed |
-| `points_scale` | Comma-separated story point values. | `1, 2, 3, 5, 8, 13` |
 
 Claude Code keeps one value per option per user, even for a project-scope install. For
 anything that differs between projects, use the project file.
@@ -112,13 +111,13 @@ values, safe to commit. Every key is optional.
 
 | Key | Used by | Meaning |
 |---|---|---|
-| `site`, `points_scale` | all skills | Override the plugin options for this project. |
+| `site` | all skills | Overrides the plugin option for this project. |
 | `project_key` | `epic`, `story-from-document` | Default Jira project key, offered instead of asking. |
-| `repos_root` | `story-from-document` | Directory holding the repositories to investigate, when they are not siblings of the current one. |
-| `sdd_template`, `sdd_guide` | `sdd` | The template and authoring guide to use instead of the bundled ones: a local file path (relative to the repo root, or absolute) or a Confluence page ID. |
+| `repos_root` | `story-from-document` | Directory holding the repositories to investigate, when they are not siblings of the current one. The skill tells you the path and asks once before reading outside the current repository. |
+| `sdd_template`, `sdd_guide` | `sdd` | The template and authoring guide to use instead of the bundled ones: a local file path relative to the repo root, or a Confluence page ID. Absolute paths and `..` are refused, so a cloned repository cannot point the skill at files elsewhere on your machine. |
 | `sdd_space`, `sdd_parent_id` | `sdd` | Default Confluence space key and parent page for a new document. |
 
-Values cannot contain double quotes or nested objects. Because the file can come from a
+Values cannot contain double quotes or nested objects, when a key appears twice the first one wins, and a value may not end in a backslash. Because the file can come from a
 repository you did not write, each value is checked against a strict format (`site` a
 hostname, `project_key` letters, digits and underscores, `sdd_space` and `sdd_parent_id`
 letters, digits, `_`, `-` and `/`, paths plain path characters) and anything else is ignored
@@ -224,14 +223,19 @@ product repos so the investigation can read them.
 
 ### Epic maturity model
 
-| State | Label | Set by |
-|-------|-------|--------|
-| Template | `epic-maturity-template` | Manual |
-| High Level Requirements Created | `epic-maturity-hlr-created` | Step 1 |
-| UI Mockups Created | `epic-maturity-mockups-created` | Step 1.5 (optional) |
-| Detailed Level Requirements Created | `epic-maturity-detailed-created` | Step 2 |
-| Story Creation In Progress | `epic-maturity-stories-in-progress` | Step 3 |
-| All Stories Created | `epic-maturity-all-stories-created` | Step 3 |
+The Epic's maturity is the `**Epic Maturity State:**` line in its description. The
+skills never set Jira labels or story points.
+
+| State | Set by |
+|-------|--------|
+| High Level Requirements Created | Step 1 |
+| UI Mockups Created | Step 1.5 (optional) |
+| Detailed Level Requirements Created | Step 2 |
+| Story Creation In Progress | Step 3 |
+| All Stories Created | Step 3 |
+
+The state only moves forward: running `ui-mockups` on an Epic that has already been
+refined leaves the state where it is.
 
 ### Full process
 
@@ -261,9 +265,12 @@ drifted or is still open — not the whole document again. Every judgment call
 you; the skill never invents one.
 
 What it changes, and only after one confirmation that lists all of it: it writes
-the document and `docs/.solution-design.state.json`, creates or updates the
-Confluence page, and commits exactly those paths on the current branch (nothing
-else you had staged). The state file records the Confluence page and its version
+the document and `docs/.solution-design.state.json`, adds a `nav` entry to
+`docs/zensical.toml` when that file already has a `nav` array, creates or updates
+the Confluence page, and commits exactly those paths on the current branch
+(nothing else you had staged). Updating a Confluence page replaces its whole body
+with the markdown, so macros, inline comments and manual layout on that page are
+not preserved. The state file records the Confluence page and its version
 so a later run can tell whether either side was edited by hand. If you already
 have a hand-written page with the standard title, the skill offers to adopt it
 instead of creating a second one. Pass `--dry-run` to see the full draft without
@@ -279,6 +286,16 @@ interactive session you are asked instead.
 
 **A skill keeps asking for the Atlassian site.** Set the `site` plugin option
 (`claude plugin configure pm@nikolasd-plugins`) or add `"site"` to `.claude/pm.json`.
+
+**A skill stops with a shell error right at the start.** The `site` plugin option
+was typed with a quote character in it. It must be a plain hostname such as
+`acme.atlassian.net`; fix it with `claude plugin configure pm@nikolasd-plugins`.
+
+## What the skills never touch
+
+The Epic and Story skills never set or change Jira **labels** or **story points**
+(the points field is left untouched on every Story they create or promote, and the
+Epic story table has no points column). Epic maturity is kept in the description only.
 
 ## Authors & Contributing
 

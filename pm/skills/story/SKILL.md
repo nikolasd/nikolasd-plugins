@@ -5,15 +5,13 @@ description: >
   Epic, filling every Story section from the Epic content and from code it has
   read, then updates the Epic's story table and maturity. Step 3 of the Epic
   pipeline, after `epic` and `epic-refine`. Use `story-from-document` instead
-  for a one-off Story with no parent Epic or story table. Triggers: "create
-  story", "next story", "generate stories", "epic step 3", or an Epic key
-  argument.
+  for a one-off Story with no parent Epic or story table.
 when_to_use: >
   Only after `epic-refine` has completed the Epic: maturity "Detailed Level
   Requirements Created", or "Story Creation In Progress" while working through
   the table. Not for an Epic that has not been refined, because the story
   content would be incomplete. One Story per invocation; run it repeatedly.
-allowed-tools: [Read, Write, Glob, Grep, Agent, mcp__atlassian__getAccessibleAtlassianResources, mcp__atlassian__getJiraIssue, mcp__atlassian__createJiraIssue, mcp__atlassian__getJiraProjectIssueTypesMetadata, mcp__atlassian__getJiraIssueTypeMetaWithFields, mcp__atlassian__searchJiraIssuesUsingJql, mcp__atlassian__editJiraIssue, mcp__atlassian__addCommentToJiraIssue, "Bash(sh ${CLAUDE_PLUGIN_ROOT}/scripts/config.sh *)"]
+allowed-tools: [Read, Write, Glob, Grep, Agent, mcp__atlassian__getAccessibleAtlassianResources, mcp__atlassian__getJiraIssue, mcp__atlassian__createJiraIssue, mcp__atlassian__getJiraProjectIssueTypesMetadata, mcp__atlassian__searchJiraIssuesUsingJql, mcp__atlassian__editJiraIssue, mcp__atlassian__addCommentToJiraIssue, "Bash(sh ${CLAUDE_PLUGIN_ROOT}/scripts/config.sh *)"]
 model: sonnet
 effort: high
 disable-model-invocation: true
@@ -33,7 +31,7 @@ the `story-from-document` skill instead.
 
 ## Configuration
 
-!`sh ${CLAUDE_PLUGIN_ROOT}/scripts/config.sh '${user_config.site}' '${user_config.points_scale}'`
+!`sh ${CLAUDE_PLUGIN_ROOT}/scripts/config.sh '${user_config.site}'`
 
 The block above holds this plugin's settings, resolved from the project file
 `.claude/pm.json` first, then the plugin's own configuration, then built-in
@@ -76,22 +74,24 @@ Apply to all generated content without exception:
 1. No em dashes. Rewrite any sentence that would need one.
 2. No LLM-signal phrasing. Plain, professional language. Active voice.
 3. Every bullet point and AC is a complete grammatical sentence.
-4. Story points use the `points_scale` from the Resolved configuration
-   (default: 1, 2, 3, 5, 8, 13).
+4. Never estimate, set or change story points. Leave the Jira story points field
+   untouched, and leave any Story Points column in the Epic table as it is.
 5. Sub-task effort estimates, when sub-tasks apply, are in days for a mid-level
    developer, to one decimal place. The Epic story table has no effort column,
    so never invent a Story-level effort.
 6. ACs must be testable and independently verifiable by a non-engineer.
 7. NFR ACs must state the specific threshold inline (not "see Epic NFR").
-8. Every story ends its Acceptance Criteria with the regression AC defined in
+8. Never add, change or remove Jira labels. Maturity lives in the Epic's
+   `**Epic Maturity State:**` line only.
+9. Every story ends its Acceptance Criteria with the regression AC defined in
    [`templates/story-sections.md`](templates/story-sections.md), filled in for
    this story.
-9. The story must be self-contained. Copy these Epic items verbatim, never
+10. The story must be self-contained. Copy these Epic items verbatim, never
    paraphrased, summarised or linked: the phase goal, the phase's technical
    constraints, the NFR thresholds that apply, the phase's sequence diagram(s),
    and the slice of Technology Context the story touches. Derive everything
    else from them and from code you have read.
-10. Every claim about existing code carries `path/to/file.py:120` evidence from
+11. Every claim about existing code carries `path/to/file.py:120` evidence from
     a file you have read in this session. Never invent a path, endpoint or
     schema: mark it `[GAP: ...]` instead.
 
@@ -102,16 +102,17 @@ Execute all three steps before presenting anything to the user.
 **1.1 Fetch the Epic.** Take the Epic key from the `epic-key` argument; ask for
 it if it was not given. Use `mcp__atlassian__getJiraIssue` with
 `responseContentFormat: markdown`. Extract and hold:
-- Epic summary and key, and its current labels (Phase 5 rewrites them)
+- Epic summary and key
 - All story table rows for every phase (or the single Delivery table for
-  standard Epics): Id, Story, Summary, Status, Story Points
+  standard Epics): Id, Story, Summary, Status (ignore any Story Points column)
 - Delivery structure (phased or standard)
 - Personas table and NFRs
 - Technology Context (full)
 - Per-phase sequence diagrams, phase goals, and technical constraints
-- Epic maturity state: the `**Epic Maturity State:**` line, or the
-  `epic-maturity-*` label if the line is missing. If they disagree, tell the
-  user and ask which to trust. State line and label pairs: High Level Requirements Created (`epic-maturity-hlr-created`), UI Mockups Created (`epic-maturity-mockups-created`), Detailed Level Requirements Created (`epic-maturity-detailed-created`), Story Creation In Progress (`epic-maturity-stories-in-progress`), All Stories Created (`epic-maturity-all-stories-created`).
+- Epic maturity state: the `**Epic Maturity State:**` line. If the line is
+  missing, ask the user which state the Epic is in. The states, in order, are:
+  High Level Requirements Created, UI Mockups Created, Detailed Level
+  Requirements Created, Story Creation In Progress, All Stories Created.
 
 **1.2 Check maturity.**
 - "Detailed Level Requirements Created" (first Story) or "Story Creation In
@@ -133,7 +134,7 @@ complete. Build the list of uncreated stories across all phases.
 ## Phase 2: Select story
 
 Present the list of uncreated stories to the user, grouped by phase if phased,
-with their story points. Ask which story to generate.
+with their summaries. Ask which story to generate.
 
 If `epic-key` was provided as an argument but no story was specified, default
 to the first uncreated story in Phase 1. State which story you are defaulting
@@ -194,28 +195,22 @@ Apply amendments and re-present the affected sections.
 
 Execute the following actions in order after confirmation.
 
+**Resolve the issue types first, on every path, including a resume.** Call
+`mcp__atlassian__getJiraProjectIssueTypesMetadata` for the target project and record
+the exact names and ids of the Story type and the sub-task type (the type the response
+flags as a sub-task; commonly `Sub-task` or `Subtask`). If the project has no
+Story type, use its closest equivalent (for example Task) and tell the user.
+
 **Duplicate check.** Call `mcp__atlassian__searchJiraIssuesUsingJql` with
 `jql: parent = <EPIC-KEY> ORDER BY created DESC` and `maxResults: 100`, and
 compare each child's summary with this story's name exactly (ignoring case and
 surrounding spaces); do not search by text, which matches loosely. If one
 matches, show it and ask whether it is this same Story from an earlier,
 interrupted run. If yes, skip Action 1 and continue with Action 2 using that
-key; in Action 3, create only the sub-tasks it does not already have (list its
-children with `parent = <STORY-KEY>` first). If no, continue normally.
+key, creating only the sub-tasks it does not already have (list its children
+with `parent = <STORY-KEY>` first). If no, continue normally.
 
 **Action 1: Create the Jira Story**
-
-**Resolve the issue types and the story points field first.** Call
-`mcp__atlassian__getJiraProjectIssueTypesMetadata` for the target project and record
-the exact names and ids of the Story type and the sub-task type (the type the response
-flags as a sub-task; commonly `Sub-task` or `Subtask`). If the project has no
-Story type, use its closest equivalent (for example Task) and tell the user. Then call
-`mcp__atlassian__getJiraIssueTypeMetaWithFields` with the Story type's id and
-`requiredFieldsOnly: false` (story points is optional, so the default would omit it) and
-find this instance's story points field. Do not assume `customfield_10016`: it is not
-universal and will fail in some Jira configurations. If you cannot identify the field, or
-the set later fails, leave the points unset, report it, and tell the user to set the
-points manually rather than surfacing a raw API error.
 
 Use `mcp__atlassian__createJiraIssue`:
 - `cloudId`: `<cloud_id>` from the cloud ID section above
@@ -225,37 +220,10 @@ Use `mcp__atlassian__createJiraIssue`:
 - `description`: the full confirmed story body
 - `contentFormat`: `markdown`
 - `parent`: the Epic key
-- `additional_fields`:
-  ```json
-  {
-    "<resolved story points field>": <story_points_number>
-  }
-  ```
 
-**Action 2: Update the Epic in one write**
+Send no `additional_fields`: story points and labels are not set by this skill.
 
-Re-fetch the Epic right before writing, because the description was read before
-a long session and may have changed. Decide the new state: if every story table
-row now has an Id, the state is "All Stories Created" with label
-`epic-maturity-all-stories-created`; otherwise "Story Creation In Progress" with
-label `epic-maturity-stories-in-progress`.
-
-Make a single `mcp__atlassian__editJiraIssue` call with `contentFormat: markdown`
-and these `fields`:
-
-```json
-{
-  "description": "<the fresh description with this story's row updated and the state line replaced>",
-  "labels": ["<every existing label except epic-maturity-*>", "<the new maturity label>"]
-}
-```
-
-In the table row, set the Id column to a Jira link to the new story,
-`[PROJECT-XXXX](<browse_url>PROJECT-XXXX)`, and the Status column to `Created`.
-Replace the state line with `**Epic Maturity State:** <state>`. Change nothing
-else in the description.
-
-**Action 3: Create sub-tasks (if applicable)**
+**Action 2: Create sub-tasks (if applicable)**
 
 If the story has sub-tasks, create each one using `mcp__atlassian__createJiraIssue`
 (when resuming, only those the Story does not already have):
@@ -265,6 +233,32 @@ If the story has sub-tasks, create each one using `mcp__atlassian__createJiraIss
 - `summary`: the sub-task name
 - `description`: the sub-task description from the story
 - `contentFormat`: `markdown`
+
+Try every sub-task even if one fails. If any failed, stop here without touching
+the Epic: report the Story key and the failed sub-tasks, and tell the user to
+run `/pm:story <EPIC-KEY>` again. The duplicate check will find the Story and
+create only the missing sub-tasks.
+
+**Action 3: Update the Epic in one write**
+
+Re-fetch the Epic right before writing, because the description was read before
+a long session and may have changed. Decide the new state: if every story table
+row now has an Id, the state is "All Stories Created"; otherwise "Story Creation
+In Progress".
+
+Make a single `mcp__atlassian__editJiraIssue` call with `contentFormat: markdown`
+and these `fields`:
+
+```json
+{
+  "description": "<the fresh description with this story's row updated and the state line replaced>"
+}
+```
+
+In the table row, set the Id column to a Jira link to the new story,
+`[PROJECT-XXXX](<browse_url>PROJECT-XXXX)`, and the Status column to `Created`.
+Replace the state line with `**Epic Maturity State:** <state>`. Change nothing
+else in the description, and send no `labels` field.
 
 **Action 4: Confirm to the user**
 
@@ -282,12 +276,12 @@ If the story has sub-tasks, create each one using `mcp__atlassian__createJiraIss
 
 - If the Jira Story create call fails, stop and show the error. Do not
   attempt the Epic update.
-- If the Epic update fails after the story was created, report the story key
-  and tell the user to set the Id and Status in the story table, the state line
-  and the maturity label by hand. The duplicate check will recognise the Story
-  on the next run.
-- If a sub-task create call fails, report which sub-task failed and continue
-  with the remaining ones rather than aborting.
+- If a sub-task create call fails, try the remaining ones, then stop without
+  updating the Epic (see Action 2).
+- If the Epic update fails after the story and its sub-tasks were created, report
+  the story key and tell the user to set the Id and Status in the story table
+  and the state line by hand. The duplicate check will recognise the Story on
+  the next run.
 - If the Epic description no longer has a row matching this story's name,
   stop before writing and ask the user how to proceed.
 
@@ -304,6 +298,6 @@ If the story has sub-tasks, create each one using `mcp__atlassian__createJiraIss
 - [ ] Gaps and judgment-call choices put to the user (no guessing)
 - [ ] Draft reviewed and all gaps resolved
 - [ ] Duplicate check run; Jira Story created as a child of the Epic
-- [ ] Epic updated in one write: story row, state line and labels
-- [ ] Sub-tasks created if applicable
+- [ ] Sub-tasks created if applicable, none failed
+- [ ] Epic updated in one write: story row and state line
 - [ ] User confirmed with story key, link, and remaining count

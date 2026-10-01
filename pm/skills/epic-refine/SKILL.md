@@ -5,9 +5,7 @@ description: >
   grounded in the codebase, then writes NFRs, personas, Technology Context,
   per-phase story tables, completion statements and sequence diagrams into the
   same Epic and advances its maturity to "Detailed Level Requirements Created".
-  Step 2 after `epic` (and the optional `ui-mockups`). Triggers: "refine epic",
-  "epic step 2", "detailed requirements", "epic-refine", or an Epic key
-  argument.
+  Step 2 after `epic` (and the optional `ui-mockups`).
 when_to_use: >
   Only after `epic` has created the Epic ("High Level Requirements Created"),
   or after the optional `ui-mockups` step ("UI Mockups Created"). Not for
@@ -26,7 +24,7 @@ Jira with the completed content and advance its maturity state.
 
 ## Configuration
 
-!`sh ${CLAUDE_PLUGIN_ROOT}/scripts/config.sh '${user_config.site}' '${user_config.points_scale}'`
+!`sh ${CLAUDE_PLUGIN_ROOT}/scripts/config.sh '${user_config.site}'`
 
 The block above holds this plugin's settings, resolved from the project file
 `.claude/pm.json` first, then the plugin's own configuration, then built-in
@@ -71,8 +69,8 @@ Apply to all generated content without exception:
 4. Plain, professional language. Active voice preferred.
 5. Story summaries must include functional requirements, non-functional
    requirements, and deliverables in a single coherent statement.
-6. Story points use the `points_scale` from the Resolved configuration
-   (default: 1, 2, 3, 5, 8, 13).
+6. Never estimate story points and never add, change or remove Jira labels.
+   Maturity lives in the `**Epic Maturity State:**` line only.
 7. Claims about existing code carry `path/to/file.py:120` evidence from a file
    you have read in this session. Never state a framework, module, route or
    store as fact without it: ask the user, or mark it `[GAP: ...]`.
@@ -86,7 +84,6 @@ one question.
 ask for it if not provided). Use `mcp__atlassian__getJiraIssue` with
 `responseContentFormat: markdown`. Extract and hold:
 - The full description body
-- Current labels
 - The delivery structure (phased or standard: inferred from whether
   "Phased Delivery" or "## Delivery" heading exists in the description)
 - All Step 1 content (Objective, Context, Scope, Success Criteria,
@@ -96,8 +93,10 @@ ask for it if not provided). Use `mcp__atlassian__getJiraIssue` with
   the frontend parts of Technology Context and the per-phase story tables.
 
 Confirm to the user which Epic was loaded and its current maturity state
-before continuing. State line and label pairs: High Level Requirements Created (`epic-maturity-hlr-created`), UI Mockups Created (`epic-maturity-mockups-created`), Detailed Level Requirements Created (`epic-maturity-detailed-created`), Story Creation In Progress (`epic-maturity-stories-in-progress`), All Stories Created (`epic-maturity-all-stories-created`). Read the state from the
-`**Epic Maturity State:**` line, or from the label if the line is missing. **Re-entry:** if any story table row already has an Id
+before continuing. Read the state from the `**Epic Maturity State:**` line; if
+the line is missing, ask the user which state the Epic is in. The states, in
+order, are: High Level Requirements Created, UI Mockups Created, Detailed Level
+Requirements Created, Story Creation In Progress, All Stories Created. **Re-entry:** if any story table row already has an Id
 (Stories were created), say so. Never overwrite or remove a row that has an Id;
 only fill placeholder rows and add new rows.
 
@@ -208,16 +207,17 @@ b) **Key technical constraints**: what must be true technically for this
 
 c) **Story table**: generate the stories for this phase based on the phase
    Goal, Scope, NFRs, and Technology Context. The table has exactly the columns
-   `| Id | Story | Summary | Status | Story Points |`. For each story produce:
+   `| Id | Story | Summary | Status |`. For each story produce:
    - Id: empty (`story` fills it when the Story is created)
    - Story: a short descriptive name (e.g. "Feedback list API"), **unique
      within the whole Epic**, because `story` matches rows by name
    - Summary: a single sentence covering functional requirements,
      non-functional requirements where applicable, and deliverables
    - Status: `Not created`
-   - Story Points: an estimate taken from the configured `points_scale`
 
-   There is no effort column: do not add one. Present the story table to the
+   There is no effort or story points column: do not add one. If an existing
+   table already has a Story Points column, keep it and leave the cells of new
+   rows empty. Present the story table to the
    user for review before proceeding. Apply any amendments before moving on. If
    the phase genuinely needs no stories, say so and ask the user how to proceed.
 
@@ -257,21 +257,27 @@ Assemble the complete updated Epic description:
 1. Start from the existing description body fetched in Phase 1.
 2. Replace every Step 2 placeholder with the content gathered in Phase 2. The
    placeholders, exactly as the `epic` templates write them, are:
+   Jira may re-escape these when it returns the page as markdown (extra
+   backslashes, changed spacing in table cells), so match each one by its words,
+   ignoring case, underscores, backslashes and spacing, and replace the whole
+   enclosing line or table row.
    - `_(To be completed in Step 2 - Detailed Requirements.)_` under
      Non-Functional Requirements, Personas and Technology Context
    - `**Personas primarily served:** _(To be completed in Step 2.)_` and
      `**Key technical constraints for this phase:** _(To be completed in Step 2.)_`
      in each phase
-   - the whole table row `| | | _(Story table to be completed in Step 2.)_ | | |`
-     in each story table: replace the entire row with the generated rows
+   - the whole table row `| | | _(Story table to be completed in Step 2.)_ | |`
+     in each story table (the row has an empty cell on each side of the
+     placeholder, whatever the column count): replace the entire row with the
+     generated rows
    - `**Phase N is complete when:** _(To be completed in Step 2.)_` in each
      phase (in standard delivery `epic` already wrote the Epic-complete-when
      statement: confirm or refine it, nothing to replace), and the
      sequence-diagram placeholder `_(To be completed in Step 2.)_` in each phase
      or in Delivery
 3. Bring the rest of the Epic up to date: if the "User Interface Mockups"
-   section still holds only its `_(Optional - run the ui-mockups skill...)_`
-   placeholder, replace that with `_No mockups were produced for this Epic._`;
+   section still holds only its placeholder (the italic line that says to run
+   the ui-mockups skill, matched by its words as above), replace that with `_No mockups were produced for this Epic._`;
    rewrite the "Summary of Gaps" section so it lists only gaps still open after
    this session.
 4. Replace the maturity state line, whichever entry state it holds
@@ -313,12 +319,10 @@ Then make a single `mcp__atlassian__editJiraIssue` call with:
 - `fields`:
   ```json
   {
-    "description": "<full updated description body>",
-    "labels": ["<every existing label except epic-maturity-*>", "epic-maturity-detailed-created"]
+    "description": "<full updated description body>"
   }
   ```
-  On a re-run from a state later than "UI Mockups Created", keep the existing
-  `epic-maturity-*` label instead of writing `epic-maturity-detailed-created`.
+  Send no `labels` field: this skill never changes labels.
 
 **Action 2: Post raw Q&A as a comment**
 
@@ -349,7 +353,7 @@ Format: `contentFormat: markdown`.
   never overwrite a story row that has an Id, and never move the maturity back.
 - If a requirements document cannot be fetched, note it and continue.
 - If the Epic write fails, show the full error and ask to retry or abort. The
-  description and labels go in one call, so the Epic is never left half-updated.
+  whole description goes in one call, so the Epic is never left half-updated.
   If only the comment fails, report it and give the user the raw Q&A to post.
 
 ---
@@ -367,5 +371,5 @@ Format: `contentFormat: markdown`.
       standard delivery)
 - [ ] No Step 2 placeholder left; mockups placeholder and Summary of Gaps updated
 - [ ] Full updated description reviewed and confirmed by user
-- [ ] Epic re-fetched, then description and maturity label written in one call
+- [ ] Epic re-fetched, then the description (with the state line) written in one call
 - [ ] Raw Q&A posted as Jira comment

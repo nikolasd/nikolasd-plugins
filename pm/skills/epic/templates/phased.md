@@ -67,9 +67,9 @@ _(To be completed in Step 2 - Detailed Requirements.)_
 
 **Key technical constraints for this phase:** _(To be completed in Step 2.)_
 
-| Id | Story | Summary | Status | Story Points |
-| --- | --- | --- | --- | --- |
-| | | _(Story table to be completed in Step 2.)_ | | |
+| Id | Story | Summary | Status |
+| --- | --- | --- | --- |
+| | | _(Story table to be completed in Step 2.)_ | |
 
 **Phase 1 is complete when:** _(To be completed in Step 2.)_
 
@@ -87,9 +87,9 @@ _(To be completed in Step 2.)_
 
 **Key technical constraints for this phase:** _(To be completed in Step 2.)_
 
-| Id | Story | Summary | Status | Story Points |
-| --- | --- | --- | --- | --- |
-| | | _(Story table to be completed in Step 2.)_ | | |
+| Id | Story | Summary | Status |
+| --- | --- | --- | --- |
+| | | _(Story table to be completed in Step 2.)_ | |
 
 **Phase 2 is complete when:** _(To be completed in Step 2.)_
 
@@ -107,9 +107,9 @@ _(To be completed in Step 2.)_
 
 **Key technical constraints for this phase:** _(To be completed in Step 2.)_
 
-| Id | Story | Summary | Status | Story Points |
-| --- | --- | --- | --- | --- |
-| | | _(Story table to be completed in Step 2.)_ | | |
+| Id | Story | Summary | Status |
+| --- | --- | --- | --- |
+| | | _(Story table to be completed in Step 2.)_ | |
 
 **Phase 3 is complete when:** _(To be completed in Step 2.)_
 

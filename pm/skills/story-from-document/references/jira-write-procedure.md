@@ -6,7 +6,7 @@ under `--dry-run`. Execute in order.
 ## Contents
 
 - [5.0 Check for work already done](#50-check-for-work-already-done)
-- [5.1 Resolve only what the approved plan needs](#51-resolve-only-what-the-approved-plan-needs)
+- [5.1 Resolve the issue types and the link type](#51-resolve-the-issue-types-and-the-link-type)
 - [5.2 Write the Story](#52-write-the-story)
 - [5.3 Create each sub-task](#53-create-each-sub-task)
 - [5.4 Create the dependency links](#54-create-the-dependency-links)
@@ -22,7 +22,9 @@ An earlier run may have been interrupted after writing part of the plan.
   `maxResults: 50`, and compare each summary with the story summary exactly
   (ignoring case and surrounding spaces); do not search by text, which matches
   loosely. If a recent issue has the same summary, show it and ask whether it is
-  this Story from an interrupted run. If yes, use its key as the Story key, skip the create in 5.2, and treat
+  this Story from an interrupted run. If yes, use its key as the Story key and
+  skip the create in 5.2. Then read what it already has: call
+  `mcp__atlassian__getJiraIssue` on that key with `fields: ["*all"]` and treat
   its existing children and links as already done in 5.3 and 5.4.
 - **Promote mode:** the existing sub-tasks and links were captured in the
   promote-mode read; use them the same way.
@@ -30,30 +32,22 @@ An earlier run may have been interrupted after writing part of the plan.
 Never create a sub-task whose summary matches an existing child of the Story,
 and never create a link that already exists.
 
-## 5.1 Resolve only what the approved plan needs
+## 5.1 Resolve the issue types and the link type
 
-This step prepares the Jira field and type information for the writes below.
-Resolve only what the breakdown actually uses, and skip the rest. If the
-approved plan has no sub-tasks, no dependency links, and no story points to set,
-skip this step entirely.
+This step prepares the type information for the writes below.
 
-- **Story points field:** if you are setting story points, first get the id of
-  the target issue's type (the Story type in create mode, the existing issue's
-  own type in promote mode) from `mcp__atlassian__getJiraProjectIssueTypesMetadata`
-  for the target project, then call `mcp__atlassian__getJiraIssueTypeMetaWithFields`
-  with that id and `requiredFieldsOnly: false` (story points is optional, so the
-  default would omit it) and find this instance's story points field. Do not
-  assume `customfield_10016`: it is not universal and will fail in some Jira
-  configurations. If you cannot identify the field, or the set later fails, leave
-  the points unset, report it, and tell the user to set the points manually
-  rather than surfacing a raw API error. If the project has no Story type, use
-  its closest equivalent (for example Task) and tell the user.
-- **Issue type names and the Blocks link type:** needed only when you will create
-  sub-tasks or dependency links. When the breakdown has sub-tasks, take the
-  sub-task issue type name (the type the response flags as a sub-task; commonly
-  `Sub-task` or `Subtask`) from that same metadata call, and use exactly that
-  name below. When it has Blocks links, call `mcp__atlassian__getIssueLinkTypes`
-  to confirm the Blocks type (`inward: "is blocked by"`, `outward: "blocks"`).
+- **Create mode: always.** Call `mcp__atlassian__getJiraProjectIssueTypesMetadata`
+  for the target project and take the exact name of the Story type from it. If
+  the project has no Story type, use its closest equivalent (for example Task)
+  and tell the user. Do not guess `Story`: a project may name it differently.
+- **Promote mode:** skip this step unless the approved plan has sub-tasks or
+  Blocks links, since the existing issue already has its type.
+- **Sub-task type name:** needed only when you will create sub-tasks. Take the
+  type the same response flags as a sub-task (commonly `Sub-task` or `Subtask`)
+  and use exactly that name below.
+- **Blocks link type:** needed only when you will create Blocks links. Call
+  `mcp__atlassian__getIssueLinkTypes` to confirm the Blocks type
+  (`inward: "is blocked by"`, `outward: "blocks"`).
 
 Make the metadata call once and reuse the result.
 
@@ -64,14 +58,13 @@ This step differs by mode.
 **Create mode:** `mcp__atlassian__createJiraIssue` with:
 - `cloudId`: `<cloud_id>`
 - `projectKey`: `<project_key>` settled in Phase 2.1 (do not guess it here)
-- `issueTypeName`: the Story type name from 5.1 (`Story` if 5.1 was skipped)
+- `issueTypeName`: the Story type name from 5.1
 - `summary` and `description`: the confirmed summary and body
 - `contentFormat`: `markdown`
 - `parent`: `<epic_key>`, only when an Epic attachment was agreed in 4.3
 
-Do not send the story points in this call: a rejected custom field would fail the
-whole create. Capture the returned key as the Story key for the steps below, then
-set the points separately (see "Story points" below).
+Send no `additional_fields`. Capture the returned key as the Story key for the
+steps below.
 
 **Promote mode:** `mcp__atlassian__editJiraIssue` on the **same** story key. This
 tool takes `fields` (not `additional_fields`) and replaces the whole description.
@@ -100,14 +93,9 @@ Include `parent` only if an Epic attachment was agreed in 4.3 (possible only whe
 the story had no parent). The key stays the same: this is an update in place,
 not a new issue. The Story key for the steps below is the existing key.
 
-**Story points (both modes).** If story points are to be set, make a second,
-separate `mcp__atlassian__editJiraIssue` call on the Story key with
-`fields: { "<resolved story points field>": <story_points_number> }`. If it is
-rejected, leave the points unset and report it (see Error handling); the Story
-and its body are already written.
-
 In both modes, attachment touches only the Story's parent link. Do not edit the
-Epic: no story-table row, no maturity or label change.
+Epic: no story-table row, no maturity or label change. This skill never sets
+story points or labels on the Story either.
 
 ## 5.3 Create each sub-task
 
@@ -139,10 +127,6 @@ remind the user to share it with reviewers.
 
 ## Error handling
 
-- If the story points field cannot be identified, or the separate points call
-  rejects it, do not abort: complete the rest, then tell the user the points were
-  not set and to set them manually. Do not surface a raw field-id API error as if
-  the story failed.
 - If the Story create call fails (create mode), stop and show the error before
   creating any sub-task.
 - If the `editJiraIssue` update fails (promote mode), report the error and keep

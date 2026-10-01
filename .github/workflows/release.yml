@@ -31,6 +31,11 @@ jobs:
           claude plugin validate pm --strict
           claude plugin validate ty-lsp --strict
 
+      - name: Run pm shell tests
+        run: |
+          sh pm/tests/test-config.sh
+          sh pm/tests/test-repo-context.sh
+
       - name: Extract this version's CHANGELOG section
         run: |
           version="${GITHUB_REF_NAME#v}"

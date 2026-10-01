@@ -8,6 +8,52 @@ and each plugin's `version` in its own `plugin.json` follows
 
 ## [Unreleased]
 
+### Changed
+- `pm` plugin (0.1.1): the skills no longer estimate or write story points, and no longer
+  add, change or remove Jira labels. An Epic's maturity is now carried only by the
+  `**Epic Maturity State:**` line in its description. The Epic story table is
+  `| Id | Story | Summary | Status |`; an existing table that still has a Story Points
+  column is left as it is. `story` decides whether a Story needs sub-tasks from about one
+  week of work for one developer, not from a point value.
+- `pm`: the `points_scale` plugin option and project-file key are removed, since nothing
+  reads them. The `site` option is unchanged.
+- `pm`: `story` now creates sub-tasks before it updates the Epic, and leaves the Epic
+  untouched if any sub-task failed, so running `/pm:story` again resumes the same Story
+  instead of skipping it.
+- `pm`: `ui-mockups` never moves an Epic's maturity backwards. Its confirmation says
+  when the state is left as it is.
+- `pm`: `epic` checks the Jira project and the Epic issue type before the Q&A, asks for any
+  required fields beyond the standard ones up front, and guards a retried create against duplicates.
+  With no Atlassian MCP it now ends the turn at that check, instead of running the whole
+  interview and failing at the final write or previewing sections it cannot save.
+  `epic-refine` matches its template placeholders by their words, so Jira's markdown
+  re-escaping no longer hides them.
+- `pm`: `story-from-document` always resolves the project's Story type name in create
+  mode, and reads an interrupted Story's children and links before resuming it.
+- `pm`: `sdd` says which copy wins after a divergence, adds a `zensical.toml` `nav` entry
+  only when the file already has a `nav` array, lists that edit in its confirmation, and
+  warns that updating a Confluence page replaces its whole body. `--dry-run` also makes
+  no offer to save configuration, in every skill that has it.
+- `pm`: the shared mockup procedure (`ui-mockups` and `story-from-document`) has screens
+  reuse the first approved screen's CSS variables and shell markup, and makes a state
+  that matters (empty, loading, error) its own page.
+- `pm`: removed the trigger phrases from the skill descriptions, since the skills run only
+  when invoked. The root README lists the skill as `sdd`, matching `/pm:sdd`.
+
+### Fixed
+- `pm` configuration: `sdd_template` and `sdd_guide` in `.claude/pm.json` must now be paths
+  relative to the repository (or a Confluence page ID). An absolute path, `~` or a drive
+  letter is refused, so a cloned repository cannot point `sdd` at a file such as
+  `~/.ssh/id_rsa`. When a key appears twice, the first occurrence now wins on one line
+  as well as across lines, and a value cut short by an escaped quote is treated as unset (a path value must not
+  end in a backslash).
+  `repos_root` is still accepted, and `story-from-document` tells you the path and asks
+  once before reading outside the current repository.
+
+### CI
+- `release.yml` runs the two `pm` shell tests before publishing. `validate.yml` checks that
+  every `pm` skill loads the configuration and pre-approves the loader command.
+
 ## [0.5.0] - 2026-10-01
 
 ### Added

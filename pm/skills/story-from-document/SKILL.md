@@ -7,15 +7,14 @@ description: >
   Checks the source's claims against the real repositories with file:line
   evidence, asks the user about every judgment call, and writes to Jira only
   after a full draft is confirmed; `--dry-run` drafts without writing. Needs no
-  Epic; use `story` when an Epic's story table exists. Triggers: "turn this page
-  into a story", "story from this document", "flesh out PROJ-123".
+  Epic; use `story` when an Epic's story table exists.
 when_to_use: >
   Explicitly, when a Story must be built from a source document or brief, or a
   placeholder Story needs full detail, especially across several repositories or
   with cross-ticket dependencies. One Story with its sub-tasks per run. It may
   attach the Story to an existing Epic as a child but never edits the Epic's
   story table or maturity.
-allowed-tools: [Read, Write, Edit, Bash, Glob, Grep, WebFetch, Agent, mcp__atlassian__getAccessibleAtlassianResources, mcp__atlassian__getConfluencePage, mcp__atlassian__searchConfluenceUsingCql, mcp__atlassian__getJiraIssue, mcp__atlassian__getJiraProjectIssueTypesMetadata, mcp__atlassian__getJiraIssueTypeMetaWithFields, mcp__atlassian__getIssueLinkTypes, mcp__atlassian__searchJiraIssuesUsingJql, mcp__atlassian__createJiraIssue, mcp__atlassian__editJiraIssue, mcp__atlassian__createIssueLink, mcp__atlassian__addCommentToJiraIssue, "Bash(sh ${CLAUDE_PLUGIN_ROOT}/scripts/config.sh *)", "Bash(sh ${CLAUDE_PLUGIN_ROOT}/skills/ui-mockups/scripts/render.sh *)"]
+allowed-tools: [Read, Write, Edit, Bash, Glob, Grep, WebFetch, Agent, mcp__atlassian__getAccessibleAtlassianResources, mcp__atlassian__getConfluencePage, mcp__atlassian__searchConfluenceUsingCql, mcp__atlassian__getJiraIssue, mcp__atlassian__getJiraProjectIssueTypesMetadata, mcp__atlassian__getIssueLinkTypes, mcp__atlassian__searchJiraIssuesUsingJql, mcp__atlassian__createJiraIssue, mcp__atlassian__editJiraIssue, mcp__atlassian__createIssueLink, mcp__atlassian__addCommentToJiraIssue, "Bash(sh ${CLAUDE_PLUGIN_ROOT}/scripts/config.sh *)", "Bash(sh ${CLAUDE_PLUGIN_ROOT}/skills/ui-mockups/scripts/render.sh *)"]
 model: sonnet
 effort: high
 disable-model-invocation: true
@@ -39,7 +38,7 @@ below says when to read its file; read it then, not before.
 
 ## Configuration
 
-!`sh ${CLAUDE_PLUGIN_ROOT}/scripts/config.sh '${user_config.site}' '${user_config.points_scale}'`
+!`sh ${CLAUDE_PLUGIN_ROOT}/scripts/config.sh '${user_config.site}'`
 
 The block above holds this plugin's settings, resolved from the project file
 `.claude/pm.json` first, then the plugin's own configuration, then built-in
@@ -47,7 +46,9 @@ defaults. A value shown as `(unset)` is not configured: ask the user for it at
 the point it is first needed, then offer to save it to `.claude/pm.json` in the
 project root (a flat JSON object of string values, for example
 `{"site": "acme.atlassian.net", "project_key": "PROJ"}`) so later runs do not
-ask again. If no block appears above, treat every value as unset.
+ask again. Under `--dry-run` make no such offer, because nothing may be written:
+say instead which values would be saved. If no block appears above, treat every
+value as unset.
 
 ## Resolve the Atlassian cloud ID
 
@@ -104,8 +105,8 @@ Apply to all generated content without exception:
    lists where sentences would read better. This is a hard-won lesson: the
    first draft of a story is usually too terse and choppy to be understood by
    a human reviewer.
-4. Story points use the `points_scale` from the Resolved configuration
-   (default: 1, 2, 3, 5, 8, 13).
+4. Never estimate, set or change story points, and never add, change or remove
+   Jira labels. Leave both exactly as they are, in both modes.
 5. Every acceptance criterion is a complete, testable sentence a non-engineer
    could verify.
 6. Claims about code carry evidence. When the story or a sub-task asserts
@@ -288,8 +289,8 @@ affected parts.
 
 Only after explicit confirmation (never under `--dry-run`). **Read
 [`references/jira-write-procedure.md`](references/jira-write-procedure.md) now**
-and follow it: check for work an earlier run already did (5.0), resolve only the
-types and fields the plan needs (5.1), write the Story (create, or edit in place
+and follow it: check for work an earlier run already did (5.0), resolve the issue
+types and the link type (5.1), write the Story (create, or edit in place
 with `fields`) (5.2), create the sub-tasks and Blocks links that do not already
 exist (5.3, 5.4), and confirm to the user (5.5). Its error-handling section
 covers partial failures.

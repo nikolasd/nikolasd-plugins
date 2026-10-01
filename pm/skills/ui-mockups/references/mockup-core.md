@@ -16,6 +16,7 @@ Owners and callers today:
 
 - [Inputs the caller must provide](#inputs-the-caller-must-provide)
 - [Output the caller receives](#output-the-caller-receives)
+- [Content rules](#content-rules)
 - [Working directory and rendering](#working-directory-and-rendering)
 - [Step A: Scan the codebase for the design language](#step-a-scan-the-codebase-for-the-design-language)
 - [Step B: Ask for additional design references](#step-b-ask-for-additional-design-references)
@@ -160,6 +161,11 @@ one product.
 Size the page to a fixed 1440x1024 canvas (an element with that width and height
 and `overflow: hidden`) so the screenshot captures the whole screen cleanly. For
 another size, pass matching width and height arguments to the renderer.
+Each screen is its own file, so carry the look across by copying: once the first
+screen is approved, reuse its `:root` variables and its shell markup (top bar,
+navigation, content area) verbatim in every later screen and change only the
+content. Show a state that matters (empty, loading, error) as its own page,
+`<screen-slug>-<state>.html`, and treat it as its own screen in the section.
 
 **D.2 Show the screen to the user**, using the rung chosen above.
 

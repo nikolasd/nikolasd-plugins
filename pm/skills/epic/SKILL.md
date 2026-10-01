@@ -6,13 +6,12 @@ description: >
   optionally starting from a PRD or requirements document, and writes it to Jira
   only after the user confirms the full draft. Step 1 of the Epic pipeline,
   followed by the optional `ui-mockups` and then `epic-refine`. Asks no
-  technical questions. Triggers: "create epic", "new epic", "start epic", "epic
-  from prd", "high level requirements for epic".
+  technical questions.
 when_to_use: >
   When a feature needs a new Epic defined from the business point of view. Not
   for adding technical detail to an existing Epic (use `epic-refine`) or for
   creating Stories (use `story`).
-allowed-tools: [mcp__atlassian__getAccessibleAtlassianResources, mcp__atlassian__createJiraIssue, mcp__atlassian__addCommentToJiraIssue, mcp__atlassian__getConfluencePage, WebFetch, Read, Write, "Bash(sh ${CLAUDE_PLUGIN_ROOT}/scripts/config.sh *)"]
+allowed-tools: [mcp__atlassian__getAccessibleAtlassianResources, mcp__atlassian__createJiraIssue, mcp__atlassian__getJiraProjectIssueTypesMetadata, mcp__atlassian__getJiraIssueTypeMetaWithFields, mcp__atlassian__searchJiraIssuesUsingJql, mcp__atlassian__addCommentToJiraIssue, mcp__atlassian__getConfluencePage, WebFetch, Read, Write, "Bash(sh ${CLAUDE_PLUGIN_ROOT}/scripts/config.sh *)"]
 disable-model-invocation: true
 ---
 
@@ -33,7 +32,7 @@ as a placeholder for the optional Step 1.5 (ui-mockups skill).
 
 ## Configuration
 
-!`sh ${CLAUDE_PLUGIN_ROOT}/scripts/config.sh '${user_config.site}' '${user_config.points_scale}'`
+!`sh ${CLAUDE_PLUGIN_ROOT}/scripts/config.sh '${user_config.site}'`
 
 The block above holds this plugin's settings, resolved from the project file
 `.claude/pm.json` first, then the plugin's own configuration, then built-in
@@ -63,6 +62,10 @@ once.
   > "The Atlassian MCP is not active in this session. This skill needs it to create the Jira Epic.
   > Ask whoever manages your Claude Code setup to enable the official Atlassian MCP
   > server, registered as `atlassian`."
+
+  Then end your turn. Do not start the interview, draft or preview any section,
+  or ask another question: the Phase 1 project check cannot run without the
+  tools, and a session started without them would fail at the final write.
 
 ## Jira Connection
 
@@ -124,7 +127,17 @@ asking open-ended.
 > 1. Phased delivery (Core / MVP / Advanced)
 > 2. Standard (no phases)"
 
-Record both answers. They drive the rest of the session. Then move to Phase 2.
+Record both answers. They drive the rest of the session.
+
+**Check the project now, not at the end.** Call
+`mcp__atlassian__getJiraProjectIssueTypesMetadata` for the project key. If the
+project is not found or not visible, say so and ask for the key again. If the
+project has no `Epic` issue type, tell the user and stop. Then call
+`mcp__atlassian__getJiraIssueTypeMetaWithFields` with the Epic type's id (the
+default returns only required fields). If it lists required fields other than
+project, issue type, summary, description and reporter, ask the user for a
+value for each now, and hold them as `<required fields>` for Action 1. Then
+move to Phase 2.
 
 ---
 
@@ -267,12 +280,9 @@ Use `mcp__atlassian__createJiraIssue` with:
 - `summary`: the Epic name from 3.1
 - `description`: the confirmed Epic description body
 - `contentFormat`: `markdown`
-- `additional_fields`:
-  ```json
-  {
-    "labels": ["epic-maturity-hlr-created"]
-  }
-  ```
+- `additional_fields`: the `<required fields>` collected in Phase 1, if there
+  were any; otherwise omit it. Never set labels: maturity is carried by the
+  `**Epic Maturity State:**` line in the description.
 
 ### Action 2 — Post the raw Q&A as a comment
 
@@ -305,8 +315,12 @@ call:
 
 ## Error Handling
 
-- If the Jira create call fails, show the full error and ask the user whether
-  to retry or abort.
+- If the Jira create call fails or times out, show the full error. Before any
+  retry, call `mcp__atlassian__searchJiraIssuesUsingJql` with
+  `project = <KEY> AND issuetype = Epic AND created >= -1d ORDER BY created DESC`
+  and compare each summary with this Epic's name exactly: the failed call may
+  have succeeded. If one matches, treat that as the created Epic. Otherwise ask
+  the user whether to retry or abort.
 - If the Epic was created but the comment post fails, report the Epic key, do not
   create the Epic again, and give the user the raw Q&A text to add by hand.
 - If a requirements document cannot be fetched, say so clearly and ask whether
