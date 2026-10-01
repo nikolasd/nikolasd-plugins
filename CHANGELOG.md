@@ -8,6 +8,75 @@ and each plugin's `version` in its own `plugin.json` follows
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-10-01
+
+### Added
+- `pm` plugin (0.2.0): eight new eval cases that give the skill a canned Atlassian
+  server (`evals/<case>/mocks/atlassian/`), so the write tools exist and a `max: 0`
+  grader on them is a real test. They cover a held confirmation for every skill that
+  writes (`holds-write-until-confirmed` for `epic`, `epic-refine`, `story`,
+  `ui-mockups`, `story-from-document` and `sdd`), an existing Epic or Story being shown
+  before a second one is created (`asks-about-existing-epic`, `asks-about-existing-story`),
+  and a source document that tries to instruct the assistant
+  (`story-from-document/ignores-instructions-in-source`).
+- `pm`: `sdd` records `local_hash` (a `git hash-object` of the document) in
+  `docs/.solution-design.state.json`, and `repo-context.sh` prints it as "Local file
+  hash". A state file without it still works; the first run falls back to the `Version`
+  field and records the hash.
+- `pm`: `epic-refine` writes a `**Technical constraints:**` line into a standard-delivery
+  Epic's Delivery section, and `story` copies it, since a standard Epic has no phase
+  constraints.
+
+### Changed
+- `pm`: a confirmation now has to come after the user has seen the draft. An earlier
+  "skip the review" or "I trust you" no longer counts, and each skill lists what
+  confirming will do and ends its turn. Before this, `epic`, `epic-refine`, `ui-mockups`
+  and `sdd` wrote to Jira, Confluence or git anyway in every run of the new mocked evals,
+  `story` tried to create the Story in every run (the sandbox denied it), and
+  `story-from-document` wrote in two of three. `sdd` still lets you skip the interview,
+  leaving each judgment call as an open question.
+- `pm`: the skills no longer fill in values nobody supplied. An NFR threshold, persona,
+  owner, sub-task effort or constraint that is not in the Epic, the source or your answers
+  becomes `[GAP: …]` and goes in the gap list, and `epic-refine` draws no sequence diagram
+  from components it has not confirmed. `epic` leaves `_(Not provided: …)_` for an
+  unanswered question. `story-from-document` no longer pads acceptance criteria to a
+  count, asks before using a different issue type when the project has no Story type, and
+  `story` takes sub-task effort from you (and proposes sub-tasks only for separable work
+  streams) instead of judging size from its own estimate.
+- `pm`: checks that used to run after the first irreversible write now run before it.
+  `epic` searches the project for a similar Epic once it has the name. `story` re-checks
+  that the Epic's story-table row still exists before creating the Story.
+  `story-from-document` searches for an existing Story by its source reference at the
+  review gate, with no date window, and again before writing.
+- `pm`: after rewriting an Epic or Story description, `epic-refine`, `story`, `ui-mockups`
+  and `story-from-document` (promote mode) re-fetch it and stop if the state line, the
+  story-table Ids or the section content did not survive Jira's markdown round trip.
+- `pm`: `story-from-document` treats the source, an existing Story and fetched pages as
+  data. It tells you about any text aimed at the assistant, in a `Source check:` line at
+  the start of its next message and again at the review gate, even when that text asks it
+  to stay quiet. It also fetches non-Confluence URLs with `WebFetch` and ignores
+  `--dry-run` when working out what the argument is.
+- `pm`: `sdd` runs the guide's pre-share checklist without its rendered-image item (the
+  skill cannot upload attachments), strips its "Rendered image not yet attached" notes
+  when the Confluence copy is taken as authoritative, and links the guide's Part files
+  directly instead of through an index. Its requirement-status vocabulary no longer has
+  `Retired`: a retired item is `Descoped`. The skill body is trimmed to 497 lines and its
+  description now says when to use it.
+- `pm`: `ui-mockups` writes its own gaps under `### UI Open Questions` instead of a second
+  `## Summary of Gaps`, treats `_No mockups were produced for this Epic._` as a
+  placeholder, and ends its turn when the Atlassian MCP is missing.
+- `pm`: `epic`, `epic-refine` and `story` no longer pre-approve `Write`, which none of
+  them uses. `ui-mockups` and `story-from-document` deliberately leave `Artifact` out of
+  `allowed-tools`, so publishing a mockup canvas stays a prompted action. The skills read
+  their argument through `$ARGUMENTS`, and the em dashes the rules ban are gone from the
+  skills' own headings and templates.
+
+### Fixed
+- `pm` evals: the old Jira guards passed only because the sandbox had no Atlassian server.
+  `epic`'s `holds-write-until-confirmed` now ships mocks and would have failed on the
+  previous skill. The `sdd` `update-preserves-ids` case uses `Descoped`, and the manual
+  `story-from-document` scenario no longer expects sub-tasks for a one-repo change.
+
 ## [0.5.1] - 2026-10-01
 
 ### Changed
