@@ -57,9 +57,9 @@ line if only the populated state applies.]
 
 ---
 
-## Summary of Gaps
+### UI Open Questions
 
 [Numbered list of any open UI questions the user could not resolve during the
-session, stating what is undecided and which screen it affects. If there are no
-gaps, write "No gaps identified at this stage."]
+session, stating what is undecided and which screen it affects. If there are
+none, write "No open UI questions at this stage."]
 ```

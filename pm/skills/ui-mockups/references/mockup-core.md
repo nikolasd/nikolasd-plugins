@@ -8,8 +8,8 @@ anywhere else).
 
 Owners and callers today:
 
-- [`../SKILL.md`](../SKILL.md) — the `ui-mockups` skill (Epic destination).
-- `../../story-from-document/SKILL.md` — the `story-from-document` skill (Story
+- [`../SKILL.md`](../SKILL.md): the `ui-mockups` skill (Epic destination).
+- `../../story-from-document/SKILL.md`: the `story-from-document` skill (Story
   destination).
 
 ## Contents
@@ -26,12 +26,12 @@ Owners and callers today:
 
 ## Inputs the caller must provide
 
-- **`<context>`** — a description of the work the mockups are for: its
+- **`<context>`**: a description of the work the mockups are for: its
   objective, scope, success criteria, and any named personas. The `ui-mockups`
   skill derives this from the Epic; `story-from-document` derives it from the
   high-level summary it has already agreed with the user. This procedure does
   not care where it came from.
-- **`<artifact-id>`** — a short slug used to name the temporary working
+- **`<artifact-id>`**: a short slug used to name the temporary working
   directory and the Claude Design canvas, and to label the screens in the assembled section. Use the
   Epic or Story key when one exists, otherwise a slug derived from the work
   (for example `audit-log-filters`).
@@ -133,13 +133,13 @@ screens. Keep the list focused on the journeys that matter for sign-off.
 
 **C.2 Capture each screen's intent.** For each confirmed screen, capture in
 turn:
-- **Primary persona** — who uses this screen (from `<context>` personas or a
+- **Primary persona**: who uses this screen (from `<context>` personas or a
   new one the user names).
-- **Purpose** — what the user is trying to accomplish on this screen.
-- **Key elements** — the main content, controls, and data the screen must show.
-- **Important states** — which of empty, loading, error, and populated states
+- **Purpose**: what the user is trying to accomplish on this screen.
+- **Key elements**: the main content, controls, and data the screen must show.
+- **Important states**: which of empty, loading, error, and populated states
   matter. Default to the populated state if the user is unsure.
-- **Style constraints** — any specific brand or layout requirement. Default to
+- **Style constraints**: any specific brand or layout requirement. Default to
   the design language found in Step A.
 
 Keep this lightweight: enough direction to draft a first mockup the user can

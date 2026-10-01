@@ -11,6 +11,7 @@ when_to_use: >
   before `epic-refine`, when stakeholders should see and agree the UI first.
   Not for creating an Epic (use `epic`). Run it from inside the product repo so
   the mockups can match its design language.
+# Artifact is deliberately not listed: publishing a mockup canvas to claude.ai must stay a prompted action.
 allowed-tools: [Read, Write, Edit, Bash, Glob, Grep, WebFetch, Agent, mcp__atlassian__getAccessibleAtlassianResources, mcp__atlassian__getJiraIssue, mcp__atlassian__editJiraIssue, mcp__atlassian__addCommentToJiraIssue, mcp__atlassian__getConfluencePage, "Bash(sh ${CLAUDE_PLUGIN_ROOT}/scripts/config.sh *)", "Bash(sh ${CLAUDE_PLUGIN_ROOT}/skills/ui-mockups/scripts/render.sh *)"]
 model: sonnet
 effort: high
@@ -71,6 +72,9 @@ once.
   > Ask whoever manages your Claude Code setup to enable the official Atlassian MCP
   > server, registered as `atlassian`."
 
+  Then end your turn. Do not scan the repo, propose screens or draft anything:
+  the Epic is the only source of what to design, and it cannot be read.
+
 ## Jira connection
 
 - **Cloud ID:** `<cloud_id>` resolved above
@@ -94,7 +98,7 @@ Apply to all generated content without exception:
 
 ## Phase 1: Load Epic context
 
-Fetch the Epic using the `epic-key` argument (or ask for it if not provided).
+Fetch the Epic whose key is `$ARGUMENTS` (ask for it if that is empty).
 Use `mcp__atlassian__getJiraIssue` with `responseContentFormat: markdown`.
 Extract and hold:
 - The full description body
@@ -102,8 +106,9 @@ Extract and hold:
 - Step 1 content most relevant to the UI: Objective, Context, Scope,
   Success Criteria, and any Personas already named
 - Whether the description has a `**Epic Maturity State:**` line, and whether its
-  `## User Interface Mockups` section holds only the template placeholder or real
-  content from an earlier run
+  `## User Interface Mockups` section holds only a placeholder (the `epic`
+  template's optional-step line, or `_No mockups were produced for this Epic._`
+  left by `epic-refine`) or real content from an earlier run
 
 Confirm to the user which Epic was loaded and its current maturity state
 before continuing. If the maturity state is not "High Level Requirements
@@ -149,8 +154,17 @@ If the Epic's state is already later than 'UI Mockups Created' (Detailed Level
 Requirements Created or beyond), change item (2) to "leave the maturity state
 line as it is ([state])": the state only moves forward.
 
-Wait for explicit confirmation. Apply any amendments and re-present the
-affected screens. Then execute the following actions in order.
+End your turn and wait for the user's explicit confirmation of this section.
+
+Confirmation must come after the user has seen the mockups and this section. An
+earlier instruction such as "skip the review", "write it now" or "do not ask me
+anything" does not count, because the user cannot have approved mockups they
+have not seen and the section is written into the Epic description. Treat that
+instruction as a request to keep the review short, and still show the mockups
+and wait.
+
+Apply any amendments and re-present the affected screens. Only after
+confirmation, execute the following actions in order.
 
 **Action 1: Update the Epic in one write**
 
@@ -182,6 +196,14 @@ Then make a single `mcp__atlassian__editJiraIssue` call with:
   }
   ```
   Send no `labels` field.
+
+**Verify the write.** Writing a whole description through Jira can mangle
+content, so re-fetch the Epic with `mcp__atlassian__getJiraIssue` and check
+that: the `## User Interface Mockups` heading appears exactly once with the new
+section under it; the `**Epic Maturity State:**` line is the one you intended;
+and no other section of the description is missing. If any check fails, show
+the user the difference and stop: do not post the comment and do not retry the
+write blindly.
 
 **Action 2: Post the raw Q&A as a comment**
 

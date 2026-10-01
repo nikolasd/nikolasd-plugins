@@ -10,7 +10,7 @@ when_to_use: >
   Only after `epic` has created the Epic ("High Level Requirements Created"),
   or after the optional `ui-mockups` step ("UI Mockups Created"). Not for
   creating an Epic (use `epic`) or for creating Stories (use `story`).
-allowed-tools: [Read, Write, Glob, Grep, WebFetch, Agent, mcp__atlassian__getAccessibleAtlassianResources, mcp__atlassian__getJiraIssue, mcp__atlassian__editJiraIssue, mcp__atlassian__addCommentToJiraIssue, mcp__atlassian__getConfluencePage, "Bash(sh ${CLAUDE_PLUGIN_ROOT}/scripts/config.sh *)"]
+allowed-tools: [Read, Glob, Grep, WebFetch, Agent, mcp__atlassian__getAccessibleAtlassianResources, mcp__atlassian__getJiraIssue, mcp__atlassian__editJiraIssue, mcp__atlassian__addCommentToJiraIssue, mcp__atlassian__getConfluencePage, "Bash(sh ${CLAUDE_PLUGIN_ROOT}/scripts/config.sh *)"]
 model: sonnet
 effort: high
 disable-model-invocation: true
@@ -61,7 +61,7 @@ once.
 
 ## Content rules
 
-Apply to all generated content without exception:
+Apply to all generated content. Epics are read by non-engineers and pasted into Jira, which renders em dashes and fragments poorly:
 
 1. No em dashes. Rewrite any sentence that would need one.
 2. No LLM-signal phrasing ("scope - in", "leveraging", etc.).
@@ -74,14 +74,19 @@ Apply to all generated content without exception:
 7. Claims about existing code carry `path/to/file.py:120` evidence from a file
    you have read in this session. Never state a framework, module, route or
    store as fact without it: ask the user, or mark it `[GAP: ...]`.
+8. Every NFR threshold, SLA, limit, persona, story and completion statement
+   comes from the user, the Epic, or a document you read. When none supplies it,
+   write `[GAP: <what is undecided>]` and list it in Summary of Gaps. Do not
+   propose a number or a persona, not even labelled "proposed": a draft that
+   looks complete gets treated as agreed.
 
 ## Phase 1: Load context
 
 Execute steps 1.1 and 1.2 before asking the user anything. Step 1.3 then asks
 one question.
 
-**1.1 Read the Jira Epic.** Fetch the Epic using the `epic-key` argument (or
-ask for it if not provided). Use `mcp__atlassian__getJiraIssue` with
+**1.1 Read the Jira Epic.** Fetch the Epic whose key is `$ARGUMENTS` (ask for
+it if that is empty). Use `mcp__atlassian__getJiraIssue` with
 `responseContentFormat: markdown`. Extract and hold:
 - The full description body
 - The delivery structure (phased or standard: inferred from whether
@@ -144,7 +149,9 @@ Work through each section below in order. For each section:
 
 Capture NFRs covering scale, performance, security, and data integrity as
 relevant to this Epic. Each NFR must be specific enough to be testable:
-include thresholds, limits, or SLAs where applicable.
+include the thresholds, limits, or SLAs the user gives you. If the user does not
+know one, record the NFR with `[GAP: threshold not decided]` instead of
+choosing a number.
 
 Ask about each dimension in turn: scale first, then performance, security,
 data integrity. Skip any dimension the user confirms is not applicable.
@@ -229,7 +236,11 @@ e) **Sequence diagrams**: generate one or more Mermaid `sequenceDiagram`
    exist. Each diagram must have a bold heading above it and sit in a fenced
    ```mermaid block, so the text survives the markdown round trip. Show actors,
    UI, API, storage, and auth components as relevant. Use the component names
-   from Technology Context (2.3).
+   from Technology Context (2.3), and draw only components the user named or
+   code you read confirms. If Technology Context is still `[GAP]`, do not draw
+   a diagram: write `_[GAP: components not identified, so no diagram yet]_`
+   under the heading. A diagram of invented components looks like an agreed
+   design.
 
 **If the Epic uses standard delivery (no phases):**
 
@@ -240,7 +251,13 @@ a) **Story table**: same format as above, derived from the full Scope and
 
 b) **Epic complete when**: confirm or refine the statement set in Step 1.
 
-c) **Sequence diagrams**: same format as above.
+c) **Technical constraints**: ask for any Epic-level technical constraints
+   (platform limits, compliance rules, fixed integrations). Write them as a
+   `**Technical constraints:**` line above "Epic is complete when". If the user
+   has none, write `None stated.` `story` copies this line into each Story, as
+   it does the phase constraints of a phased Epic.
+
+d) **Sequence diagrams**: same format as above.
 
 ---
 
@@ -297,14 +314,24 @@ Present the full updated description to the user and say:
 > "Here is the complete updated Epic. Please review it and confirm before
 > I write it to Jira."
 
-Wait for explicit confirmation. Apply any amendments and re-present the
-affected sections before proceeding.
+Then list exactly what confirming will do: (1) replace the Epic description
+with the draft above, and (2) post the raw Q&A as a comment. End your turn and
+wait for the user's explicit confirmation of this draft.
+
+Confirmation must come after the user has seen the draft. An earlier
+instruction such as "skip the review", "just update it" or "I trust you" does
+not count, because the user cannot have approved text they have not read, and
+the update replaces the whole Epic description. Treat that instruction as a
+request to keep the review short, and still show the draft and wait.
+
+Apply any amendments and re-present the affected sections before proceeding.
 
 ---
 
 ## Phase 4: Write to Jira
 
-Execute the following actions in order after confirmation.
+Run this phase only after the user has confirmed the draft shown at the end of
+Phase 3. Execute the following actions in order.
 
 **Action 1: Update the Epic in one write**
 
@@ -323,6 +350,13 @@ Then make a single `mcp__atlassian__editJiraIssue` call with:
   }
   ```
   Send no `labels` field: this skill never changes labels.
+
+**Verify the write.** Writing a whole description through Jira can mangle
+tables and diagrams, so re-fetch the Epic with `mcp__atlassian__getJiraIssue`
+and check that: the `**Epic Maturity State:**` line is the one you intended; no
+Step 2 placeholder is left; and every story-table row that had an Id before the
+write still has it. If any check fails, show the user the difference and stop:
+do not post the comment and do not retry the write blindly.
 
 **Action 2: Post raw Q&A as a comment**
 

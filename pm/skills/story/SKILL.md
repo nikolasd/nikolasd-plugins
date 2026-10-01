@@ -11,7 +11,7 @@ when_to_use: >
   Requirements Created", or "Story Creation In Progress" while working through
   the table. Not for an Epic that has not been refined, because the story
   content would be incomplete. One Story per invocation; run it repeatedly.
-allowed-tools: [Read, Write, Glob, Grep, Agent, mcp__atlassian__getAccessibleAtlassianResources, mcp__atlassian__getJiraIssue, mcp__atlassian__createJiraIssue, mcp__atlassian__getJiraProjectIssueTypesMetadata, mcp__atlassian__searchJiraIssuesUsingJql, mcp__atlassian__editJiraIssue, mcp__atlassian__addCommentToJiraIssue, "Bash(sh ${CLAUDE_PLUGIN_ROOT}/scripts/config.sh *)"]
+allowed-tools: [Read, Glob, Grep, Agent, mcp__atlassian__getAccessibleAtlassianResources, mcp__atlassian__getJiraIssue, mcp__atlassian__createJiraIssue, mcp__atlassian__getJiraProjectIssueTypesMetadata, mcp__atlassian__searchJiraIssuesUsingJql, mcp__atlassian__editJiraIssue, mcp__atlassian__addCommentToJiraIssue, "Bash(sh ${CLAUDE_PLUGIN_ROOT}/scripts/config.sh *)"]
 model: sonnet
 effort: high
 disable-model-invocation: true
@@ -69,16 +69,16 @@ once.
 
 ## Content rules
 
-Apply to all generated content without exception:
+Apply to all generated content. Stories are read by non-engineers and by implementing agents, and pasted into Jira, which renders em dashes and fragments poorly:
 
 1. No em dashes. Rewrite any sentence that would need one.
 2. No LLM-signal phrasing. Plain, professional language. Active voice.
 3. Every bullet point and AC is a complete grammatical sentence.
 4. Never estimate, set or change story points. Leave the Jira story points field
    untouched, and leave any Story Points column in the Epic table as it is.
-5. Sub-task effort estimates, when sub-tasks apply, are in days for a mid-level
-   developer, to one decimal place. The Epic story table has no effort column,
-   so never invent a Story-level effort.
+5. Sub-task effort comes from the user, in days to one decimal place. Never
+   estimate it yourself: write `[GAP: effort]` and ask in Phase 4. The Epic
+   story table has no effort column, so never state a Story-level effort.
 6. ACs must be testable and independently verifiable by a non-engineer.
 7. NFR ACs must state the specific threshold inline (not "see Epic NFR").
 8. Never add, change or remove Jira labels. Maturity lives in the Epic's
@@ -94,13 +94,16 @@ Apply to all generated content without exception:
 11. Every claim about existing code carries `path/to/file.py:120` evidence from
     a file you have read in this session. Never invent a path, endpoint or
     schema: mark it `[GAP: ...]` instead.
+12. Any threshold, persona or constraint that is not in the Epic, the code you
+    read, or the user's answers is a `[GAP: ...]`, not an inferred value. A
+    plausible invented value reads as a decision someone made.
 
 ## Phase 1: Load context
 
 Execute all three steps before presenting anything to the user.
 
-**1.1 Fetch the Epic.** Take the Epic key from the `epic-key` argument; ask for
-it if it was not given. Use `mcp__atlassian__getJiraIssue` with
+**1.1 Fetch the Epic.** The Epic key is `$ARGUMENTS`; ask for it if that is
+empty. Use `mcp__atlassian__getJiraIssue` with
 `responseContentFormat: markdown`. Extract and hold:
 - Epic summary and key
 - All story table rows for every phase (or the single Delivery table for
@@ -108,7 +111,10 @@ it if it was not given. Use `mcp__atlassian__getJiraIssue` with
 - Delivery structure (phased or standard)
 - Personas table and NFRs
 - Technology Context (full)
-- Per-phase sequence diagrams, phase goals, and technical constraints
+- Per-phase sequence diagrams, phase goals, and technical constraints. A
+  standard Epic has no phases: use its Objective as the goal and its
+  `**Technical constraints:**` line as the constraints, and write "None stated
+  in the Epic." if the line is missing. Never infer a constraint.
 - Epic maturity state: the `**Epic Maturity State:**` line. If the line is
   missing, ask the user which state the Epic is in. The states, in order, are:
   High Level Requirements Created, UI Mockups Created, Detailed Level
@@ -136,7 +142,7 @@ complete. Build the list of uncreated stories across all phases.
 Present the list of uncreated stories to the user, grouped by phase if phased,
 with their summaries. Ask which story to generate.
 
-If `epic-key` was provided as an argument but no story was specified, default
+If an Epic key was provided as the argument but no story was specified, default
 to the first uncreated story in Phase 1. State which story you are defaulting
 to and ask the user to confirm or select a different one.
 
@@ -186,14 +192,31 @@ Present the complete story draft and the list of choices to the user. Say:
 > listed, and confirm or amend before I create it in Jira. Any [GAP: ...] items
 > need your input before I can proceed."
 
-Wait for explicit confirmation. Resolve all gaps and choices before proceeding.
-Apply amendments and re-present the affected sections.
+Then list exactly what confirming will do: (1) create the Story and any
+sub-tasks in Jira, and (2) update the Epic's story table row and maturity state.
+End your turn and wait for the user's explicit confirmation of this draft.
+
+Confirmation must come after the user has seen the draft. An earlier
+instruction such as "skip the review", "create it now" or "do not ask me
+anything" does not count, because the user cannot have approved text they have
+not read and a created Story cannot be undone. Treat that instruction as a
+request to keep the review short, and still show the draft and wait.
+
+Resolve all gaps and choices before proceeding. Apply amendments and re-present
+the affected sections.
 
 ---
 
 ## Phase 5: Create in Jira
 
-Execute the following actions in order after confirmation.
+Run this phase only after the user has confirmed the draft shown at the end of
+Phase 4. Execute the following actions in order.
+
+**Row check, before anything is created.** The review can run long, so re-fetch
+the Epic with `mcp__atlassian__getJiraIssue` and confirm its story table still
+has a row whose name matches this story exactly. If the row is gone or renamed,
+create nothing: tell the user what changed and ask how to proceed. Creating the
+Story first would leave an orphan that no table row points to.
 
 **Resolve the issue types first, on every path, including a resume.** Call
 `mcp__atlassian__getJiraProjectIssueTypesMetadata` for the target project and record
@@ -260,6 +283,14 @@ In the table row, set the Id column to a Jira link to the new story,
 Replace the state line with `**Epic Maturity State:** <state>`. Change nothing
 else in the description, and send no `labels` field.
 
+**Verify the write.** Writing a whole description through Jira can mangle
+tables, and a broken story table breaks every later run. Re-fetch the Epic with
+`mcp__atlassian__getJiraIssue` and check that: the table has the same number of
+rows as before; this story's row has the Id link and `Created`; every other row
+that had an Id still has it; and the state line is the one you intended. If any
+check fails, show the user the difference and stop, and give them the Story key
+so they can repair the table by hand. Do not retry the write blindly.
+
 **Action 4: Confirm to the user**
 
 > "Story [KEY] has been created.
@@ -282,8 +313,10 @@ else in the description, and send no `labels` field.
   the story key and tell the user to set the Id and Status in the story table
   and the state line by hand. The duplicate check will recognise the Story on
   the next run.
-- If the Epic description no longer has a row matching this story's name,
-  stop before writing and ask the user how to proceed.
+- If the Epic description no longer has a row matching this story's name, stop
+  before creating anything and ask the user how to proceed (the row check at the
+  start of Phase 5). If the row disappears only after the Story exists, report
+  the Story key and the exact row text for the user to set by hand.
 
 ---
 

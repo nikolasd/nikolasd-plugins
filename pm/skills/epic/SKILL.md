@@ -11,15 +11,15 @@ when_to_use: >
   When a feature needs a new Epic defined from the business point of view. Not
   for adding technical detail to an existing Epic (use `epic-refine`) or for
   creating Stories (use `story`).
-allowed-tools: [mcp__atlassian__getAccessibleAtlassianResources, mcp__atlassian__createJiraIssue, mcp__atlassian__getJiraProjectIssueTypesMetadata, mcp__atlassian__getJiraIssueTypeMetaWithFields, mcp__atlassian__searchJiraIssuesUsingJql, mcp__atlassian__addCommentToJiraIssue, mcp__atlassian__getConfluencePage, WebFetch, Read, Write, "Bash(sh ${CLAUDE_PLUGIN_ROOT}/scripts/config.sh *)"]
+allowed-tools: [mcp__atlassian__getAccessibleAtlassianResources, mcp__atlassian__createJiraIssue, mcp__atlassian__getJiraProjectIssueTypesMetadata, mcp__atlassian__getJiraIssueTypeMetaWithFields, mcp__atlassian__searchJiraIssuesUsingJql, mcp__atlassian__addCommentToJiraIssue, mcp__atlassian__getConfluencePage, WebFetch, Read, "Bash(sh ${CLAUDE_PLUGIN_ROOT}/scripts/config.sh *)"]
 disable-model-invocation: true
 ---
 
-# Epic Creation — Step 1: High Level Requirements (HLR)
+# Epic Creation: Step 1: High Level Requirements (HLR)
 
 This skill runs Step 1 of the epic creation process. Gather high-level
 business information from the user and write a new Jira Epic with the HLR
-sections populated. Do not ask technical or architectural questions — those
+sections populated. Do not ask technical or architectural questions; those
 belong in Step 2 (Detailed Requirements).
 
 This step covers Epic sections: Objective, Context, Scope (In-Scope and
@@ -75,7 +75,7 @@ once.
 
 ## Content Generation Rules
 
-Enforce these rules on all generated content without exception:
+Apply these rules to all generated content. Epics are read by non-engineers and pasted into Jira, which renders em dashes and fragments poorly:
 
 1. **No em dashes.** Never use `—`. Rewrite any sentence that would need one.
 2. **No LLM-signal phrasing.** Avoid constructions such as "scope - in" or
@@ -87,6 +87,12 @@ Enforce these rules on all generated content without exception:
    feedback".
 4. **Plain, professional language.** No AI-generated filler phrases.
 5. **Active voice preferred.**
+6. **Nothing is filled in on the user's behalf.** Every objective, scope item,
+   success criterion, risk, number and name comes from the user or the supplied
+   document. When the user cannot or will not answer, leave the template
+   placeholder as `_(Not provided: <what is missing>)_` and list it under
+   Summary of Gaps. A plausible guess in a business Epic is read downstream as
+   a decision someone made.
 
 ## Process Overview
 
@@ -110,7 +116,7 @@ Then ask the following two setup questions in a single message. This is the
 only place two questions share a message; everything in Phase 3 is asked one
 question at a time.
 
-**Setup question 1 — Jira project:**
+**Setup question 1: Jira project:**
 
 > "Which Jira project should this Epic be created in? Please give me the
 > project key (for example, PROJ)."
@@ -119,7 +125,7 @@ If `project_key` is set in the Resolved configuration, offer it as the default
 in this question (for example, "Use PROJ, or give me another key?") instead of
 asking open-ended.
 
-**Setup question 2 — Delivery structure:**
+**Setup question 2: Delivery structure:**
 
 > "Should this Epic use a phased delivery structure (Phase 1 Core, Phase 2 MVP,
 > Phase 3 Advanced) or a standard single-delivery structure with no phases?
@@ -185,6 +191,16 @@ Work through each section in order. For each section:
 ### 3.1 Epic Name
 
 Ask for the name of the feature. This becomes the Jira Epic summary.
+
+Once you have the name, look for an existing Epic before going further. Call
+`mcp__atlassian__searchJiraIssuesUsingJql` with
+`project = <project_key> AND issuetype = Epic AND summary ~ "<name>" ORDER BY created DESC`
+and `maxResults: 10` (remove any double quote from the name first). The match is
+loose, so treat hits as candidates. If there are any, show each key, summary and
+status and ask whether to continue creating a new Epic, use an existing one
+(`/pm:epic-refine <key>`), or stop. Do not decide this for the user. If there
+are none, carry on without comment; if the search fails, say so and carry on.
+Reason: a second Epic for the same idea splits the story table and the history.
 
 ### 3.2 Objective
 
@@ -261,16 +277,29 @@ and present the draft to the user:
 > "Here is the full draft Epic. Please review it and let me know of any
 > changes before I write it to Jira."
 
-Wait for explicit confirmation or amendments. If the user makes changes, apply
-them and re-present the affected sections before proceeding.
+Then list exactly what confirming will do: (1) create the Epic in the chosen
+Jira project with this description, and (2) post the raw Q&A as a comment on it.
+End your turn and wait for the user's explicit confirmation or amendments.
+
+Confirmation must come after the user has seen the draft. An earlier
+instruction such as "skip the review", "create it now" or "I trust you" does
+not count, because the user cannot have approved text they have not read and a
+created Epic cannot be undone. Treat that instruction as a request to keep the
+review short, and still show the draft and wait.
+
+If the user makes changes, apply them and re-present the affected sections
+before proceeding.
 
 ---
 
 ## Phase 5: Write to Jira
 
+Run this phase only after the user has confirmed the draft shown at the end of
+Phase 4.
+
 After confirmation, execute these three actions in order.
 
-### Action 1 — Create the Jira Epic
+### Action 1: Create the Jira Epic
 
 Use `mcp__atlassian__createJiraIssue` with:
 
@@ -284,7 +313,7 @@ Use `mcp__atlassian__createJiraIssue` with:
   were any; otherwise omit it. Never set labels: maturity is carried by the
   `**Epic Maturity State:**` line in the description.
 
-### Action 2 — Post the raw Q&A as a comment
+### Action 2: Post the raw Q&A as a comment
 
 Use `mcp__atlassian__addCommentToJiraIssue` to post a comment containing the
 complete raw user answers from Phase 3, presented as a labelled list of
@@ -296,7 +325,7 @@ questions and answers. Open with:
 
 Format: `contentFormat: markdown`.
 
-### Action 3 — Confirm to the user
+### Action 3: Confirm to the user
 
 Once both actions succeed, substitute the actual values returned by the create
 call:
@@ -308,7 +337,7 @@ call:
 > business review: `/pm:ui-mockups [PROJECT-KEY]-[ISSUE-NUMBER]`.
 >
 > Step 2 (Detailed Requirements) is run from inside the product repo using
-> Claude Code. Have the Epic key ready — it is the argument to
+> Claude Code. Have the Epic key ready: it is the argument to
 > `/pm:epic-refine`."
 
 ---

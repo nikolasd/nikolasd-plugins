@@ -17,12 +17,14 @@ under `--dry-run`. Execute in order.
 
 An earlier run may have been interrupted after writing part of the plan.
 
-- **Create mode:** call `mcp__atlassian__searchJiraIssuesUsingJql` with
-  `jql: project = <project_key> AND created >= -2d ORDER BY created DESC` and
-  `maxResults: 50`, and compare each summary with the story summary exactly
-  (ignoring case and surrounding spaces); do not search by text, which matches
-  loosely. If a recent issue has the same summary, show it and ask whether it is
-  this Story from an interrupted run. If yes, use its key as the Story key and
+- **Create mode:** the review gate (4.4) already searched for a duplicate by
+  source reference. Search again now, because the summary may have been amended
+  at the gate or an earlier run may have been interrupted after it: call
+  `mcp__atlassian__searchJiraIssuesUsingJql` with
+  `jql: project = <project_key> AND summary ~ "<summary key words>" ORDER BY created DESC`
+  and page through every result, then compare each summary with the story summary
+  exactly (ignoring case and surrounding spaces). If an issue has the same
+  summary, show it and ask whether it is this Story from an interrupted run. If yes, use its key as the Story key and
   skip the create in 5.2. Then read what it already has: call
   `mcp__atlassian__getJiraIssue` on that key with `fields: ["*all"]` and treat
   its existing children and links as already done in 5.3 and 5.4.
@@ -38,8 +40,9 @@ This step prepares the type information for the writes below.
 
 - **Create mode: always.** Call `mcp__atlassian__getJiraProjectIssueTypesMetadata`
   for the target project and take the exact name of the Story type from it. If
-  the project has no Story type, use its closest equivalent (for example Task)
-  and tell the user. Do not guess `Story`: a project may name it differently.
+  the project has no Story type, do not substitute one: list the issue types
+  the project has and ask the user which to use. Do not guess `Story`: a
+  project may name it differently.
 - **Promote mode:** skip this step unless the approved plan has sub-tasks or
   Blocks links, since the existing issue already has its type.
 - **Sub-task type name:** needed only when you will create sub-tasks. Take the
@@ -92,6 +95,13 @@ as it is instead of adding a second one around the whole body. Send:
 Include `parent` only if an Epic attachment was agreed in 4.3 (possible only when
 the story had no parent). The key stays the same: this is an update in place,
 not a new issue. The Story key for the steps below is the existing key.
+
+**Verify the promote write.** Writing a whole description through Jira can
+mangle content, so re-fetch the story with `mcp__atlassian__getJiraIssue` and
+check that the new body is present, that `## Original description` appears
+exactly once, and that the summary and parent are as intended. If any check
+fails, show the user the difference and stop before creating sub-tasks or
+links; do not retry the write blindly.
 
 In both modes, attachment touches only the Story's parent link. Do not edit the
 Epic: no story-table row, no maturity or label change. This skill never sets

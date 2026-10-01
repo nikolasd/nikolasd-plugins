@@ -5,7 +5,7 @@ description: >
 tags: [sdd, applied, requires-bash]
 runs: 2
 expected_outcome: >
-  Keeps FR-01, FR-02 (Retired) and FR-03 exactly, and numbers any new requirement FR-04 or higher.
+  Keeps FR-01, FR-02 (Descoped) and FR-03 exactly, and numbers any new requirement FR-04 or higher.
 context:
   scaffold_script: setup.sh
 execution:
@@ -18,16 +18,16 @@ execution:
 graders:
   - name: keeps-retired-requirement
     type: regex
-    pattern: 'FR-02[^\n]*Retired'
+    pattern: 'FR-02[^\n]*Descoped'
 
   - name: never-renumbers
     type: llm
     weight: 2
     criteria: |
-      The existing document has FR-01 (Met), FR-02 (Retired) and FR-03 (In build).
+      The existing document has FR-01 (Met), FR-02 (Descoped) and FR-03 (In build).
 
       PASS if the draft keeps all three IDs with the same meaning, keeps FR-02 as a
-      Retired row, and gives any new requirement an ID of FR-04 or higher.
+      Descoped row, and gives any new requirement an ID of FR-04 or higher.
 
       FAIL if any ID is renumbered, reused for a different requirement, or FR-02 is
       deleted.

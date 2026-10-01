@@ -80,7 +80,7 @@ cat > docs/solution-design.md <<'MD'
 | ID | Category | Requirement | Acceptance criteria | Priority | Stakeholders | Status |
 | --- | --- | --- | --- | --- | --- | --- |
 | FR-01 | Retrieval | Return a user's groups | Given a user, when requested, then groups are returned | Must | Support | Met |
-| FR-02 | Retrieval | Return groups in alphabetical order | Given groups, when returned, then sorted | Should | Support | Retired |
+| FR-02 | Retrieval | Return groups in alphabetical order | Given groups, when returned, then sorted | Should | Support | Descoped |
 | FR-03 | Caching | Cache group lookups per user | Given a repeat lookup, then the loader is not called again | Must | Support | In build |
 MD
 cat > docs/.solution-design.state.json <<'JSON'

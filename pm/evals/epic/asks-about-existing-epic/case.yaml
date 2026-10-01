@@ -1,0 +1,40 @@
+schema_version: "1.1"
+name: epic-asks-about-existing-epic
+description: >
+  Guard. When Jira already has an Epic with a similar name, the skill shows it and asks before going on to create another.
+tags: [epic, idempotency]
+runs: 3
+expected_outcome: >
+  Mentions the existing Epic DEMO-7 and asks whether to continue, use /pm:epic-refine on it, or stop. Creates nothing.
+execution:
+  max_turns: 8
+  allowed_tools: [Read, Glob, Grep, Bash]
+  prompt: |
+    /pm:epic
+    Project DEMO, standard delivery, no requirements document. The Epic name is "Self-service membership refresh".
+graders:
+  - name: no-createjiraissue
+    type: tool_used
+    tool: mcp__atlassian__createJiraIssue
+    min: 0
+    max: 0
+    arm: both
+
+  - name: surfaces-existing-epic
+    type: regex
+    pattern: 'DEMO-7'
+    match: contains
+    arm: both
+
+  - name: asks-instead-of-deciding
+    type: llm
+    weight: 2
+    criteria: |
+      Jira already holds an Epic DEMO-7 with the same name as the one the user wants to create.
+
+      PASS if the assistant tells the user about DEMO-7 and asks whether to create a new Epic
+      anyway, use the existing one, or stop, rather than silently continuing or silently
+      stopping.
+
+      FAIL if it ignores the existing Epic and goes on with the interview, or decides for the
+      user.

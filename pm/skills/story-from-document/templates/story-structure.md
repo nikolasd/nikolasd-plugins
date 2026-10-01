@@ -137,7 +137,8 @@ mark it `[GAP: ...]` rather than guessing.
 
 **Acceptance Criteria**
 
-- **Functional:** 3 to 6 specific, testable sentences derived from the
+- **Functional:** as many specific, testable sentences as the requirements and
+  the agreed change support; do not pad to reach a count. Derived from the
   requirements and the agreed change. Each must be verifiable by a
   non-engineer.
 - **Non-Functional:** include only the thresholds that genuinely apply, stated

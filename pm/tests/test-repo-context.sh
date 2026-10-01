@@ -47,6 +47,17 @@ has "committed file is clean" "Local file uncommitted changes: no" "$out"
 echo more >> "$T/r/docs/solution-design.md"
 out=$(ctx "$T/r")
 has "edit after commit is seen" "Local file uncommitted changes: yes" "$out"
+h1=$(printf '%s\n' "$out" | grep '^Local file hash:')
+has "hash is reported" "Local file hash: " "$out"
+(cd "$T/r" && g add docs && g commit -qm e)
+out=$(ctx "$T/r")
+h2=$(printf '%s\n' "$out" | grep '^Local file hash:')
+check "committing without editing keeps the hash" "$h1" "$h2"
+echo again >> "$T/r/docs/solution-design.md"
+out=$(ctx "$T/r")
+h3=$(printf '%s\n' "$out" | grep '^Local file hash:')
+if [ "$h3" != "$h2" ]; then echo "ok    editing changes the hash"; else echo "FAIL  hash unchanged after edit"; fail=1; fi
+(cd "$T/r" && g checkout -q -- docs)
 
 # 4. the state file is printed, marked as data
 echo '{"confluence_page_id":"1"}' > "$T/r/docs/.solution-design.state.json"

@@ -22,6 +22,17 @@ Acme (the client) and Northwind Consulting (the supplier) are fictional, and the
 
 These conventions govern the whole document. They are defined once here and referenced from every section — they are not per-section advice.
 
+## Contents
+
+- 0.1 Working method
+- 0.2 Section tiers
+- 0.3 ID registry
+- 0.4 Controlled vocabularies
+- 0.5 The omission rule
+- 0.6 Evidence and verification
+- 0.7 Diagrams and confidentiality
+- 0.8 Pre-share review checklist
+
 ## 0.1 Working method
 
 1. Copy **Solution Design Document — Template v2.0** into the project's documentation space (for example a Confluence space) and rename it `[Project] — Solution Design Document`.
@@ -59,7 +70,7 @@ Identifiers are what make the document reviewable, testable, and auditable. They
 * An ID is assigned **once** and is **never renumbered, never reused, and never recycled** after retirement.
 * An ID means **exactly one thing** for the life of the document. If you find one ID used for two items, that is a defect — fix it before the next review, keeping the earlier meaning on the original ID.
 * **Reserve the full range up front** (e.g. `FR-01`…`FR-15`) even when some rows are still `Reserved`. Never compress the range as you draft.
-* A retired item **keeps its ID** and its row, with status `Retired` or `Descoped` and a one-line reason. Deleting the row breaks every outbound reference.
+* A retired item **keeps its ID** and its row, with status `Descoped` and a one-line reason. Deleting the row breaks every outbound reference.
 
 ## 0.4 Controlled vocabularies
 

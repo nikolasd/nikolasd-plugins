@@ -94,9 +94,10 @@ Copy the following directly from the Epic. Do not summarise or link:
 
 **Sub-tasks**
 
-Apply the sub-task rules: only if the story is about one week of work or more
-for one developer AND has clearly separable work streams. If sub-tasks apply, list them with description and
-effort. If not, omit the section entirely.
+Include sub-tasks only when the work has two or more clearly separable work
+streams, and put the split to the user as a Phase 4 choice. If sub-tasks apply,
+list each with description and effort, where effort is what the user gave you or
+`[GAP: effort]`. If not, omit the section entirely.
 
 ---
 

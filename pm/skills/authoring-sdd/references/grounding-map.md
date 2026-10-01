@@ -3,7 +3,7 @@
 Read this at the start of Phase 2. The section numbers are the bundled template's; with a custom template, map them by section name.
 
 For each of the following, capture the fact together with `file:line`
-evidence. These map onto the sections in `section-tiers.md`:
+evidence. These map onto the section tiers you read before Phase 2:
 
 - **Tech stack and dependencies** (§18): package manifests, lockfiles,
   Dockerfiles.

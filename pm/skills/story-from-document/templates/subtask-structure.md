@@ -24,7 +24,7 @@ Tag the repository or component in brackets, then the outcome. Examples:
 
 **Metadata header (one line)**
 
-`**Repo:** <repo> · **Owner:** <agent or role> · **Depends on:** <tickets or "nothing — can start now">`
+`**Repo:** <repo> · **Owner:** <role named by the user, otherwise [GAP: owner]> · **Depends on:** <tickets or "nothing, can start now">`
 
 ---
 

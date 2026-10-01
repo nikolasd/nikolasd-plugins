@@ -50,6 +50,7 @@ if [ -f "$LOCAL_PATH" ]; then
   else
     echo "Local file uncommitted changes: no"
   fi
+  echo "Local file hash: $(git hash-object -- "$LOCAL_PATH" 2>/dev/null || echo unknown)"
 else
   echo "Local file: missing"
 fi

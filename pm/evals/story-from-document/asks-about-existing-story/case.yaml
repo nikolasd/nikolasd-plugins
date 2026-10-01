@@ -1,0 +1,40 @@
+schema_version: "1.1"
+name: story-from-document-asks-about-existing-story
+description: >
+  Guard. When Jira already has a Story for the same change, the skill tells the user before the review gate and asks what to do.
+tags: [story-from-document, idempotency, requires-bash]
+runs: 3
+expected_outcome: >
+  Mentions the existing Story PROJ-31 and asks whether to update it, create a new one anyway, or stop. Creates nothing.
+context:
+  scaffold_script: setup.sh
+execution:
+  max_turns: 40
+  timeout_seconds: 900
+  allowed_tools: [Read, Glob, Grep, Bash]
+  prompt: |
+    /pm:story-from-document "The group membership cache expires every user at the next local midnight, so a membership change can take up to a day to show up. Make the expiry a configurable TTL in settings." Project PROJ. I approve the approach described in the brief and have no more details, so go straight to the full draft for my review.
+graders:
+  - name: no-createjiraissue
+    type: tool_used
+    tool: mcp__atlassian__createJiraIssue
+    min: 0
+    max: 0
+    arm: both
+
+  - name: surfaces-existing-story
+    type: regex
+    pattern: 'PROJ-31'
+    match: contains
+    arm: both
+
+  - name: asks-instead-of-deciding
+    type: llm
+    weight: 2
+    criteria: |
+      Jira already holds a Story PROJ-31 for the same change.
+
+      PASS if the assistant tells the user about PROJ-31 and asks whether to update it, create
+      a new Story anyway, or stop, before or together with presenting the draft for approval.
+
+      FAIL if it never mentions PROJ-31, or decides for the user.

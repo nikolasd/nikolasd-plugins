@@ -12,8 +12,8 @@
     {
       "id": 1,
       "name": "brief-single-repo-dry-run",
-      "prompt": "I want a standalone story from this brief: 'The <BRIEF_FILE_OR_SYMBOL> value is hard-coded in <APP_REPO>; make it configurable via settings so changes are picked up sooner.' Investigate the brief against the <APP_REPO> repo to confirm where the value is set, then draft a Story with sub-tasks and a dependency map. Dry-run only, do not create anything in Jira.",
-      "expected_output": "The skill reads the brief (no Confluence call needed), investigates <APP_REPO> to confirm the location of the hard-coded value with file:line evidence, and drafts a small Story (likely one or two sub-tasks) with a human-readable Context, a Claude Planning Hints layer, a definition of done that names the repo's own test or lint command, and a clean dry-run stop. Should not over-engineer a multi-repo breakdown for a single-repo change.",
+      "prompt": "I want a standalone story from this brief: 'The <BRIEF_FILE_OR_SYMBOL> value is hard-coded in <APP_REPO>; make it configurable via settings so changes are picked up sooner.' Investigate the brief against the <APP_REPO> repo to confirm where the value is set, then draft a Story (with sub-tasks and a dependency map only if the work genuinely splits). Dry-run only, do not create anything in Jira.",
+      "expected_output": "The skill reads the brief (no Confluence call needed), investigates <APP_REPO> to confirm the location of the hard-coded value with file:line evidence, and drafts a small Story with no sub-tasks (a single-repo change that fits one pull request keeps its detail in Technical Notes) and with a human-readable Context, a Claude Planning Hints layer, a definition of done that names the repo's own test or lint command, and a clean dry-run stop. Should not over-engineer a multi-repo breakdown for a single-repo change.",
       "files": []
     },
     {

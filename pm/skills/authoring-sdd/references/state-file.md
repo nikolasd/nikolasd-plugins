@@ -16,7 +16,8 @@ page. Its shape is fixed:
   "confluence_version": 7,
   "local_path": "docs/solution-design.md",
   "last_run_version": "1.3",
-  "last_run_date": "2026-08-07"
+  "last_run_date": "2026-08-07",
+  "local_hash": "9f2c1e0b7a4d5c3e8b6a1d2f0c9e4b7a3d5f6c8e"
 }
 ```
 
@@ -37,12 +38,16 @@ page. Its shape is fixed:
 - `last_run_version` — the document's `Version` field, from its Document
   Control section, as of the run that last wrote this state file.
 - `last_run_date` — `YYYY-MM-DD`, the date of that run.
+- `local_hash` — `git hash-object` of the local document as of that run.
+  Phase 0 compares it with the current "Local file hash" to tell whether the
+  file was edited since, including a committed edit with no `Version` bump.
+  An older state file may lack it: that is not an error, see below.
 
 Phase 0 reads `confluence_page_id` and `confluence_version` from this file for
 the divergence check;
 Phase 5 writes the whole file after every successful run. If the file
 exists but fails to parse as JSON, or is missing an expected key, treat it
 the same as "state file missing" (see Error handling) rather than guessing
-at the absent fields. The one exception is `confluence_version`: if it is the
+at the absent fields. The exceptions are `confluence_version` and `local_hash`: if one of them is the
 only key missing, keep the file and its page ID, and ask the divergence
 question once (Phase 0) before recording the version.
