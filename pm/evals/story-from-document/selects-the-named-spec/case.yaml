@@ -1,0 +1,61 @@
+schema_version: "1.1"
+name: story-from-document-selects-the-named-spec
+description: >
+  Applied. Given a specs document and one spec ID, the skill builds a Story from that spec only: the rest of the document is context, never scope.
+tags: [story-from-document, applied, requires-bash]
+runs: 3
+expected_outcome: >
+  Declares create mode, reads the whole document, drafts a Story about the CSV download in S-01, and does not pull the weekly emailed export (S-02) into its scope. Writes nothing.
+context:
+  scaffold_script: setup.sh
+execution:
+  max_turns: 30
+  timeout_seconds: 900
+  allowed_tools: [Read, Glob, Grep, Write, Edit, Bash, Agent]
+  prompt: |
+    /pm:story-from-document docs/specs/exports.md#S-01 --dry-run
+    Project DEMO. I approve the approach and have no more details, so go straight to the full draft for my review.
+graders:
+  - name: no-createjiraissue
+    type: tool_used
+    tool: mcp__atlassian__createJiraIssue
+    min: 0
+    max: 0
+    arm: both
+
+  - name: no-editjiraissue
+    type: tool_used
+    tool: mcp__atlassian__editJiraIssue
+    min: 0
+    max: 0
+    arm: both
+
+  - name: story-is-s01-only
+    type: llm
+    weight: 2
+    criteria: |
+      The user pointed the skill at spec S-01 of a specs document. S-01 is a CSV download of
+      a customer's orders. S-02 (a weekly emailed export) sits next to it in the same document.
+
+      PASS if the draft Story is about downloading orders as a CSV file, and the scope and
+      acceptance criteria do not include scheduling or emailing exports. Mentioning S-02 as a
+      neighbouring spec or a dependency note is fine.
+
+      FAIL if the draft Story takes on scheduling or email as part of its scope, or is built
+      from the whole document rather than from S-01.
+
+  - name: does-not-edit-the-specs-document
+    type: tool_used
+    tool: Edit
+    input_match: 'docs/specs'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: does-not-write-the-specs-document
+    type: tool_used
+    tool: Write
+    input_match: 'docs/specs'
+    min: 0
+    max: 0
+    arm: both

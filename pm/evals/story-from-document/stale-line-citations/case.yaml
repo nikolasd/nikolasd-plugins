@@ -1,0 +1,37 @@
+schema_version: "1.1"
+name: story-from-document-stale-line-citations
+description: >
+  The spec cites app/exports.py:5 but the code has moved: the skill must re-check the cited lines and report the drift.
+tags: [story-from-document, applied, requires-bash]
+runs: 3
+expected_outcome: >
+  Re-reads the code, cites the real current lines, and reports that the spec's lines had drifted.
+context:
+  scaffold_script: setup.sh
+execution:
+  max_turns: 40
+  timeout_seconds: 900
+  allowed_tools: [Read, Glob, Grep, Write, Edit, Bash, Agent]
+  prompt: |
+    /pm:story-from-document docs/specs/exports.md#S-01 --dry-run
+    Project DEMO. I approve the approach and have no more details, so go straight to the full draft.
+graders:
+  - name: no-createjiraissue
+    type: tool_used
+    tool: mcp__atlassian__createJiraIssue
+    min: 0
+    max: 0
+    arm: both
+
+  - name: reports-drift-and-cites-current-lines
+    type: llm
+    weight: 2
+    criteria: |
+      The specs document cites app/exports.py:5 for the export function, but a refactor pushed the
+      function down by about ten lines, so line 5 is now blank or a comment.
+
+      PASS if the draft Story cites app/exports.py lines that match where export_orders_csv actually
+      is now (roughly lines 13 to 20, not line 5) AND the assistant says the spec's line numbers
+      had drifted (or equivalent).
+
+      FAIL if it repeats app/exports.py:5 as evidence without noticing, or cites no lines.
