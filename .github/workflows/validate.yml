@@ -37,6 +37,9 @@ jobs:
       - name: Test pm repository-context script
         run: sh pm/tests/test-repo-context.sh
 
+      - name: Test pm specs checker
+        run: python3 pm/tests/test_check_specs.py
+
       - name: Check every pm skill loads the configuration
         run: |
           status=0
