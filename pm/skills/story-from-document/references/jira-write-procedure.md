@@ -17,8 +17,8 @@ under `--dry-run`. Execute in order.
 
 An earlier run may have been interrupted after writing part of the plan.
 
-- **Create mode:** the review gate (4.4) already searched for a duplicate by
-  source reference. Search again now, because the summary may have been amended
+- **Create mode:** the duplicate check in 2.1 already searched by
+  source reference, unless it was skipped. Search again now, because the summary may have been amended
   at the gate or an earlier run may have been interrupted after it: call
   `mcp__atlassian__searchJiraIssuesUsingJql` with
   `jql: project = <project_key> AND summary ~ "<summary key words>" ORDER BY created DESC`
@@ -29,7 +29,7 @@ An earlier run may have been interrupted after writing part of the plan.
   `mcp__atlassian__getJiraIssue` on that key with `fields: ["*all"]` and treat
   its existing children and links as already done in 5.3 and 5.4.
 - **Promote mode:** the existing sub-tasks and links were captured in the
-  promote-mode read; use them the same way.
+  Phase 1 (promote) read; use them the same way.
 
 Never create a sub-task whose summary matches an existing child of the Story,
 and never create a link that already exists.
@@ -73,7 +73,7 @@ steps below.
 tool takes `fields` (not `additional_fields`) and replaces the whole description.
 
 First re-fetch the story with `mcp__atlassian__getJiraIssue`: the body you read
-in the promote-mode step may be hours old. If its description differs from that
+in the Phase 1 (promote) step may be hours old. If its description differs from that
 copy, show the user what changed and confirm again before overwriting.
 
 Keep the original text: end the new body with an `## Original description`

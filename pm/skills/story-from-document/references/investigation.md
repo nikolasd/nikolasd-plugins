@@ -34,11 +34,24 @@ expected path, report it and ask the user for the correct path rather than
 skipping the investigation.
 
 Settle the target Jira **project key** here too, because Phase 5 needs it and
-the primary repo may not map to the obvious project. Use `project_key` from the
-Resolved configuration when it is set; otherwise derive it from the source, an
-existing ticket it references, or the current branch if obvious, otherwise ask.
+the primary repo may not map to the obvious project. A project the user names in the
+invocation or the conversation wins over the configuration, and you say which project you
+are using. Otherwise use `project_key` from the Resolved configuration when it is set;
+otherwise derive it from the source, an existing ticket it references, or the current
+branch if obvious, otherwise ask.
 Hold it as `<project_key>`. In promote mode the project key is already settled
 from the story key, so reuse it rather than re-deriving it.
+
+**Duplicate check (create mode).** Before you spend the investigation, look for an
+existing Story for the same source. Call `mcp__atlassian__searchJiraIssuesUsingJql` on
+`<project_key>` with no date limit, matching the source reference you will record under
+"Source of analysis" (the page ID or URL, when there is one) and the key words of the
+source's title or brief, and page through every result. The match is loose, so treat hits
+as candidates: show each key, summary and status and ask whether to update that Story
+instead (promote mode), create a new one anyway, or stop. If there are none, carry on
+without comment. Skip this check under `--dry-run`, or when the Jira tools are
+unavailable, and say so in one line at the top of your next message. Hold the result for
+the review gate. Phase 5.0 repeats the search just before writing.
 
 ## 2.2 Investigate the claims
 

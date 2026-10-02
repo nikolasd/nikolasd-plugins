@@ -54,7 +54,8 @@ at least:
 - The problem the story addresses and why it matters now.
 - The outcome the user wants, in plain terms: what should be true once this is
   done. Not how to achieve it.
-- Which repositories the work touches, and which is primary.
+- Which repositories the work touches, and which is primary. This answer settles 2.1;
+  do not ask it again there.
 - What "done" looks like (the acceptance expectations).
 - Any decisions already made that implementers must not reopen.
 

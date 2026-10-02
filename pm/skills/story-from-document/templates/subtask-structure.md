@@ -36,6 +36,13 @@ State what changes, what stays the same, and any ordering or safety constraint
 that matters (for example, why it must wait for another sub-task, or why a
 check must fail closed). Do not start the body with file paths.
 
+Example preamble (flexible):
+
+> This sub-task makes the library read the cache lifetime from its settings instead of
+> computing it. Callers that pass no value keep today's behavior, expiry at the next
+> midnight, so nothing changes until a service sets the value. It must land before the
+> service sub-task, because the service can only set a value the library knows how to read.
+
 ---
 
 **### Claude Planning Hints**

@@ -27,7 +27,7 @@ Use the section definitions in `../templates/story-structure.md` for the Story a
 `### Claude Planning Hints` block.
 
 **Promote mode:** the review must show the sub-tasks and links that already
-exist (captured in the promote-mode read). Mark each planned sub-task as `new`
+exist (captured in the Phase 1 (promote) read). Mark each planned sub-task as `new`
 or `already exists (skip)`, matching on summary, and do the same for each link.
 Plan to create only what is new.
 
@@ -54,7 +54,7 @@ according to the mode:
   > add a row to the Epic's story table or change the Epic's maturity."
 
 - **Promote mode:** ask only if the story has **no** parent Epic (checked in the
-  promote-mode read). If it already has one, skip the offer and leave the parent
+  Phase 1 (promote) read). If it already has one, skip the offer and leave the parent
   as it is.
 
 If the user names an Epic, validate it before accepting it: fetch it with

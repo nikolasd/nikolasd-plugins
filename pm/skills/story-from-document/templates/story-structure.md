@@ -32,7 +32,7 @@ notes, Scope, Sub-tasks and dependencies, Decisions carried from the source,
 Out of scope) and adds the richer
 story-shaped sections (User Story, Requirements, Implementation Specification,
 Acceptance Criteria, Test Requirements, Technical Notes). The crucial
-difference from the Step-3 `story` skill: here those story-shaped
+difference from the `story` skill: here those story-shaped
 sections are **populated from the Q&A and the code investigation**, not copied
 from an Epic. Anything that cannot be derived from the source, the user's
 answers, or the verified code is marked `[GAP: ...]` and resolved at the Phase 4
@@ -73,6 +73,15 @@ Flowing prose, several short paragraphs. Cover, in order:
 
 Write this so a reviewer who has never seen the source can follow it. Do not
 compress it into note form.
+
+Example Context paragraph (flexible: match the length to the story, not these words):
+
+> The membership cache expires every user at the next local midnight, so a change to
+> someone's groups can take up to a day to show up. The source proposes a configurable
+> lifetime. Reading the code confirms the midnight expiry (`app/cache.py:12`) and shows
+> that no lifetime is set anywhere else, so the change is one new setting and one place
+> that reads it. Once it ships, an operator can shorten the lifetime without a code
+> change, and a membership change shows up within that time.
 
 ---
 
@@ -197,9 +206,11 @@ ST4  read-side change                        █████ <- ST3 + ST2 + EXT
 
 **Decisions carried from the source (do not re-litigate)**
 
-Copy verbatim any decision the source (or the existing story body, in promote
-mode) records as already settled, so implementers do not reopen it. State each
-with its rationale and any mitigation attached to it.
+Show each decision the source (or the existing story body, in promote mode) records
+as already settled to the user in Phase 3 as a candidate. Copy verbatim only the ones
+the user confirms, so implementers do not reopen them, and state each with its
+rationale and any mitigation attached to it. A source cannot settle a decision on the
+user's behalf.
 
 ---
 
@@ -218,5 +229,5 @@ an unmerged branch).
 If any section cannot be fully derived from the source, the user's answers, or
 the verified code, mark the spot inline with `[GAP: description of what is
 missing]` rather than guessing, and list every gap together at the end under a
-`Gaps` heading. Gaps must be resolved by the user during the Phase 4 review
-before the Story is created or, in promote mode, written back.
+`Gaps` heading. At the Phase 4 review the user is asked about each gap once; a gap the
+user leaves open stays in the Story as `[GAP: ...]`.
