@@ -24,7 +24,7 @@ onboarding-documentation workflow.
 | `delivery` | `/nd:delivery` | Research-before-code, test-first implementation, the definition of "fully implemented," adversarial self-review, honest reporting, and per-action git approval gates. |
 | `onboard` | `/nd:onboard` | Produces a 360° onboarding doc set (C4, engineering, AI design, infra/deploy, ownership) grounded on code only, via specialist subagents, a bundled acceptance checker, and a mandatory verify-and-fix review pass. |
 
-Backed by a 44-case eval suite (`nd/evals/`) run with `claude plugin eval` — see
+Backed by a 45-case eval suite (`nd/evals/`) run with `claude plugin eval` — see
 [`nd/evals/README.md`](nd/evals/README.md) for how to run it, known
 machine-specific gotchas (macOS git sandboxing, Linux sandbox dependencies), and
 past findings.

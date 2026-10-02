@@ -1,0 +1,26 @@
+schema_version: "1.1"
+name: disciplined-delivery-skips-trivial-change
+description: >
+  Near-miss. A small, one-spot code change with no "done", status, or git language.
+  The skill is for medium and heavy work where quality matters, so a three-line cap
+  must not load the full protocol. Requires --scaffold: without orders.py on disk a
+  model correctly asks where the code lives.
+tags: [disciplined-delivery, near-miss]
+runs: 5
+expected_outcome: >
+  Makes the change directly and does not invoke the delivery skill.
+context:
+  scaffold_script: setup.sh
+execution:
+  max_turns: 12
+  allowed_tools: [Read, Glob, Grep, Skill, Write, Edit]
+  prompt: |
+    In orders.py, cap page_size at 100 in list_orders — callers passing more than
+    100 should get 100 items per page at most.
+graders:
+  - name: delivery-not-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?delivery"'
+    min: 0
+    max: 0

@@ -1,11 +1,11 @@
 ---
 name: delivery
-description: Enforces fully verified delivery and a per-action approval gate. Checks the work against all acceptance criteria before it is called done, and requires an explicit "approve" before each commit, push, rebase, amend, PR, or branch checkout change.
+description: Use for medium or heavy coding work where quality matters (a feature, a multi-step fix, a refactor with logic, anything that ships), and when declaring work done or reporting status. Also before any commit, push, rebase, amend, PR, or branch checkout change, each of which needs an explicit "approve". Sets the protocol (read, failing test, implement, verify) before the first edit. Not for small or trivial edits.
 when_to_use: |
   Trigger phrases: "is this done", "ready to commit", "mark this complete", "commit it", "push it", "push this to origin", "force-push", "rebase", "amend", "open a PR", "let's ship it". Any request to run a gated git action (see below) loads this skill, however it is phrased.
-  Also when behavior-changing code is about to be written (failing test first).
+  Also at the start of medium or heavy work where quality matters: a feature, a multi-step or multi-file fix, a refactor with logic, a change to a contract or to shared behavior. The protocol applies before the first edit, not only at the end.
 
-  Not for: read-only code questions, docs-only edits, or RED-GREEN-REFACTOR mechanics (see `superpowers:test-driven-development`).
+  Not for: small or trivial edits (a one-line fix, a constant or rename, a typo, a config tweak), read-only code questions, docs-only edits, or RED-GREEN-REFACTOR mechanics (see `superpowers:test-driven-development`).
 ---
 
 # Disciplined Delivery
@@ -18,7 +18,11 @@ Understand before changing, test before implementing, verify before claiming don
 
 ## The contract
 
-**Before coding.** Read the files you will touch and their tests, follow the repo's existing patterns, and check library behaviour in the real documentation instead of from memory. Do the one requested change, nothing more. A behavior change gets a failing test first; skip that for docs, config and throwaway spikes, and say you skipped it.
+**Before coding.** Work in this order: read, test, implement, verify.
+1. **Read.** Read the files you will touch and their tests, follow the repo's existing patterns, and check library behaviour in the real documentation instead of from memory.
+2. **Test.** Write a failing test before any implementation code. Skip that only for docs, config and throwaway spikes, and say you skipped it.
+3. **Implement.** Do the one requested change, nothing more, one task at a time. Apply SOLID, DRY, YAGNI, KISS and the language's idioms.
+4. **Verify.** Run the full suite and check the "fully implemented" list below before calling it done.
 
 **"Fully implemented" means ALL of:**
 - Covers the spec, not a subset.
@@ -51,6 +55,15 @@ If the user declines, stop: do not retry or reword the request, and report what 
 ## Red flags
 | Thought | Reality |
 |---|---|
+| "It is a big change, so I will write the tests after" | On work this size a failing test comes first; skip only for docs, config and spikes, and say so |
 | "Close enough to done" | Check all six "fully implemented" criteria explicitly |
 | "Just this once", skip showing the diff first | Every gated action shows its diff, tests and message first — no exceptions |
 | "The user probably wants X" | It's their choice — ask with options and a recommendation |
+
+## Quick reference
+| Situation | Required action |
+|---|---|
+| Writing implementation code | Have a failing test first |
+| Saying "done" | Check all six "fully implemented" criteria explicitly |
+| A choice is yours, or a requirement is ambiguous | Ask with options and a recommendation |
+| About to commit, push, rebase, amend, open a PR or change checkout | Show diff, tests and message; wait for its own "approve" |

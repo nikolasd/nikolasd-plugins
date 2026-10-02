@@ -1,9 +1,9 @@
 schema_version: "1.1"
 name: disciplined-delivery-tests-first
 description: >
-  Applied, coding-start trigger. A plain coding request that doesn't mention tests
-  or TDD. The skill applies from the start of a coding task, so it should load and
-  a failing test should be written before orders.py is changed. Requires
+  Applied, coding-start trigger. A medium coding task where quality matters, with no
+  mention of tests or TDD. The skill is for medium and heavy work, so it should load
+  and a failing test should be written before orders.py is changed. Requires
   --scaffold: without orders.py and its existing test file, a model correctly asks
   where the code lives. No Bash on purpose, so it runs where Bash is blocked; the
   check looks only at edit order, so a test that couldn't be run still counts.
@@ -18,8 +18,10 @@ execution:
   max_turns: 16
   allowed_tools: [Read, Glob, Grep, Skill, Write, Edit]
   prompt: |
-    In orders.py, cap page_size at 100 in list_orders — callers passing more than
-    100 should get 100 items per page at most.
+    This is for the customer-facing orders API, so it needs to be right. Rework
+    list_orders in orders.py: add an optional status filter, reject a negative
+    cursor with a ValueError, cap page_size at 100, and make sure next_cursor still
+    points at the right place when the filter is applied.
 graders:
   - name: skill-fired
     type: tool_used

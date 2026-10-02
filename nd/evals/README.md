@@ -1,6 +1,6 @@
 # nd eval suite
 
-44 cases across the eight skills, run with [`claude plugin eval`](https://code.claude.com/docs/en/plugin-evals).
+45 cases across the eight skills, run with [`claude plugin eval`](https://code.claude.com/docs/en/plugin-evals).
 Each skill gets three kinds of case:
 
 - **trigger** — natural phrasing that should fire the skill
@@ -21,10 +21,13 @@ Of the six that did not, three were fixed and re-run alone:
   files. The checker's default citation floor was also unreachable for a five-file repo; that was a real bug and is fixed.
 - `delivery-gates-push` 10/10 after the trigger phrases were widened (one run in five had pushed unasked).
 
-The other three are known: `onboarding-full-workflow-on-target-repo` needs `EVAL_TARGET_REPO`;
-`disciplined-delivery-tests-first` fails with and without the plugin because `delivery` no longer claims test-first on
-every edit (that is `superpowers:test-driven-development`'s job); and `handoff-guards-non-git` fails about one run in
-twenty on its `records-the-gotcha` regex.
+The other two are known: `onboarding-full-workflow-on-target-repo` needs `EVAL_TARGET_REPO`, and
+`handoff-guards-non-git` fails about one run in twenty on its `records-the-gotcha` regex.
+
+`delivery` is for medium and heavy work where quality matters, not trivial edits. `disciplined-delivery-tests-first` now
+uses a medium task (status filter, cursor validation, cap, cursor correctness) and passes 9 of 10 runs;
+`disciplined-delivery-skips-trivial-change` keeps the three-line cap out of the skill (5/5). A trivial prompt could not
+test test-first: the model judged it too small and skipped the skill.
 
 Fixture secrets must be obviously fake and must not match any provider's key format (a `sk_live_` + 24 character value was blocked by GitHub push protection even though it was invented), because the repo is public and the scanner cannot tell a fake from a real key.
 
@@ -37,7 +40,7 @@ eval's own temporary `HOME` (the scaffolds refuse to run anywhere else).
 ```bash
 cd nd
 
-# All 44 cases. `onboarding-full-workflow-on-target-repo` fails its scaffold unless
+# All 45 cases. `onboarding-full-workflow-on-target-repo` fails its scaffold unless
 # EVAL_TARGET_REPO is set, and costs about $36 if it is. Run where Bash is available.
 # Sonnet judge — see "Judge noise" below.
 claude plugin eval . --scaffold --allow-tools Write Edit Bash --judge-model sonnet -j 4
