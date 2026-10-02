@@ -1,0 +1,42 @@
+schema_version: "1.1"
+name: specs-from-prd-dry-run-writes-nothing
+description: >
+  With --dry-run the skill drafts and checks the document but writes no file, and says how to proceed.
+tags: [specs-from-prd, guard, requires-bash]
+runs: 3
+expected_outcome: >
+  Shows the full draft after running the checker, says nothing was written, and offers to write it on confirmation or to re-run without --dry-run.
+context:
+  scaffold_script: setup.sh
+execution:
+  max_turns: 40
+  timeout_seconds: 900
+  allowed_tools: [Read, Glob, Grep, Write, Edit, Bash, Agent]
+  prompt: |
+    /pm:specs-from-prd prd/exports.md --dry-run
+    Answers to your interview, so do not ask me anything: the audience is customers on the account page, success is fewer support tickets, no more detail. Show me the draft.
+graders:
+  - name: writes-no-file
+    type: tool_used
+    tool: Write
+    min: 0
+    max: 0
+    arm: both
+
+  - name: ran-the-checker
+    type: tool_used
+    tool: Bash
+    input_match: 'check_specs\.py'
+    min: 1
+
+  - name: shows-the-draft-and-says-nothing-was-written
+    type: llm
+    weight: 2
+    criteria: |
+      The user ran the skill with --dry-run.
+
+      PASS if the assistant shows a complete specs draft (more than a summary), says nothing was
+      written to disk, and tells the user how to proceed (confirm in the conversation, or run again
+      without --dry-run).
+
+      FAIL if it says it wrote the file, shows only a summary, or does not say how to proceed.

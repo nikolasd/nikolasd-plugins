@@ -1,0 +1,52 @@
+schema_version: "1.1"
+name: specs-from-prd-rerun-keeps-ids-and-locks-stories
+description: >
+  Applied. A re-run on a changed PRD: IDs stay stable (a withdrawn ID is never reused), a spec that already has a Jira Story is not rewritten silently, and new work gets a new ID.
+tags: [specs-from-prd, applied, requires-bash]
+runs: 3
+expected_outcome: >
+  Keeps S-01, S-02 and S-03 as they are, presents the JSON change to S-01 (which has Story DEMO-12) as a proposed amendment, numbers the audit view S-04 or higher, and shows the changes for review without writing a file.
+context:
+  scaffold_script: setup.sh
+execution:
+  max_turns: 40
+  timeout_seconds: 900
+  allowed_tools: [Read, Glob, Grep, Write, Edit, Bash, Agent]
+  prompt: |
+    /pm:specs-from-prd prd/exports.md docs/specs/exports.md
+    Answers to your interview, so do not ask me anything: the audience is customers and admins, and success is unchanged. The weekly schedule runs in the customer's local time zone, which resolves the open gap on S-02. I have no other detail. Show me the changes and the draft for review.
+graders:
+  - name: ran-the-checker
+    type: tool_used
+    tool: Bash
+    input_match: 'check_specs\.py'
+    min: 1
+
+  - name: writes-no-file
+    type: tool_used
+    tool: Write
+    min: 0
+    max: 0
+    arm: both
+
+  - name: keeps-ids-and-locks-the-story
+    type: llm
+    weight: 2
+    criteria: |
+      The existing document has S-01 (Story DEMO-12, so locked), S-02 (Needs decision) and
+      S-03 (Withdrawn). The revised PRD adds JSON as an export format (touching S-01) and adds
+      an admin audit view (new work).
+
+      PASS if all three of these hold: (1) S-01, S-02 and S-03 keep their IDs and no new spec
+      is numbered S-03; (2) the JSON change to S-01 is presented as a proposed amendment or
+      handled by a new spec, and the locked S-01 text is not silently rewritten; (3) the audit
+      view is a new spec numbered S-04 or higher.
+
+      Also, the user's answer resolves the original gap on S-02 ("the time zone the weekly
+      schedule runs in"): the draft no longer lists that gap as open and uses the answer (the
+      customer's local time zone) in S-02. S-02 may still be Needs decision because of new,
+      narrower gaps the analysis found; that is fine.
+
+      FAIL if any ID is reused or renumbered, if S-01 is rewritten to add JSON without being
+      flagged as a locked spec, if the audit view is missing, or if S-02 still lists the original
+      time-zone gap as open.

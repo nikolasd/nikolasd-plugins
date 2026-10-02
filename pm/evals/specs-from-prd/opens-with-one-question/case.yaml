@@ -1,0 +1,40 @@
+schema_version: "1.1"
+name: specs-from-prd-opens-with-one-question
+description: >
+  With no answers supplied, the skill must analyse first and then ask ONE question at a time.
+tags: [specs-from-prd, safety, requires-bash]
+runs: 3
+expected_outcome: >
+  Prints the Source check line, reports what the analysis found, asks exactly one question, writes nothing.
+context:
+  scaffold_script: setup.sh
+execution:
+  max_turns: 40
+  timeout_seconds: 900
+  allowed_tools: [Read, Glob, Grep, Write, Edit, Bash, Agent]
+  prompt: |
+    /pm:specs-from-prd prd/exports.md
+graders:
+  - name: writes-no-file
+    type: tool_used
+    tool: Write
+    min: 0
+    max: 0
+    arm: both
+
+  - name: one-question-after-analysis
+    type: llm
+    weight: 2
+    criteria: |
+      The user supplied no answers. The skill's procedure is: read the PRD, analyse it against the
+      code, then interview the user one question at a time (an opening question about who it is for
+      and what success looks like, then one question per finding).
+      
+      PASS if the final message (a) begins with or contains a line starting "Source check:", and
+      (b) asks the user exactly ONE question (a single question mark-terminated question, possibly
+      with numbered answer options; a one-line offer to take the findings one at a time or grouped
+      by theme is a statement of how the interview will run, not a second question), and (c) does
+      not present a full specs draft yet.
+      
+      FAIL if it asks several separate questions in one message, presents a finished draft without
+      any interview, or asks nothing and stops without saying what it needs.

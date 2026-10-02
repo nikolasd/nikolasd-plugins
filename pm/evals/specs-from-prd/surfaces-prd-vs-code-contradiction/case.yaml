@@ -1,0 +1,44 @@
+schema_version: "1.1"
+name: specs-from-prd-surfaces-prd-vs-code-contradiction
+description: >
+  Applied. The PRD claims the export already streams; the code builds the whole result in memory. The skill must report the claim as false or partial with file evidence and must not carry it into the specs as fact.
+tags: [specs-from-prd, applied, requires-bash]
+runs: 3
+expected_outcome: >
+  Marks the streaming claim FALSE or PARTIAL citing app/exports.py, surfaces it as a finding or question, and shows the draft without writing a file.
+context:
+  scaffold_script: setup.sh
+execution:
+  max_turns: 40
+  timeout_seconds: 900
+  allowed_tools: [Read, Glob, Grep, Write, Edit, Bash, Agent]
+  prompt: |
+    /pm:specs-from-prd prd/exports.md
+    Answers to your interview, so do not ask me anything: the audience is customers on the web account page, and success is that customers with long histories can still export. I have no more detail. Show me the draft for review.
+graders:
+  - name: ran-the-checker
+    type: tool_used
+    tool: Bash
+    input_match: 'check_specs\.py'
+    min: 1
+
+  - name: writes-no-file
+    type: tool_used
+    tool: Write
+    min: 0
+    max: 0
+    arm: both
+
+  - name: reports-the-false-claim-with-evidence
+    type: llm
+    weight: 2
+    criteria: |
+      The PRD says the existing export endpoint already streams large histories. In the code,
+      app/exports.py builds the whole result in memory (a list of rows joined into one string),
+      so the claim is false.
+
+      PASS if the response marks that claim FALSE or PARTIAL (or says in equivalent words that
+      the export does not stream and is built in memory), cites a file path in app/ as
+      evidence, and does not repeat the streaming claim as established fact in a spec.
+
+      FAIL if it accepts the claim as true, repeats it as fact, or never addresses it.

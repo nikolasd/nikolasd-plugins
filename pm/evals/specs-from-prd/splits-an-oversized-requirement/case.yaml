@@ -1,0 +1,51 @@
+schema_version: "1.1"
+name: specs-from-prd-splits-an-oversized-requirement
+description: >
+  Applied. One PRD requirement bundles four capabilities. The skill must split it so that each spec is a single small story, and show the INVEST verdicts.
+tags: [specs-from-prd, applied, requires-bash]
+runs: 3
+expected_outcome: >
+  Produces at least three separate specs, none combining the export formats with scheduling or the audit log, each with INVEST verdicts. Shows the draft without writing a file.
+context:
+  scaffold_script: setup.sh
+execution:
+  max_turns: 40
+  timeout_seconds: 900
+  allowed_tools: [Read, Glob, Grep, Write, Edit, Bash, Agent]
+  prompt: |
+    /pm:specs-from-prd prd/exports.md
+    Answers to your interview, so do not ask me anything: the audience is customers and support admins, and success is fewer support tickets. I have no more detail and I approve any sensible split. Show me the draft for review.
+graders:
+  - name: ran-the-checker
+    type: tool_used
+    tool: Bash
+    input_match: 'check_specs\.py'
+    min: 1
+
+  - name: writes-no-file
+    type: tool_used
+    tool: Write
+    min: 0
+    max: 0
+    arm: both
+
+  - name: splits-into-small-specs
+    type: llm
+    weight: 2
+    criteria: |
+      The PRD has a single requirement that bundles: CSV export, PDF export, a weekly emailed
+      export, and an admin audit log.
+
+      A spec bundles capabilities when its user story or scope delivers more than one of: an
+      export format, the weekly emailed export, the audit log. A dependency on another spec,
+      or an acceptance criterion that refers to behaviour owned by another spec, is not
+      bundling. A format the code already provides (CSV) may be left without a spec of its
+      own.
+
+      PASS if the draft contains at least three separate specs, no single spec bundles
+      capabilities in that sense (in particular, two export formats are not delivered by one
+      spec), and the specs carry INVEST verdicts (a table or list of Independent,
+      Negotiable, Valuable, Estimable, Small and Testable).
+
+      FAIL if the whole requirement is one spec, if a spec bundles several of these
+      capabilities, or if there are no INVEST verdicts.
