@@ -18,7 +18,7 @@
     {
       "name": "pm",
       "source": "./pm",
-      "description": "Project-management skills: Jira Epic and Story authoring pipeline and per-repository Solution Design Document authoring"
+      "description": "Project-management skills: Jira Epic and Story authoring pipeline, PRD-to-specs analysis, and per-repository Solution Design Document authoring"
     }
   ]
 }
