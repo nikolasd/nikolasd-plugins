@@ -56,10 +56,11 @@ claude plugin uninstall pm --scope user
 | epic-refine | `/pm:epic-refine EPIC-123` | Step 2: technical Q&A that reads the codebase and populates NFRs, Personas, Technology Context, story tables, and sequence diagrams |
 | story | `/pm:story EPIC-123` | Step 3: generates one Jira Story at a time from the Epic's story table, populating all sections from the Epic content and codebase, and updates the Epic story table and maturity state |
 | story-from-document | `/pm:story-from-document <source OR story key>` | Standalone (not part of the epic pipeline). Two modes: **create** a new verified Jira Story from a source artifact (a Confluence page, a local document, or a written brief), or **promote** an existing Story (often a placeholder) by fleshing it out in place. Either mode can optionally attach the Story to an existing Epic as a child (parent link only, no Epic story-table or maturity change). Investigates claims against the relevant repos with `file:line` evidence; sub-tasks and Blocks links; optional UI mockups via the shared mockup core. Supports `--dry-run` |
+| specs-from-prd | `/pm:specs-from-prd <PRD> [specs path] [--dry-run]` | Standalone, needs no Jira. Reads a PRD, checks its claims against the codebase with `file:line` evidence, interviews you about what it finds (contradictions, missing pieces, architectural conflicts), and writes one local specs document (default `docs/specs/<name>.md`): a feature-level design plus specs that are each one small story under INVEST. Anything undecided is recorded as `[GAP: ...]`, never guessed. A checker enforces the mechanical rules. Re-runnable: IDs are stable and a spec that already has a Story is locked. Writes only after you confirm the draft. Build each Story afterwards with `/pm:story-from-document <doc>#S-03`. Supports `--dry-run` |
 | sdd | `/pm:sdd [--dry-run]` | Standalone, scoped to the repo it runs in (no Jira key). Creates or refreshes one living Solution Design Document against a Solution Design Document template (the bundled Template v2.0, or one you supply as a file or Confluence page), grounding every section it can in the codebase with `file:line` evidence and interviewing the user, batched by document Part, for anything that is a judgment call rather than a fact. Writes a local markdown copy (Zensical-aware path if `docs/zensical.toml` exists) and a Confluence page, kept in sync; the first run creates, every later run updates in place, preserving every existing requirement/risk/decision ID. Supports `--dry-run` |
 
-All six skills run only when you invoke them (`/pm:<name>`); none fires on its own,
-because each one can write to Jira, Confluence or git. Each asks for explicit
+All seven skills run only when you invoke them (`/pm:<name>`); none fires on its own,
+because each one can write to Jira, Confluence, git or your repository. Each asks for explicit
 confirmation of a full draft before it writes anything.
 
 ## Requirements
@@ -186,10 +187,32 @@ Run from inside the product repo so Claude can read the codebase. Re-run the
 command to generate the next story; the Epic story table and maturity state
 update on each invocation.
 
+### Specs from a PRD (before any tickets exist)
+
+```
+/pm:specs-from-prd <PRD path, URL or Confluence page> [specs path] [--dry-run]
+```
+
+Run from inside the repository the PRD is about. The skill reads the PRD, checks what it
+says about the code against the code, and asks you about what it finds. It then writes one
+Markdown file, by default `docs/specs/<name>.md`, holding a feature-level design and a set
+of specs, each sized as one small story under INVEST. It never touches Jira, and it writes
+only after you have seen and confirmed the full draft. Re-run it when the PRD changes: spec
+IDs stay stable, a spec that already has a Story is shown as a proposed amendment and never
+rewritten, and a spec that no longer fits is marked `Withdrawn`.
+
+Then build the Stories one at a time:
+
+```
+/pm:story-from-document docs/specs/<name>.md#S-03
+```
+
+and put the new Jira key on that spec's `Story:` line, which locks it.
+
 ### Story from a document (independent of the epic pipeline)
 
 ```
-/pm:story-from-document <source OR existing story key e.g. PROJ-1234>
+/pm:story-from-document <source, existing story key e.g. PROJ-1234, or specs-document#S-03>
 ```
 
 Builds a fully detailed Jira Story, with sub-tasks and dependency links, without

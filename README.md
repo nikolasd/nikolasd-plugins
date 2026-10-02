@@ -42,7 +42,8 @@ Ransome. See [`pm/README.md`](pm/README.md).
 | `ui-mockups` | `/pm:ui-mockups` | Step 1.5 (optional): screen mockups for business review, written back into the Epic. |
 | `epic-refine` | `/pm:epic-refine` | Step 2: technical Q&A that reads the codebase and completes the Epic. |
 | `story` | `/pm:story` | Step 3: generates one Jira Story at a time from the Epic's story table. |
-| `story-from-document` | `/pm:story-from-document` | Builds or promotes a single verified Jira Story, with sub-tasks and dependency links, without an Epic. |
+| `story-from-document` | `/pm:story-from-document` | Builds or promotes a single verified Jira Story, with sub-tasks and dependency links, without an Epic, or from one spec of a specs document. |
+| `specs-from-prd` | `/pm:specs-from-prd` | Turns a PRD into a local specs document of story-sized, code-grounded specs with a feature design and every gap recorded. Build each Story with `story-from-document <doc>#S-03`. |
 | `sdd` | `/pm:sdd` | Creates or refreshes one living Solution Design Document per repository. |
 
 ### `ty-lsp` — ty Language Server
