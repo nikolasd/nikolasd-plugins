@@ -1,0 +1,37 @@
+schema_version: "1.1"
+name: sdd-continues-local-only-without-atlassian
+description: >
+  Applied. The Atlassian tools are not available in this run. The skill must not stop: it carries on local-only, and says plainly that the Confluence page would not be created or updated.
+tags: [sdd, applied, requires-bash]
+runs: 2
+expected_outcome: >
+  Produces the dry-run draft, names the local path, and states that Confluence cannot be reached so only the local file would be written.
+context:
+  scaffold_script: setup.sh
+execution:
+  max_turns: 25
+  timeout_seconds: 900
+  allowed_tools: [Read, Glob, Grep, Write, Bash, Agent]
+  prompt: |
+    /pm:sdd --dry-run
+    I do not know any of the judgment calls (owner, client, classification, priorities, severities, approvals). Record each one as an open question and give me the complete dry-run draft in one go, without waiting for answers. At the end, tell me where the document would be written and what would happen with Confluence.
+graders:
+  - name: writes-no-file
+    type: tool_used
+    tool: Write
+    min: 0
+    max: 0
+    arm: both
+
+  - name: states-the-local-only-outcome
+    type: llm
+    weight: 2
+    criteria: |
+      The Atlassian (Confluence) tools are not available in this run, and the user asked what
+      would happen with Confluence.
+
+      PASS if the response gives a local path for the document and says that Confluence
+      could not be reached or would be skipped (only the local file would be written).
+
+      FAIL if it says it would publish or has published to Confluence, or says nothing about
+      Confluence when asked.

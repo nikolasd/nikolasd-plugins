@@ -17,7 +17,7 @@ when_to_use: >
   current code. One repository per run. It never creates or edits a Jira issue;
   for Epics and Stories use `epic`, `epic-refine`, `story` or
   `story-from-document`.
-allowed-tools: [Read, Write, Edit, Bash(git add docs/*), Bash(git commit -m *), Glob, Grep, Agent, mcp__atlassian__getAccessibleAtlassianResources, mcp__atlassian__getConfluencePage, mcp__atlassian__searchConfluenceUsingCql, mcp__atlassian__createConfluencePage, mcp__atlassian__updateConfluencePage, mcp__atlassian__getConfluenceSpaces, "Bash(sh ${CLAUDE_PLUGIN_ROOT}/scripts/config.sh *)", "Bash(sh ${CLAUDE_PLUGIN_ROOT}/skills/authoring-sdd/scripts/repo-context.sh)"]
+allowed-tools: [Read, Write, Edit, Bash(git add docs/*), Bash(git commit -m *), Glob, Grep, Agent, mcp__atlassian__getAccessibleAtlassianResources, mcp__atlassian__getConfluencePage, mcp__atlassian__searchConfluenceUsingCql, mcp__atlassian__createConfluencePage, mcp__atlassian__updateConfluencePage, mcp__atlassian__getConfluenceSpaces, "Bash(sh ${CLAUDE_PLUGIN_ROOT}/scripts/config.sh *)", "Bash(sh ${CLAUDE_PLUGIN_ROOT}/skills/authoring-sdd/scripts/repo-context.sh)", "Bash(sh ${CLAUDE_PLUGIN_ROOT}/skills/authoring-sdd/scripts/repo-context.sh --hash)"]
 disable-model-invocation: true
 model: sonnet
 effort: high
@@ -446,9 +446,9 @@ never under `--dry-run`. Write exactly the body the user confirmed.
    `confluence_parent_id` just resolved, the page's new version as
    `confluence_version`, the `local_path` from Phase 0, the document's new
    `Version` as `last_run_version`, today's date as `last_run_date`, and the
-   hash of `<local_path>` as `local_hash` (recompute it with
-   `git hash-object <local_path>` after the final write; the Phase 0 value is
-   the old content).
+   hash of `<local_path>` as `local_hash` (recompute it after the final write with
+   `sh ${CLAUDE_PLUGIN_ROOT}/skills/authoring-sdd/scripts/repo-context.sh --hash`;
+   the Phase 0 value is the old content).
 4. Commit, if the user's confirmation covered it. Stage exactly these paths:
    `<local_path>`, `docs/.solution-design.state.json`, and `docs/zensical.toml`
    if step 1 added a nav entry to it, with `git add <those paths>` (each starts

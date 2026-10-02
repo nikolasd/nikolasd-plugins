@@ -75,7 +75,7 @@ because they go stale.
 Each screen is shown to the user by the first of these rungs that works. Stay
 on one rung for the whole session unless it fails:
 
-1. **PNG from a local browser.** `scripts/render.sh` finds Chrome, Edge,
+1. **PNG from a local browser.** `../scripts/render.sh` (in the `ui-mockups` skill directory) finds Chrome, Edge,
    Chromium or Brave on macOS, Linux, or Windows (Git Bash) and renders
    headless. Nothing needs installing if one of those is present; set the
    `PM_BROWSER` environment variable to a browser path or command to choose a

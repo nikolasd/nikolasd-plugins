@@ -332,7 +332,7 @@ Apply any amendments and re-present the affected parts.
 
 ## Phase 5: Write to Jira
 
-Only after explicit confirmation (never under `--dry-run`). **Read
+Only after explicit confirmation, and never in a run that is still under `--dry-run` (see the dry-run boundary for how to continue after one). **Read
 [`references/jira-write-procedure.md`](references/jira-write-procedure.md) now**
 and follow it: check for work an earlier run already did (5.0), resolve the issue
 types and the link type (5.1), write the Story (create, or edit in place

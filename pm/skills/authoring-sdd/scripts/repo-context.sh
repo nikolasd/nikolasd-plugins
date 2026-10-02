@@ -8,6 +8,15 @@
 # under both BSD sed (macOS) and GNU sed (Linux/CI).
 set -u
 
+# `--hash` prints only the git hash of the resolved local document (used after the
+# final write in Phase 5, when the hash from the start of the run is out of date).
+# Everything printed before the path is known is discarded in that mode.
+HASH_ONLY=0
+if [ "${1:-}" = "--hash" ]; then
+  HASH_ONLY=1
+  exec 3>&1 1>/dev/null
+fi
+
 ROOT=$(git rev-parse --show-toplevel 2>&1)
 STATUS=$?
 if [ "$STATUS" -ne 0 ]; then
@@ -40,6 +49,11 @@ else
   echo "docs/zensical.toml: not found"
 fi
 echo "Resolved local_path: $LOCAL_PATH"
+
+if [ "$HASH_ONLY" -eq 1 ]; then
+  git hash-object -- "$LOCAL_PATH" >&3 2>/dev/null || echo unknown >&3
+  exit 0
+fi
 
 echo "Current branch: $(git branch --show-current 2>/dev/null || echo unknown)"
 

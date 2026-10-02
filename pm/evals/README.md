@@ -1,16 +1,14 @@
 # pm eval suite
 
-Eighteen cases for the `pm` skills, in the format `claude plugin eval` reads, plus two
+Twenty cases for the `pm` skills, in the format `claude plugin eval` reads, plus two
 deterministic shell tests (`tests/`).
 
 ## Status
 
-Last full run on 2026-10-01 with a Sonnet judge and no baseline arm (`--ablation none`),
-three runs per case, two for the long `sdd` cases. 16 of 18 cases passed on the full run;
-the other two (`story-from-document` dry run, and `asks-about-existing-story` after its
-prompt was fixed to run through to the review gate) passed 5 of 5 when re-run alone.
+Last full run on 2026-10-02 with a Sonnet judge and no baseline arm (`--ablation none`),
+three runs per case, two for the long `sdd` cases: **20 of 20 cases passed**.
 
-A full run costs about $11 and takes about 15 minutes. Expect the `story-from-document`
+A full run costs about $14 and takes about 20 minutes. Expect the `story-from-document`
 and `sdd` cases to vary from run to run: re-run a failing case several times before
 concluding anything.
 

@@ -297,7 +297,7 @@ before proceeding.
 Run this phase only after the user has confirmed the draft shown at the end of
 Phase 4.
 
-After confirmation, execute these three actions in order.
+After confirmation, make the two writes below in order, then confirm to the user.
 
 ### Action 1: Create the Jira Epic
 

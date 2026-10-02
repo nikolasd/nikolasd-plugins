@@ -22,8 +22,8 @@ Notes section instead. A story with a single sub-task adds no value and only
 prompts the reviewer to ask why it is there. Reach for sub-tasks only when the
 work genuinely splits across repositories or into separately reviewable units.
 
-Use the section definitions in `templates/story-structure.md` for the Story and
-`templates/subtask-structure.md` for each sub-task (both read in Phase 3). Every sub-task gets a human-readable preamble followed by a
+Use the section definitions in `../templates/story-structure.md` for the Story and
+`../templates/subtask-structure.md` for each sub-task (both read in Phase 3). Every sub-task gets a human-readable preamble followed by a
 `### Claude Planning Hints` block.
 
 **Promote mode:** the review must show the sub-tasks and links that already
