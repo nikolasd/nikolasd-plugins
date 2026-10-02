@@ -8,8 +8,10 @@ and each plugin's `version` in its own `plugin.json` follows
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-10-02
+
 ### Changed
-- **nd `delivery`**: restored the pre-coding protocol (read, failing test, implement, verify, with SOLID/DRY/YAGNI/KISS) and a quick-reference table. It now targets medium and heavy work where quality matters and says explicitly that small or trivial edits are out of scope.
+- **nd `delivery`** (nd 0.5.1): restored the pre-coding protocol (read, failing test, implement, verify, with SOLID/DRY/YAGNI/KISS) and a quick-reference table. It now targets medium and heavy work where quality matters and says explicitly that small or trivial edits are out of scope.
 
 ### Added
 - **nd evals**: `disciplined-delivery-skips-trivial-change`. `disciplined-delivery-tests-first` now uses a medium task and passes 9 of 10 runs.
