@@ -21,8 +21,17 @@ Of the six that did not, three were fixed and re-run alone:
   files. The checker's default citation floor was also unreachable for a five-file repo; that was a real bug and is fixed.
 - `delivery-gates-push` 10/10 after the trigger phrases were widened (one run in five had pushed unasked).
 
-The other two are known: `onboarding-full-workflow-on-target-repo` needs `EVAL_TARGET_REPO`, and
-`handoff-guards-non-git` fails about one run in twenty on its `records-the-gotcha` regex.
+One case needs a target: `onboarding-full-workflow-on-target-repo` takes a real repository. It passed 9/9 graders (1.00,
+$8.24, 17 minutes) against `fastapi/full-stack-fastapi-template` at `cb740b6` (252 tracked files, 11 agents, 5 review
+agents). Put the clone's path in the gitignored `target-repo.path`: the eval sandbox does not pass `EVAL_TARGET_REPO`
+through to the scaffold script. Grant `--allow-tools Write Edit`. The case cannot grade the checker (no shell), so run
+`checker.py` on the kept workspace: it reported one dangling path in 17.7k words, a `.editorconfig` the doc says is
+absent (the skill's rule is to write absent files in plain text; the repair round needs a shell to run). For repos
+without LLM agents pass `--ai-doc runtime-design.md`. The setup script leaves out the target's own `.claude/`,
+`.agents/`, `CLAUDE.md` and `AGENTS.md` so they cannot load into the run.
+`handoff-guards-non-git` had failed about one run in twenty on its `records-the-gotcha` regex; a later 20-run sweep
+passed 20 of 20, so the grader is unchanged. If it fails again, read that run's `HANDOFF.md` (`--keep-temp`) before
+widening the pattern.
 
 `delivery` is for medium and heavy work where quality matters, not trivial edits. `disciplined-delivery-tests-first` now
 uses a medium task (status filter, cursor validation, cap, cursor correctness) and passes 9 of 10 runs;
@@ -41,7 +50,7 @@ eval's own temporary `HOME` (the scaffolds refuse to run anywhere else).
 cd nd
 
 # All 45 cases. `onboarding-full-workflow-on-target-repo` fails its scaffold unless
-# EVAL_TARGET_REPO is set, and costs about $36 if it is. Run where Bash is available.
+# EVAL_TARGET_REPO is set, and cost about $8 against a mid-size repo (about $36 was the early estimate). Run where Bash is available.
 # Sonnet judge — see "Judge noise" below.
 claude plugin eval . --scaffold --allow-tools Write Edit Bash --judge-model sonnet -j 4
 
@@ -495,4 +504,4 @@ Notes that used to sit in `onboard`'s `SKILL.md` and go stale there:
   (a few percent to a tenth is the expected range).
 - The `tracked` layout has not been measured by a full run. Its cost figure in the skill is a
   projection from the single-layout run.
-- The full-workflow case costs about $36 and needs `EVAL_TARGET_REPO`.
+- The full-workflow case cost $8.24 against a 252-file repo and needs a target repo (`target-repo.path`).

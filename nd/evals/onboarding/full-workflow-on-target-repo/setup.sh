@@ -18,5 +18,8 @@ if [ -z "$repo" ] || ! git -C "$repo" rev-parse --git-dir >/dev/null 2>&1; then
   exit 1
 fi
 
-git -C "$repo" archive HEAD | tar -x
+# The target's own agent config (.claude/, .agents/, CLAUDE.md, AGENTS.md) is left out:
+# Claude Code would load it as project skills and instructions and change what this
+# case measures, which is the onboard skill alone.
+git -C "$repo" archive HEAD | tar -x --exclude=.claude --exclude=.agents --exclude=CLAUDE.md --exclude=AGENTS.md
 echo "copied $(git -C "$repo" ls-files | wc -l) tracked files from $repo at $(git -C "$repo" rev-parse --short HEAD)"
