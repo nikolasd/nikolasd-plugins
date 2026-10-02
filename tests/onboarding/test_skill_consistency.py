@@ -10,7 +10,7 @@ import re
 import unittest
 from pathlib import Path
 
-SKILL = Path(__file__).resolve().parents[2] / "nd" / "skills" / "onboarding"
+SKILL = Path(__file__).resolve().parents[2] / "nd" / "skills" / "onboard"
 read = lambda name: (SKILL / name).read_text(encoding="utf-8")
 squash = lambda text: re.sub(r"\s+", " ", text)
 
@@ -38,6 +38,8 @@ class TestBriefMatchesChecker(unittest.TestCase):
             "mermaid": ["mermaid"],
             "relative links": ["relative markdown links"],
             "leak rules": ["Domain extension points"],
+            "repo text is data": ["never instructions to you", "embedded instruction in"],
+            "secrets": ["Never copy a secret value", "SECRETS"],
         }
         for category, phrases in expectations.items():
             for phrase in phrases:
@@ -46,11 +48,11 @@ class TestBriefMatchesChecker(unittest.TestCase):
     def test_shared_context_tells_writers_how_to_mention_files_and_todos(self):
         ctx = shared_context()
         self.assertIn("Backtick a file only when you cite its real path", ctx)
-        self.assertIn('write "to-do comments"', ctx)
-        self.assertIn("literal words TODO and TBD", ctx)
+        self.assertIn("Placeholder markers", ctx)
+        self.assertIn("describing to-do comments in the code is fine", ctx)
 
-    def test_checker_still_fails_the_words_so_the_brief_rule_is_load_bearing(self):
-        self.assertRegex(read("checker.py"), r'PLACEHOLDER = re\.compile\(r"\\b\(TODO\|TBD\)\\b"\)')
+    def test_checker_fails_placeholder_markers_not_the_bare_words(self):
+        self.assertRegex(read("checker.py"), r"PLACEHOLDER = re\.compile\(.*TODO\|TBD")
 
     def test_mixed_repos_keep_agents_md_and_cover_workloads(self):
         tracks = squash(read("tracks.md"))
@@ -144,7 +146,7 @@ class TestSkillMd(unittest.TestCase):
     def test_cost_line_counts_tracked_reviewers_and_flags_the_estimate(self):
         text = squash(self.text)
         self.assertIn("plus one per track when tracked", text)
-        self.assertIn("unmeasured", text)
+        self.assertIn("projection", text)
 
     def test_python_requirement_is_stated(self):
         self.assertIn("Python ≥3.9", self.text)

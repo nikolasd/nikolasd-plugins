@@ -1,4 +1,4 @@
-"""Tests for nd/skills/onboarding/checker.py.
+"""Tests for nd/skills/onboard/checker.py.
 
 Run from the repo root:  python -m unittest discover -s tests/onboarding -v
 """
@@ -10,7 +10,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-CHECKER = Path(__file__).resolve().parents[2] / "nd" / "skills" / "onboarding" / "checker.py"
+CHECKER = Path(__file__).resolve().parents[2] / "nd" / "skills" / "onboard" / "checker.py"
 spec = importlib.util.spec_from_file_location("checker", CHECKER)
 assert spec is not None and spec.loader is not None
 checker = importlib.util.module_from_spec(spec)
@@ -103,13 +103,68 @@ class TestGate(CheckerCase):
         self.assertIn("missing_links", out)
 
 
+class TestSecrets(CheckerCase):
+    def test_secret_shaped_string_fails_and_is_never_printed(self):
+        key = "AKIA" + "ABCDEFGHIJKLMNOP"
+        self.write_all({"deployment.md": self.body(f"The CI uses {key} as its key.")})
+        ok, out = self.run_check()
+        self.assertFalse(ok)
+        self.assertIn("SECRETS", out)
+        self.assertIn("AWS access key at line", out)
+        self.assertNotIn(key, out)
+
+    def test_credentials_in_a_url_fail(self):
+        self.write_all({"deployment.md": self.body("DB is postgres://admin:hunter2@db.internal/app")})
+        ok, out = self.run_check()
+        self.assertFalse(ok)
+        self.assertIn("credentials in URL", out)
+
+    def test_variable_names_and_references_pass(self):
+        self.write_all({"deployment.md": self.body(
+            "Set `DATABASE_URL`; the key comes from api_key = ${API_KEY} and token = os.environ['TOKEN']."
+        )})
+        ok, out = self.run_check()
+        self.assertTrue(ok, out)
+
+
 class TestCitationCount(CheckerCase):
-    def test_anchored_citations_of_few_files_count(self):
-        # 3 files, 30 distinct anchored citations: a small deploy surface, well cited.
+    def test_anchors_of_few_files_do_not_pad_the_floor(self):
+        # 3 files, 30 distinct anchors: the floor counts distinct files, so this fails.
         cites = " ".join(f"`src/m{i % 3}.py:L{i // 3 + 1}`" for i in range(30))  # lines 1-10 exist
         self.write_all({"deployment.md": "# D\n\n" + cites + "\n\n```mermaid\ngraph TD\n A-->B\n```\n"})
         ok, out = self.run_check()
-        self.assertTrue(ok, out)
+        self.assertFalse(ok)
+        self.assertIn("<25 cites", out)
+
+    def test_default_floor_scales_with_citable_files(self):
+        # 45 sources; README.md and docs/guide.md are not citable.
+        self.assertEqual(checker.citable_files(self.root), 45)
+        self.assertEqual(checker.default_min_cites(self.root), 25 if 45 * 2 // 3 > 25 else 45 * 2 // 3)
+        small = self.root / "small"
+        small.mkdir()
+        for i in range(5):
+            (small / f"f{i}.py").write_text("x = 1\n")
+        (small / "README.md").write_text("hi\n")
+        self.assertEqual(checker.citable_files(small), 5)   # the README does not count
+        self.assertEqual(checker.default_min_cites(small), 3)  # a tiny repo gets a reachable floor
+
+    def test_tiny_repo_passes_at_the_default_floor_citing_everything_it_has(self):
+        import shutil
+        shutil.rmtree(self.root / "src")
+        (self.root / "src").mkdir()
+        for i in range(5):
+            (self.root / "src" / f"m{i}.py").write_text("def handler():\n    pass\n" + "x = 1\n" * 8)
+        floor, citable = checker.default_min_cites(self.root, self.docs), checker.citable_files(self.root, self.docs)
+        self.assertEqual((floor, citable), (3, 5))
+        every = " ".join(f"`src/m{i}.py`" for i in range(5))
+        links = " ".join(f"[{x}]({x})" for x in SINGLE if x != "ONBOARDING.md")
+        docs = {rel: "# D\n\n" + every + "\n\n```mermaid\ngraph TD\n A-->B\n```\n" for rel in SINGLE}
+        docs["ONBOARDING.md"] = docs["ONBOARDING.md"] + links
+        self.write_all(docs)
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            ok = checker.check(self.docs, self.root, "single", {}, floor, citable=citable)
+        self.assertTrue(ok, buf.getvalue())
 
     def test_repeating_one_citation_does_not_pad(self):
         cites = " ".join("`src/m0.py:L1`" for _ in range(30))
@@ -458,11 +513,119 @@ class TestCli(CheckerCase):
     def test_missing_docs_dir_is_a_usage_error(self):
         self.assertEqual(self.run_cli(str(self.root / "nope"), "--layout", "single"), 2)
 
+    def test_tiny_repo_passes_through_main_at_the_default_floor(self):
+        import shutil
+        shutil.rmtree(self.root / "src")
+        (self.root / "src").mkdir()
+        for i in range(5):
+            (self.root / "src" / f"m{i}.py").write_text("def handler():\n    pass\n" + "x = 1\n" * 8)
+        every = " ".join(f"`src/m{i}.py`" for i in range(5))
+        links = " ".join(f"[{x}]({x})" for x in SINGLE if x != "ONBOARDING.md")
+        docs = {rel: "# D\n\n" + every + "\n\n```mermaid\ngraph TD\n A-->B\n```\n" for rel in SINGLE}
+        docs["ONBOARDING.md"] += links
+        self.write_all(docs)
+        # no --min-cites: the default floor for 5 citable files must be reachable
+        self.assertEqual(self.run_cli(str(self.docs), "--layout", "single", "--root", str(self.root)), 0)
+
     def test_allow_placeholders_flag(self):
         self.write_all({"engineering.md": self.body("TBD later")})
         args = [str(self.docs), "--layout", "single", "--root", str(self.root)]
         self.assertEqual(self.run_cli(*args), 1)
         self.assertEqual(self.run_cli(*args, "--allow-placeholders"), 0)
+
+
+
+class TestStricterRules(CheckerCase):
+    def test_diagram_required_in_infrastructure_deployment_ai_and_onboarding(self):
+        for rel in ("infrastructure.md", "deployment.md", "ai-design.md"):
+            with self.subTest(rel=rel):
+                self.write_all({rel: self.body(mermaid=False)})
+                ok, out = self.run_check()
+                self.assertFalse(ok)
+                self.assertIn("no mermaid", out)
+        links = " ".join(f"[{s}]({s})" for s in SINGLE if s != "ONBOARDING.md")
+        self.write_all({"ONBOARDING.md": self.body(links, mermaid=False, cites=40)})
+        ok, out = self.run_check()
+        self.assertFalse(ok)
+        self.assertIn("no mermaid", out)
+
+    def test_empty_or_keywordless_mermaid_block_does_not_count(self):
+        self.write_all({"deployment.md": self.body(mermaid=False) + "\n```mermaid\n```\n\n```mermaid\njust words\n```\n"})
+        ok, out = self.run_check()
+        self.assertFalse(ok)
+        self.assertIn("no mermaid", out)
+
+    def test_prose_exemption_applies_only_in_onboarding(self):
+        extra = "\n## Existing in-repo prose (unverified)\n\nThe README says things: `README.md`.\n"
+        self.write_all({"engineering.md": self.body(extra)})
+        ok, out = self.run_check()
+        self.assertFalse(ok)
+        self.assertIn("INADMISSIBLE", out)
+        links = " ".join(f"[{s}]({s})" for s in SINGLE if s != "ONBOARDING.md")
+        self.write_all({"ONBOARDING.md": self.body(links + extra, cites=40)})
+        ok, out = self.run_check()
+        self.assertTrue(ok, out)
+
+    def test_citations_under_the_exempt_heading_do_not_count_toward_the_floor(self):
+        links = " ".join(f"[{s}]({s})" for s in SINGLE if s != "ONBOARDING.md")
+        # 39 counted files + 5 more only under the exempt heading: still below the 40 needed.
+        extra = "\n## Existing in-repo prose (unverified)\n\n" + " ".join(f"`src/m{i}.py`" for i in range(39, 44)) + "\n"
+        self.write_all({"ONBOARDING.md": self.body(links, cites=39) + extra})
+        ok, out = self.run_check()
+        self.assertFalse(ok)
+        self.assertIn("<40 cites", out)
+
+    def test_markdown_link_out_of_the_docs_dir_to_the_readme_fails(self):
+        self.write_all({"engineering.md": self.body("See [the README](../README.md) for context.")})
+        ok, out = self.run_check()
+        self.assertFalse(ok)
+        self.assertIn("link:../README.md", out)
+
+    def test_bare_word_todo_in_prose_is_not_a_placeholder(self):
+        self.write_all({"engineering.md": self.body("A task app lets users add a TODO item and mark a TBD date.")})
+        ok, out = self.run_check()
+        self.assertTrue(ok, out)
+
+    def test_todo_marker_is_still_a_placeholder(self):
+        for text in ("TODO: fill this in", "- TBD", "see this later TBD: owner"):
+            with self.subTest(text=text):
+                self.write_all({"engineering.md": self.body(text)})
+                ok, out = self.run_check()
+                self.assertFalse(ok)
+                self.assertIn("placeholder", out)
+
+    def test_inadmissible_dirs_can_be_replaced(self):
+        # A real source dir named docs/ is flagged by default and fine once only reference/ is listed.
+        (self.root / "docs" / "conf.py").write_text("x = 1\n")
+        self.write_all({"engineering.md": self.body("The builder reads `docs/conf.py`.")})
+        ok, out = self.run_check()
+        self.assertFalse(ok)
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            ok = checker.check(self.docs, self.root, "single", {}, 25, inadmissible_dirs=("reference/",))
+        self.assertTrue(ok, buf.getvalue())
+
+    def test_directory_listings_are_cached(self):
+        checker._names.cache_clear()
+        for _ in range(3):
+            self.assertTrue(checker.exists_exact(self.root, "src/m0.py"))
+        info = checker._names.cache_info()
+        self.assertGreaterEqual(info.hits, 2)
+
+
+class TestRootArgument(CheckerCase):
+    def test_nonexistent_root_is_a_usage_error(self):
+        import sys
+        self.write_all()
+        old = sys.argv
+        sys.argv = ["checker.py", str(self.docs), "--layout", "single", "--root", str(self.root / "typo")]
+        try:
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                with self.assertRaises(SystemExit) as cm:
+                    checker.main()
+        finally:
+            sys.argv = old
+        self.assertEqual(cm.exception.code, 2)
 
 
 if __name__ == "__main__":

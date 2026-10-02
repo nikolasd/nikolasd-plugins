@@ -1,0 +1,31 @@
+schema_version: "1.1"
+name: disciplined-delivery-skips-docs-typo-fix
+description: >
+  Near-miss. A docs-only edit (fix one misspelled word in a README): no behaviour change,
+  no tests, no commit, push or "is this done" language. The skill's trigger is the approval
+  gate and the definition of done, so it must not load for a typo fix. Requires --scaffold:
+  without README.md on disk a model correctly asks where the file is.
+tags: [disciplined-delivery, near-miss]
+runs: 5
+expected_outcome: >
+  Fixes "recieve" to "receive" in README.md and does not invoke the delivery skill.
+context:
+  scaffold_script: setup.sh
+execution:
+  max_turns: 8
+  allowed_tools: [Read, Glob, Grep, Edit, Skill]
+  prompt: |
+    There's a typo in README.md ("recieve"). Fix it.
+graders:
+  - name: delivery-not-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?delivery"'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: typo-fixed
+    type: regex
+    target: { source: file, path: README.md }
+    pattern: 'receive'

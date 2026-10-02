@@ -18,7 +18,7 @@ graders:
   - name: skill-fired
     type: tool_used
     tool: Skill
-    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?(?:herdr|spawning-herdr-agents)"'
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?herdr"'
 
   # Positive control. Without Bash, never-runs-herdr passes for free and the agent
   # can only report that it has no shell, so require the Prerequisite check itself.

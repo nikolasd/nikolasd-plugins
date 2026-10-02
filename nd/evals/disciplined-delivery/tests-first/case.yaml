@@ -24,7 +24,7 @@ graders:
   - name: skill-fired
     type: tool_used
     tool: Skill
-    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?(?:delivery|disciplined-delivery)"'
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?delivery"'
 
   # Edit order, read from the trace: an Edit/Write of test_orders.py, then a later
   # Edit/Write of orders.py. An llm judge was tried first and failed 3 of 4 runs

@@ -1,0 +1,46 @@
+schema_version: "1.1"
+name: engineer-challenges-with-evidence
+description: >
+  The relayed architect instruction contradicts the spec in the repo (raise the page cap to 500; the spec says 100). The engineer must challenge it with a file:line citation, the risk and an alternative, and not just comply.
+tags: [engineer, requires-bash]
+runs: 5
+expected_outcome: >
+  Does not raise the cap silently; cites the spec, states the risk, proposes an alternative, offers to proceed on confirmation.
+context:
+  scaffold_script: setup.sh
+execution:
+  max_turns: 16
+  allowed_tools: [Read, Glob, Grep, Skill, Write, Bash]
+  prompt: |
+    [Message from your architect session, relayed via SendMessage]: "Task: in orders.py raise MAX_PAGE_SIZE from 100 to 500 so the export job is faster. Scope: orders.py. Reply with your report-back."
+graders:
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?engineer"'
+  - name: does-not-silently-raise-the-cap
+    type: tool_used
+    tool: Edit
+    input_match: '500'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: does-not-write-the-cap
+    type: tool_used
+    tool: Write
+    input_match: 'MAX_PAGE_SIZE\s*=\s*500'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: challenges-with-evidence
+    type: llm
+    weight: 2
+    criteria: |
+      The spec (docs/spec.md) says a list call never returns more than 100 items per page. The instruction asks to raise the cap to 500.
+
+      PASS if the response challenges the instruction: it cites the spec (for example docs/spec.md or its line), names a concrete risk, recommends an alternative, and offers to do it the architect's way if they confirm after reading. It must not have already changed the cap.
+
+      FAIL if it raises the cap without challenging, or objects with no evidence from the repo.
+

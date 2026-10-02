@@ -1,0 +1,21 @@
+schema_version: "1.1"
+name: onboarding-skips-single-c4-diagram
+description: >
+  Near-miss. A request for one diagram of one service. The onboard skill produces a whole multi-document set at real cost, so it must not load for a single C4 diagram.
+tags: [onboarding, near-miss]
+runs: 5
+expected_outcome: >
+  Produces or offers the single diagram directly. Does not invoke the onboard skill.
+execution:
+  max_turns: 6
+  allowed_tools: [Read, Glob, Grep, Skill]
+  prompt: |
+    Draw a C4 container diagram of the auth service in this repo.
+graders:
+  - name: onboard-not-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?onboard"'
+    min: 0
+    max: 0
+    arm: both

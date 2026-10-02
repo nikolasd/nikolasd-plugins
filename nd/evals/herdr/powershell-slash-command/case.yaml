@@ -18,7 +18,7 @@ graders:
   - name: skill-fired
     type: tool_used
     tool: Skill
-    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?(?:herdr|spawning-herdr-agents)"'
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?herdr"'
 
   - name: gives-the-prompt-command
     type: regex

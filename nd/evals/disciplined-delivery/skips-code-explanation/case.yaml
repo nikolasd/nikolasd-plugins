@@ -21,7 +21,7 @@ graders:
   - name: disciplined-delivery-not-fired
     type: tool_used
     tool: Skill
-    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?(?:delivery|disciplined-delivery)"'
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?delivery"'
     min: 0
     max: 0
     arm: both

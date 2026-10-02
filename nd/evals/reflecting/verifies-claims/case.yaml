@@ -34,7 +34,7 @@ graders:
   - name: skill-fired
     type: tool_used
     tool: Skill
-    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?(?:reflect|reflecting)"'
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?reflect"'
 
   # Focused on the trace, not last_message. Against last_message this failed on a run
   # whose trace showed three Glob calls: the reply reported the outcome without

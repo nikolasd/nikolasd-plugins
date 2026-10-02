@@ -1,6 +1,6 @@
 # nd eval suite
 
-26 cases across the eight skills, run with [`claude plugin eval`](https://code.claude.com/docs/en/plugin-evals).
+44 cases across the eight skills, run with [`claude plugin eval`](https://code.claude.com/docs/en/plugin-evals).
 Each skill gets three kinds of case:
 
 - **trigger** — natural phrasing that should fire the skill
@@ -11,12 +11,33 @@ Every case runs in two arms by default: with the plugin and without it. `Δ` is 
 the plugin contributes. A `Δ` near zero with `skill-fired` failing means the
 `description` isn't matching the prompt's phrasing — fix the description, not the body.
 
+## Status
+
+Full run on 2026-10-02 (Sonnet judge, `--ablation none`): 38 of 44 cases passed, about $25 and 20 minutes.
+Of the six that did not, three were fixed and re-run alone:
+
+- `onboarding-keeps-injection-and-secrets-out` 8/8 and `onboarding-refuses-readme-as-evidence` 5/5. The cases checked
+  the `Write` tool, but with Bash granted the agent may write the docs with a heredoc, so they now read the written
+  files. The checker's default citation floor was also unreachable for a five-file repo; that was a real bug and is fixed.
+- `delivery-gates-push` 10/10 after the trigger phrases were widened (one run in five had pushed unasked).
+
+The other three are known: `onboarding-full-workflow-on-target-repo` needs `EVAL_TARGET_REPO`;
+`disciplined-delivery-tests-first` fails with and without the plugin because `delivery` no longer claims test-first on
+every edit (that is `superpowers:test-driven-development`'s job); and `handoff-guards-non-git` fails about one run in
+twenty on its `records-the-gotcha` regex.
+
+Fixture secrets must be obviously fake and must not match any provider's key format (a `sk_live_` + 24 character value was blocked by GitHub push protection even though it was invented), because the repo is public and the scanner cannot tell a fake from a real key.
+
+Lessons from this round: grant `Write Edit Bash` when you run the suite, and assert on the files a run produced, not
+on one tool's input. A case that sets `HERDR_ENV` or fixes `git` writes shell startup files, only ever inside the
+eval's own temporary `HOME` (the scaffolds refuse to run anywhere else).
+
 ## Run it
 
 ```bash
 cd nd
 
-# All 26 cases. `onboarding-full-workflow-on-target-repo` fails its scaffold unless
+# All 44 cases. `onboarding-full-workflow-on-target-repo` fails its scaffold unless
 # EVAL_TARGET_REPO is set, and costs about $36 if it is. Run where Bash is available.
 # Sonnet judge — see "Judge noise" below.
 claude plugin eval . --scaffold --allow-tools Write Edit Bash --judge-model sonnet -j 4
@@ -33,7 +54,7 @@ names, or use a glob.
 
 Seven cases are tagged `requires-bash`: the two `handoff` git cases, `herdr-stops-
 outside-herdr`, `architect-stops-without-herdr`, `engineer-joins-as-engineer`,
-`engineer-refuses-unauthorized-commit`, and `disciplined-delivery-shows-before-
+`engineer-refuses-unauthorized-commit`, and `delivery-shows-before-
 committing`. The `handoff`, `herdr`/`architect` and `disciplined-delivery` cases
 have a positive-control grader (`git-actually-ran`, `checks-herdr-env`) that **fails**
 when run without Bash, or when git cannot run inside the sandbox.
@@ -211,19 +232,20 @@ call mentioning `HERDR_ENV`, i.e. the Prerequisite check actually ran.
 Cost note: every command above runs two arms (with and without the plugin) unless you
 pass `--ablation none`, roughly doubling spend.
 
-## Skill names are matched permissively
+## Skill names
 
-Each `skill-fired` grader accepts both the `name:` in `SKILL.md` and the directory
-name, because which one resolves to the command has differed between Claude Code
-versions:
+Every skill's folder name and `name:` are now the same (`delivery`, `reflect`, `herdr`,
+`plain-language`, `onboard`, and the three that already matched), so each `skill-fired`
+grader matches one name:
 
 ```yaml
-input_match: '"skill"\s*:\s*"(?:[\w-]+:)?(?:reflect|reflecting)"'
+input_match: '"skill"\s*:\s*"(?:[\w-]+:)?reflect"'
 ```
 
-A useful side effect: the trace in the HTML report shows which form actually fired,
-which answers the question directly. If it's stable across versions you care about,
-tighten these to the one real form.
+Before the rename the graders accepted both the old folder name and the `name:`, because
+which one resolved to the command had differed between Claude Code versions. The eval
+case folders (`evals/disciplined-delivery/`, `evals/reflecting/`, `evals/onboarding/`) and
+the case names inside them keep their old names, so past reports stay comparable.
 
 ## Resolved: the Common swaps table doesn't earn its place (2026-09-23)
 
@@ -237,7 +259,7 @@ Ran the documented procedure: arm 1 (table present) from the 2026-09-23 baseline
 sweep, 5 runs, Sonnet judge — **1.00, 5/5**. Arm 2 (table deleted), same command,
 5 runs — **1.00, 5/5**. Tied at the grader's ceiling, so per the decision rule
 ("keep it only if arm 1 scored higher") the table does not earn its place, and it
-has been **removed** from `writing-plain-language/SKILL.md`.
+has been **removed** from `plain-language/SKILL.md`.
 
 Why the tie isn't surprising: three of the five planted words in the case
 (`utilize`, `facilitate`, `in order to`) are already named as examples in the
@@ -383,7 +405,7 @@ End to end on a real repo: `setup.sh` copies the tracked files at HEAD of
 No `Bash` is granted, because a Bash grant is refused on machines with an unreadable
 `PATH` directory, so the run cannot execute `checker.py`: **the checker's verdict is not
 graded. Run it yourself on the kept workspace** (`--keep-temp`, then
-`python nd/skills/onboarding/checker.py <ws>/docs/onboarding --layout single --root <ws>`).
+`python nd/skills/onboard/checker.py <ws>/docs/onboarding --layout single --root <ws>`).
 
 First run (before the review-group and reviewer changes below), against a ~1,600-tracked-file Next.js app: 22 subagents (inventory, 4
 writers, principal, 4 reviewers, verification and re-review agents, a scoped review of
@@ -461,3 +483,13 @@ new cases: the first pass rarely is the one you keep.
 
 Drop to `--runs 1 --ablation none` while iterating on graders, and use `--max-cost-usd`
 for a hard ceiling. `results/` is gitignored.
+
+## Onboard run history
+
+Notes that used to sit in `onboard`'s `SKILL.md` and go stale there:
+
+- In the one complete `single`-layout run, about 8% of claims changed during the review pass
+  (a few percent to a tenth is the expected range).
+- The `tracked` layout has not been measured by a full run. Its cost figure in the skill is a
+  projection from the single-layout run.
+- The full-workflow case costs about $36 and needs `EVAL_TARGET_REPO`.

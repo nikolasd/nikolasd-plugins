@@ -1,10 +1,10 @@
 ---
 name: handoff
-description: Use when ending a session, running low on context, or handing work to another agent — produces a HANDOFF.md the next session can start from without this conversation.
+description: Writes a HANDOFF.md at the repo root capturing state, non-obvious decisions and next steps, so a fresh session or agent can continue without this conversation. Use when ending a session, running low on context, or handing work to another agent.
 when_to_use: |
-  Trigger phrases: "hand off", "write a handoff", "I'm running out of context", "wrap up for the next session", "continue this in a new session", "compact this conversation".
+  Trigger phrases: "hand off", "write a handoff", "I'm running out of context", "wrap up for the next session", "continue this in a new session".
 
-  Not this skill: recording a single decision or fact — use the basic-memory MCP directly. Summarising a conversation the user will keep reading — just summarise it.
+  Not this skill: recording a single decision or fact (use the basic-memory MCP directly); "compact", "summarize so far" or "recap" while staying in this session (just summarise it, or use /compact).
 argument-hint: "What will the next session be used for?"
 ---
 
@@ -12,7 +12,7 @@ Produce a handoff document so a fresh agent can continue the work without needin
 
 Next session's focus: $ARGUMENTS
 
-If that focus is non-empty, let it drive which sections get the most detail, and call it out in a short opening paragraph at the top of the document.
+If that focus is non-empty, let it drive which sections get the most detail, and call it out in a short opening paragraph at the top of the document. If it is empty (usual when the skill triggers on its own), infer the likely focus from the conversation and state it in that paragraph; don't ask.
 
 ## Prerequisite
 
@@ -32,8 +32,10 @@ Otherwise show the user both outputs, list the files you propose to stage, and w
 
 **2. Locate the target file.**
 Check whether `HANDOFF.md` already exists in the repo root.
-- If it exists: read it, then update it in place (preserve sections that are still accurate, replace what changed).
+- If it exists: read it. If it describes the same work, keep the sections that are still true (Architecture, Commands), rewrite What Was Built, Outstanding Work and Testing Notes for this session, and remove items that are done: a handoff is state for the next session, not a changelog. If it describes unrelated work, ask before overwriting.
 - If it does not exist: create it.
+
+The repo root is `git rev-parse --show-toplevel` (the working directory if this is not a git repo).
 
 Do not use `mktemp` — the file must be version-controlled and discoverable by the next session.
 
@@ -42,9 +44,13 @@ Do not use `mktemp` — the file must be version-controlled and discoverable by 
 ```markdown
 # [Project] Handoff
 
-Date: <today>
+Date: <today, from `date +%F`>
 Repo: <absolute path>
-Current HEAD: <short sha> <commit message>
+Branch: <current branch>
+HEAD of the work (excluding this file): <short sha> <commit message>
+
+## Next Steps
+The first thing the next session should do, then the following one or two. Put open questions or decisions the user still owes here too.
 
 ## What Was Built This Session
 2–4 bullets summarising the work done.
@@ -79,21 +85,14 @@ List skills the next session is likely to need (e.g. superpowers:test-driven-dev
 **4. Content rules.**
 - Do NOT duplicate content already captured in formal artifacts (PRDs, ADRs, issues, diffs, commit messages). Reference them by path or URL instead.
 - DO document implementation gotchas and non-obvious decisions even if the code change is small — these are the hardest things to reconstruct from a diff.
-- Keep each section tight. The handoff is a quick-read, not a spec.
+- Outstanding Work is never left empty: record deferred items and known issues, or write that there are none.
+- Keep each section tight. The handoff is a quick-read, not a spec: aim for under about 80 lines, and link to a file or artifact instead of quoting it.
+- Before listing a file path, command or environment variable, confirm it exists (`ls`, `grep`): a wrong path costs the next agent more than a missing one. Write from the repo, not only from memory of the conversation.
+- Never write a secret value (API key, token, password, private key, connection string with credentials), even if the user asks you to include it. `HANDOFF.md` is committed and may be pushed, so a value written here stays in git history. Name the variable or file and say where to get the value ("`PAYMENTS_API_KEY`, in the team vault under payments-sandbox"), and tell the user you left the value out.
+- Before saving, scan the draft: `grep -nE 'AKIA|ghp_|xox[abp]-|sk[-_](live|test)?[-_]?[A-Za-z0-9]{12,}|BEGIN [A-Z ]*PRIVATE KEY|://[^ /@]+:[^ /@]+@|(secret|token|passw|api[_-]?key)[A-Za-z_]*[:=] *["'"'"']?[A-Za-z0-9/+_=.-]{16,}' HANDOFF.md`. Remove every hit that is a real value.
 
 **5. Commit the handoff.**
-Stage and commit `HANDOFF.md` by path so the repo ends in a clean state. Skip if this is not a git repo (see Prerequisite).
-
-## Common mistakes
-
-| Mistake | Fix |
-|---|---|
-| `git add -A` in step 1, sweeping up unrelated or untracked files | Stage only the files you listed and the user confirmed, by path |
-| Writing the handoff to a temp file or a scratch directory | It must be at the repo root and version-controlled, or the next session cannot find it |
-| Restating the diff in "What Was Built" | Reference the commits; spend the words on gotchas a diff cannot show |
-| Duplicating a PRD, ADR, or issue into the handoff | Link it by path or URL |
-| Committing in step 1 before showing the user what would be staged | Show `git status --short` and `git diff --stat` first, then wait |
-| Leaving Outstanding Work empty because the session "finished" | Record deferred items and known issues, or say explicitly that there are none |
+Stage and commit `HANDOFF.md` by path (`git add HANDOFF.md`, then `git commit -m "docs: update HANDOFF.md" -- HANDOFF.md`) so the repo ends in a clean state. Never push. Skip the commit, and tell the user why, if this is not a git repo (see Prerequisite) or the current branch is `main`, `master` or otherwise protected: committing there is a decision for the user. If a stricter approval rule is active in this session (such as `nd:delivery`'s per-action gate), follow it for this commit too.
 
 ## Completion checklist
 
@@ -103,4 +102,5 @@ Stage and commit `HANDOFF.md` by path so the repo ends in a clean state. Skip if
 - [ ] Next session's focus reflected in section emphasis, if one was given
 - [ ] Gotchas and non-obvious decisions documented — not just a summary of the diff
 - [ ] Nothing duplicated that a linked artifact already captures
-- [ ] `HANDOFF.md` committed, or the user told it is uncommitted
+- [ ] No secret value in the file (scanned); the user told if one was left out
+- [ ] `HANDOFF.md` committed by path on an unprotected branch, or the user told it is uncommitted

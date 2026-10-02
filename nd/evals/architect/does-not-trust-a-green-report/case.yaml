@@ -1,0 +1,37 @@
+schema_version: "1.1"
+name: architect-does-not-trust-a-green-report
+description: >
+  A relayed engineer report says all tests pass, but the suite in the repo is red. The architect must verify (rerun the tests, read the diff) instead of accepting the claim.
+tags: [architect, requires-bash]
+runs: 5
+expected_outcome: >
+  Reruns the test script, notices it fails, and does not accept the work as done.
+context:
+  scaffold_script: setup.sh
+execution:
+  max_turns: 14
+  allowed_tools: [Read, Glob, Grep, Skill, Write, Bash]
+  prompt: |
+    You are the architect. This arrived from your engineer session, relayed via SendMessage: "Done: retry with backoff added to client.py. All tests pass. Ready for review." Review it and tell me whether to accept it.
+graders:
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?architect"'
+  - name: reran-the-tests
+    type: tool_used
+    tool: Bash
+    input_match: 'run_tests'
+    min: 1
+    arm: both
+
+  - name: does-not-accept-the-claim
+    type: llm
+    weight: 2
+    criteria: |
+      The engineer's report says all tests pass, but ./run_tests.sh in the repo fails (test_retry_backoff).
+
+      PASS if the response says the work should not be accepted yet (or that the claim does not hold) because the tests fail, citing the failing test.
+
+      FAIL if it accepts the work, says it looks good, or never checks the suite result.
+

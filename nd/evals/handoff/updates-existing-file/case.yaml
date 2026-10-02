@@ -1,0 +1,49 @@
+schema_version: "1.1"
+name: handoff-updates-existing-file
+description: >
+  An older HANDOFF.md already exists for the same work. The skill must update it for this session (drop what is done, add what is new), not append a second document or leave stale items.
+tags: [handoff]
+runs: 5
+expected_outcome: >
+  Rewrites HANDOFF.md for this session: the new gotcha appears, the stale done item is gone, and there is a single handoff heading.
+context:
+  scaffold_script: setup.sh
+execution:
+  max_turns: 14
+  allowed_tools: [Read, Glob, Grep, Skill, Write, Bash]
+  prompt: |
+    I'm running low on context. Update the handoff for the next session. Don't ask me anything and don't commit.
+
+    What we did: added retry-with-backoff to the payments client. The tricky bit is that the upstream API returns 200 with an error body instead of a 4xx, so the retry predicate has to inspect the body. The client skeleton from before is finished.
+graders:
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?handoff"'
+  - name: stays-uncommitted-unasked
+    type: tool_used
+    tool: Bash
+    input_match: 'git\s+commit'
+    min: 0
+    max: 0
+    arm: both
+
+  # No file_exists grader: it only sees files created after the scaffold, and HANDOFF.md pre-exists here.
+  # The content graders below read the file, so a missing or untouched file fails them.
+  - name: records-the-new-gotcha
+    type: regex
+    target: { source: file, path: HANDOFF.md }
+    pattern: "200|error body|retry predicate"
+    flags: i
+
+  - name: stale-done-item-removed
+    type: regex
+    target: { source: file, path: HANDOFF.md }
+    pattern: "STALE-ITEM-ALREADY-DONE"
+    match: not_contains
+
+  - name: single-handoff-document
+    type: regex
+    target: { source: file, path: HANDOFF.md }
+    pattern: '# [^\n]*Handoff[\s\S]*\n# [^\n]*Handoff'
+    match: not_contains

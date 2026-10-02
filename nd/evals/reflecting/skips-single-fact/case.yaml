@@ -16,7 +16,7 @@ graders:
   - name: reflecting-skill-not-fired
     type: tool_used
     tool: Skill
-    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?(?:reflect|reflecting)"'
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?reflect"'
     min: 0
     max: 0
     arm: both

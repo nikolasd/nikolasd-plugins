@@ -20,4 +20,4 @@ graders:
   - name: skill-fired
     type: tool_used
     tool: Skill
-    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?(?:onboard|onboarding)"'
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?onboard"'

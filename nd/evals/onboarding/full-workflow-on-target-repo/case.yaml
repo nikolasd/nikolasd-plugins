@@ -39,7 +39,7 @@ graders:
   - name: skill-fired
     type: tool_used
     tool: Skill
-    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?(?:onboard|onboarding)"'
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?onboard"'
 
   # 4 writers + principal + at least one reviewer; a tracked layout adds more.
   - name: fanned-out

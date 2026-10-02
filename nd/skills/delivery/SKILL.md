@@ -1,11 +1,11 @@
 ---
 name: delivery
-description: Use when about to write or change code — any feature, fix, or edit, however small — or when declaring work done, reporting status, or before any commit, push, rebase, amend, PR, or checkout change.
+description: Enforces fully verified delivery and a per-action approval gate. Checks the work against all acceptance criteria before it is called done, and requires an explicit "approve" before each commit, push, rebase, amend, PR, or branch checkout change.
 when_to_use: |
-  Trigger phrases: "is this done", "ready to commit", "mark this complete", "let's ship it".
-  Also before writing or changing any code, and when status is being reported.
+  Trigger phrases: "is this done", "ready to commit", "mark this complete", "commit it", "push it", "push this to origin", "force-push", "rebase", "amend", "open a PR", "let's ship it". Any request to run a gated git action (see below) loads this skill, however it is phrased.
+  Also when behavior-changing code is about to be written (failing test first).
 
-  Not this skill: RED-GREEN-REFACTOR mechanics — see `superpowers:test-driven-development`.
+  Not for: read-only code questions, docs-only edits, or RED-GREEN-REFACTOR mechanics (see `superpowers:test-driven-development`).
 ---
 
 # Disciplined Delivery
@@ -13,12 +13,12 @@ when_to_use: |
 ## Overview
 Understand before changing, test before implementing, verify before claiming done, and get one explicit approval per irreversible action. When a choice is the user's to make or a requirement is ambiguous, stop and ask — options plus a recommendation, never a guess on the user's behalf.
 
-**REQUIRED SUB-SKILL:** `superpowers:test-driven-development` — assumes RED before GREEN.
+**REQUIRED SUB-SKILL:** `superpowers:test-driven-development` (invoke it with the Skill tool; assumes RED before GREEN). If it is unavailable, write a failing test first yourself.
 **RECOMMENDED:** `superpowers:verification-before-completion`, `superpowers:requesting-code-review`.
 
 ## The contract
 
-**Before coding.** Understand the code touched, apply SOLID, DRY, YAGNI, KISS and the language's idioms, and ground decisions in real documentation. One task at a time.
+**Before coding.** Read the files you will touch and their tests, follow the repo's existing patterns, and check library behaviour in the real documentation instead of from memory. Do the one requested change, nothing more. A behavior change gets a failing test first; skip that for docs, config and throwaway spikes, and say you skipped it.
 
 **"Fully implemented" means ALL of:**
 - Covers the spec, not a subset.
@@ -30,34 +30,27 @@ Understand before changing, test before implementing, verify before claiming don
 
 Missing any one is not "basically done" — name the gap. If the repo measures no coverage or keeps no ADRs, say so in the report.
 
+When verification is not clean, say so instead of claiming "fully verified":
+- **The suite was already failing** before your change: name the failures that predate it and report only the new ones as yours.
+- **There is no test runner, or the suite is too slow or cannot run here:** say what you could not run and why.
+
 **Self-review.** Read your diff adversarially, hunting for what's wrong. Stay scoped.
+
+**Decisions and contracts.** Record a non-trivial decision in an ADR if the repo keeps them, and leave only a short pointer in the code: a comment next to the change is lost when the code moves. When you change a data contract, migrate every consumer and pin the contract with a test, because updating only the obvious consumer breaks the others silently. Test behavior, not source text: a test that greps the source passes while the behavior is wrong, so find a real check or drop the test.
 
 **Reporting.** "Plan executed" ≠ "requirements met." State what's verified, assumed, or open, and the real baseline used.
 
-**Approval — one approval, one action.** Show the diff stat, test result, and exact message first, then wait for an explicit "approve" — for every commit, never inherited. A push, rebase, amend, PR, or checkout change (switching the branch of the main worktree) each needs its own "approve" too.
+**Approval — one approval, one action.** Approval is only informed if the user has seen what will happen. So before each gated action, show the diff stat, the test result and the exact commit message (or the push target, or the rebase range), then wait for a reply that clearly says go ("approve", "yes", "go ahead"). An instruction given before you showed anything ("commit it") is not approval: show, then ask. Approval covers that one action; "continue" after a push does not cover the next commit.
 
-**Stakeholder text:** plain words, attributed by branch/PR/commit — never internal labels or private paths.
+Gated means any git command that publishes, rewrites history, discards uncommitted work, or moves the main worktree's HEAD: commit, push, force-push, rebase, amend, reset, clean, stash drop, tag, merge, cherry-pick, branch deletion, opening a PR, and a checkout or switch in the main worktree. These are the actions that cannot be cheaply undone or that other people see.
+
+If the user declines, stop: do not retry or reword the request, and report what is ready. If nobody can approve (you are a subagent, or the session is non-interactive), do not perform the gated action; report what is ready instead.
+
+**Stakeholder text:** plain words, attributed by branch, PR or commit. Don't use labels only you know (a task number from your own plan, a private file path). Show the PR body or question to the user at the gate before sending it.
 
 ## Red flags
 | Thought | Reality |
 |---|---|
-| "Continue" after a push approves the next commit | Approval is per commit, not inherited |
-| Permission to use worktrees covers switching the main worktree's branch | A checkout change needs its own "approve" |
-| The plan is complete, so the ticket is implemented | A plan built on assumptions isn't the requirements |
-| The baseline was "before this branch" — from memory | State the actual baseline SHA and what was reused |
-| Rationale belongs in a code comment next to the change | Rationale goes in an ADR if the repo keeps them; code gets a short pointer |
-| A test that asserts on source text is good enough | Not a behavior test; find a real check or drop it |
-| Change a data contract and update only the obvious consumer | Migrate every consumer; pin the contract with a test |
 | "Close enough to done" | Check all six "fully implemented" criteria explicitly |
-| "Just this once", skip showing the diff first | Every commit shows diff, tests, message first — no exceptions |
+| "Just this once", skip showing the diff first | Every gated action shows its diff, tests and message first — no exceptions |
 | "The user probably wants X" | It's their choice — ask with options and a recommendation |
-
-## Quick reference
-| Situation | Required action |
-|---|---|
-| Writing implementation code | Have a failing test first |
-| Saying "done" | Check all six "fully implemented" criteria explicitly |
-| A choice is the user's, or a requirement is ambiguous | Ask with options and a recommendation |
-| About to commit | Diff stat, test result, exact message; wait for "approve" |
-| About to push, rebase, amend, open a PR, or change checkout | Its own "approve", never inherited |
-| Writing a PR body or stakeholder question | Plain language, attributed by branch/PR/commit, no internal paths |

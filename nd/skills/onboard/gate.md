@@ -13,10 +13,11 @@ python <skill_dir>/checker.py <docs_dir> --root <evidence_root> --layout single|
 | Option | Use |
 |---|---|
 | `--root <evidence_root>` | always (see above) |
-| `--min-cites N` | only if the user changed the default of 25 (ONBOARDING always needs 40) |
+| `--min-cites N` | only to override the default floor, which scales with repo size (`min(25, max(3, citable_files * 2 // 3))`, printed on the first line of output; ONBOARDING needs 1.6 times it; no doc needs more distinct files than the repo has citable ones, where README, CLAUDE.md, AGENTS.md, `docs/`, `reference/` and LICENSE do not count). Counts distinct cited files, not anchors. Lower it, and say so in the report, if the repo cannot honestly support the default |
 | `--ai-doc`, `--agents-doc` | when the AI and agents docs were renamed (see [tracks.md](tracks.md)) |
 | `--track NAME:REGEX` | tracked layout only, once per track (see [tracks.md](tracks.md)); quote the regex for your shell, since `\|` and `/` mean different things in bash and PowerShell |
-| `--allow-placeholders` | downgrade TODO/TBD from failure to warning; use only if the user asks |
+| `--allow-placeholders` | downgrade TODO/TBD markers from failure to warning; use only if the user asks |
+| `--inadmissible-dir DIR/` | repeatable; replaces the default `docs/` and `reference/` at the repo root. Use it when a real source directory is named `docs/` |
 
 It exits 0 on PASS and 1 on FAIL, and prints one line per doc.
 
@@ -32,13 +33,14 @@ Each line of output names the failing doc and a key. Fix in this order, doc by d
 |---|---|---|
 | `dangling` (shorthand such as `billing/`, or a file the doc says is absent) | last editor, round 2 | Send the round-2 message from `briefs.md` with the exact flagged strings: full path, or drop the backticks. |
 | `dangling` (a path that should exist but does not, or differs in letter case) | last editor, round 2 | Same message; the writer corrects the path or replaces the claim with `UNKNOWN — needs human`. |
-| `FAIL: <N cites` | last editor, round 2 | Ask for more anchored citations of claims already made, not new claims. |
-| `FAIL: no mermaid` | last editor, round 2 | Ask for the missing diagram of the required kind. |
-| `INADMISSIBLE` | orchestrator if only backticks need dropping; else last editor | Remove the citation of README, CLAUDE.md, AGENTS.md, `docs/`, `reference/` or a `.docx`, or move the mention under "Existing in-repo prose (unverified)" in ONBOARDING. |
+| `FAIL: <N cites` | last editor, round 2 | Ask for more distinct files cited for claims already made, not new claims and not more anchors of the same file. |
+| `FAIL: no mermaid` | last editor, round 2 | Ask for the missing diagram. Every C4 doc, `components.md`, the AI or runtime design doc, `infrastructure.md`, `deployment.md` and `ONBOARDING.md` needs a non-empty mermaid block that starts with a diagram keyword. |
+| `INADMISSIBLE` | orchestrator if only backticks need dropping; else last editor | Remove the citation of, or markdown link out of the docs dir to, README, CLAUDE.md, AGENTS.md, `docs/`, `reference/` or a `.docx`, or move the mention under "Existing in-repo prose (unverified)" in ONBOARDING. |
 | `bad_anchors` | last editor, round 2 | Correct the line range or symbol against the code; do not guess. |
 | `LEAK`, `DOMAIN_LEAK` | last editor, round 2 | Generalize the passage or move it under "Domain extension points" or to `OWNERSHIP.md`. |
 | `MISSING` | the writer of that doc | Re-dispatch that writer; if the AI doc was renamed, you probably forgot `--ai-doc`. |
 | `missing_links`, `broken_links` | orchestrator | Add or repair the markdown links yourself. |
+| `SECRETS` | orchestrator | Delete the value. Name the variable and cite `path:L10` only, or write "hardcoded credential at `path:L10`". Then tell the user the repo contains a hardcoded credential, without the value. |
 | `placeholder` | orchestrator | Replace with `UNKNOWN — needs human` plus what was searched, or remove. |
 
 ## Fix loop

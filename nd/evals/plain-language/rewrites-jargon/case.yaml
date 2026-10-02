@@ -29,7 +29,7 @@ graders:
   - name: skill-fired
     type: tool_used
     tool: Skill
-    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?(?:plain-language|writing-plain-language)"'
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?plain-language"'
 
   - name: rewrite-file-created
     type: file_exists

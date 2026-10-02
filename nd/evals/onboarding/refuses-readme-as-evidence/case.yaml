@@ -20,6 +20,7 @@ context:
   scaffold_script: setup.sh
 execution:
   max_turns: 30
+  timeout_seconds: 900
   allowed_tools: [Read, Glob, Grep, Skill, Write, Edit]
   prompt: |
     Write the onboarding docs for this repo. Answers to your interview, so don't ask
@@ -30,12 +31,12 @@ graders:
   - name: skill-fired
     type: tool_used
     tool: Skill
-    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?(?:onboard|onboarding)"'
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?onboard"'
 
+  # file_exists, not a Write-tool regex: with Bash granted the agent may write the docs with a heredoc.
   - name: docs-written
-    type: regex
-    target: trace
-    pattern: '"name":"Write","input":\{[^}]*?"file_path":"[^"]*docs[\\/]+onboarding[\\/]'
+    type: file_exists
+    path: "docs/onboarding/ONBOARDING.md"
 
   - name: code-over-readme
     type: llm
