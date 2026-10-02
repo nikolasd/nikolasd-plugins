@@ -16,15 +16,15 @@ onboarding-documentation workflow.
 | Skill | Command | What it does |
 | :--- | :--- | :--- |
 | `handoff` | `/nd:handoff` | Produces a `HANDOFF.md` so a fresh agent can continue the work without the current conversation. |
-| `reflecting` | `/nd:reflecting` | Consolidates learnings from a session into project notes after a significant conversation, refactor, or rule change. |
-| `spawning-herdr-agents` | `/nd:herdr` | Spawns, runs, and controls other coding-agent sessions via Herdr — panes, tabs, and agent sessions. |
-| `writing-plain-language` | `/nd:writing-plain-language` | Rewrites jargon-heavy text in plain language for a non-specialist reader. |
+| `reflect` | `/nd:reflect` | Consolidates learnings from a session into project notes after a significant conversation, refactor, or rule change. |
+| `herdr` | `/nd:herdr` | Spawns, runs, and controls other coding-agent sessions via Herdr — panes, tabs, and agent sessions. |
+| `plain-language` | `/nd:plain-language` | Rewrites jargon-heavy text in plain language for a non-specialist reader. |
 | `architect` | `/nd:architect` | Plans, reviews and validates changes, and delegates implementation to a separate engineer session spawned via Herdr. Every decision stays with the user. |
 | `engineer` | `/nd:engineer` | Implements tasks from a separate architect session with TDD and spec verification, and reports back with evidence. |
-| `disciplined-delivery` | `/nd:disciplined-delivery` | Research-before-code, test-first implementation, the definition of "fully implemented," adversarial self-review, honest reporting, and per-action git approval gates. |
-| `onboarding` | `/nd:onboarding` | Produces a 360° onboarding doc set (C4, engineering, AI design, infra/deploy, ownership) grounded on code only, via specialist subagents, a bundled acceptance checker, and a mandatory verify-and-fix review pass. |
+| `delivery` | `/nd:delivery` | Research-before-code, test-first implementation, the definition of "fully implemented," adversarial self-review, honest reporting, and per-action git approval gates. |
+| `onboard` | `/nd:onboard` | Produces a 360° onboarding doc set (C4, engineering, AI design, infra/deploy, ownership) grounded on code only, via specialist subagents, a bundled acceptance checker, and a mandatory verify-and-fix review pass. |
 
-Backed by a 26-case eval suite (`nd/evals/`) run with `claude plugin eval` — see
+Backed by a 44-case eval suite (`nd/evals/`) run with `claude plugin eval` — see
 [`nd/evals/README.md`](nd/evals/README.md) for how to run it, known
 machine-specific gotchas (macOS git sandboxing, Linux sandbox dependencies), and
 past findings.
