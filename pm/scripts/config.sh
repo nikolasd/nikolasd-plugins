@@ -99,6 +99,7 @@ F_TPL=$(filekey sdd_template)
 F_GUIDE=$(filekey sdd_guide)
 F_SPACE=$(filekey sdd_space)
 F_PARENT=$(filekey sdd_parent_id)
+F_SPECS=$(filekey specs_dir)
 
 SITE=$(pick host "$F_SITE" "$(normalise_site "$(clean "$1")")")
 
@@ -116,6 +117,7 @@ show sdd_template "$(pick docpath "$F_TPL")"
 show sdd_guide "$(pick docpath "$F_GUIDE")"
 show sdd_space "$(pick id "$F_SPACE")"
 show sdd_parent_id "$(pick id "$F_PARENT")"
+show specs_dir "$(pick docpath "$F_SPECS")"
 if [ -f "$FILE" ]; then
   echo "project_file=$FILE (exists)"
 else
@@ -128,4 +130,5 @@ note sdd_template docpath "$F_TPL"
 note sdd_guide docpath "$F_GUIDE"
 note sdd_space id "$F_SPACE"
 note sdd_parent_id id "$F_PARENT"
+note specs_dir docpath "$F_SPECS"
 exit 0

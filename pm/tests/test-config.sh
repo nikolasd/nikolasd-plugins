@@ -101,6 +101,20 @@ out=$(run "$T/r11" "$PH_SITE")
 check "relative template kept" "docs/design/template.md" "$(val "$out" sdd_template)"
 check "space/page id kept" "ENG/1234567" "$(val "$out" sdd_guide)"
 
+# 8b. the specs folder is a repo-relative path; one that climbs out or is absolute is refused
+newrepo r15 '{"specs_dir":".implementation/specs"}'
+out=$(run "$T/r15" "$PH_SITE")
+check "relative specs folder kept" ".implementation/specs" "$(val "$out" specs_dir)"
+newrepo r16 '{"specs_dir":"../outside"}'
+out=$(run "$T/r16" "$PH_SITE")
+check "specs folder with .. ignored" "(unset)" "$(val "$out" specs_dir)"
+newrepo r17 '{"specs_dir":"/etc"}'
+out=$(run "$T/r17" "$PH_SITE")
+check "absolute specs folder ignored" "(unset)" "$(val "$out" specs_dir)"
+mkdir -p "$T/nospecs"
+out=$(run "$T/nospecs" "$PH_SITE")
+check "specs folder unset by default" "(unset)" "$(val "$out" specs_dir)"
+
 # 9. duplicate keys: the first one wins, on one line or on several
 newrepo r12 '{"site":"first.atlassian.net","site":"second.atlassian.net"}'
 out=$(run "$T/r12" "$PH_SITE")
