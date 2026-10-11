@@ -57,6 +57,5 @@ an audit log of exports; `S-03` Customers receive a weekly emailed export, which
 - **Not testable:** rewrite the criterion until a person could verify it, or record a
   `[GAP: ...]` for the missing observable meaning.
 
-List every split and merge with its reason at the top of the review gate, where the user
-approves them with the rest of the draft. Ask earlier only when one touches a locked spec or
-a recorded decision.
+The user approves splits and merges at the review gate with the rest of the draft. Ask
+earlier only when one touches a locked spec or a recorded decision.

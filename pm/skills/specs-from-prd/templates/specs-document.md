@@ -36,7 +36,7 @@ flowchart LR
 #### D-01 <decision title>
 
 - **Decision:** <what was decided>
-- **Decided by:** <the user, or the document the decision came from>
+- **Decided by:** <the user, or the source document that states it, with its location; a choice nobody made is a gap, not a decision>
 - **Alternatives shown:** <the other options put to the user>
 
 ### Spec dependencies

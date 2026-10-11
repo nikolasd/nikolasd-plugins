@@ -23,10 +23,9 @@ The repository set and the ref to read in each were settled in Phase 1. A system
 PRD or the code names but the user gave no path for is out of reach: record
 `[GAP: <system> was not available to read]` and treat claims about it as unverified.
 
-In each repository, read the documentation that describes how it is built before you
-search its code: onboarding and architecture documents, ADRs, the README, agent
-instruction files such as `CLAUDE.md` or `AGENTS.md`, and the module docstrings of the
-entry points they name. Then write a systems map, short enough for one screen:
+Phase 1 read the current repository's documentation. Read the same kinds of documents in
+each other repository before you search its code, plus the module docstrings of the entry
+points they name. Then write a systems map, short enough for one screen:
 
 - each system: what it is in one plain sentence, who uses it, and the repository it lives
   in, or "external" when it is in none of them;

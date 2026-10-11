@@ -21,7 +21,9 @@ reader without the code open.
 Open with the systems map from Phase 3, in plain words: which systems take part, what
 each does in one sentence, and how one item moves through them. Use a small table or a
 short list, not file paths. Then list the defects you found (findings that need a fix,
-not a decision) in one or two lines each.
+not a decision) in one or two lines each. A PRD claim the code shows to be FALSE is not a
+defect: what to do about it is the user's decision, so it waits for its turn among the
+findings.
 
 End the message with one question, on its own:
 
@@ -30,10 +32,11 @@ End the message with one question, on its own:
 Use the answer to judge the value of each spec later (the "Valuable" criterion), and record
 it in the header's `Audience and success signal` line in the user's words. On a re-run that
 line is already there: show it and ask whether it still holds, instead of asking again. Do
-not turn the opening into a questionnaire. After the question, add one line offering the
-pacing: findings can be taken one at a time or grouped by theme. When there are more than
-about ten findings, recommend grouping them by system or product area, and say which
-group comes first. Use the user's pick for the rest of the interview.
+not turn the opening into a questionnaire. After the question, add one line that states
+the pacing as a plan, not as a second question: "I'll take the findings one at a time
+unless you'd rather have them grouped by theme." When there are more than about ten
+findings, plan to group them by system or product area instead, and say which group comes
+first. If the user asks for the other pacing, use it for the rest of the interview.
 
 ## 4.2 One finding per question
 
@@ -113,6 +116,12 @@ document. Say `Recorded as D-03: <the decision>` in your acknowledgement, so the
 what was captured. A decision records what was decided, `Decided by: the user`, and the
 alternatives you showed. An answer that overrides the PRD is recorded as a decision and
 noted as an override; the PRD is not edited.
+
+A decision needs an answer from the user or a source document that states it (Phase 3,
+3.3), named in `Decided by`. When the user answers ahead of time and asks not to be
+interviewed, each answer they gave is recorded; every other finding that needs a choice
+becomes a gap, even when their success signal seems to settle it. Put your recommendation
+for it in the review gate, where the user can turn it into a decision.
 
 If an answer shows that a fact you relied on was wrong, say so, correct the finding, and
 check whether an earlier decision rested on it. Re-ask that decision before going on.

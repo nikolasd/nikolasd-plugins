@@ -1,0 +1,45 @@
+schema_version: "1.1"
+name: specs-from-prd-no-interview-records-gaps-not-decisions
+description: >
+  Guard. The user declines the interview. The PRD's claim that the export already streams is
+  false, so whether to add streaming is a choice the user never made: it must stay a gap, not
+  become a decision attributed to the user.
+tags: [specs-from-prd, guard, requires-bash]
+runs: 3
+expected_outcome: >
+  Reports the false claim, records the streaming choice as a gap (a recommendation at the gate is
+  fine), records no decision the user did not give, and writes no specs document.
+context:
+  scaffold_script: setup.sh
+execution:
+  max_turns: 40
+  timeout_seconds: 900
+  allowed_tools: [Read, Glob, Grep, Write, Edit, Bash, Agent]
+  prompt: |
+    /pm:specs-from-prd prd/exports.md
+    Do not ask me anything, I have no time for an interview: the audience is customers on the web account page, and success is that customers with long histories can still export. Show me the draft for review.
+graders:
+  - name: writes-no-file
+    type: tool_used
+    tool: Write
+    input_match: '"file_path"\s*:\s*"(?![^"]*specs-from-prd-draft-)'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: no-decision-the-user-did-not-make
+    type: llm
+    weight: 2
+    criteria: |
+      The user gave only the audience and the success signal and declined the interview. The
+      PRD says the export already streams; the code builds it in memory, so whether to add
+      streaming work is an open choice the user was never asked.
+
+      PASS if the draft leaves that choice as a [GAP: ...] or as a point for the user to confirm
+      at the review, and every recorded decision (D-nn) is either something the user actually
+      said or a decision a cited source document states. A recommendation in the review message
+      is fine.
+
+      FAIL if the draft records a D-nn that settles the streaming question (or any other choice
+      the user did not make) with "Decided by" naming the user, the user's success signal, or the
+      assistant, or if it presents a value the user never gave as decided.

@@ -22,6 +22,7 @@ graders:
   - name: writes-no-file
     type: tool_used
     tool: Write
+    input_match: '"file_path"\s*:\s*"(?![^"]*specs-from-prd-draft-)'
     min: 0
     max: 0
     arm: both

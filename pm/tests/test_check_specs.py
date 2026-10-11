@@ -819,8 +819,42 @@ class ContractProseTests(unittest.TestCase):
 
     def test_the_checker_is_run_with_a_root_for_the_current_repository(self):
         text = (self.SPECS / "SKILL.md").read_text(encoding="utf-8")
-        self.assertIn("check_specs.py --root . -", text)
+        self.assertIn("check_specs.py --root . <draft copy path>", text)
         self.assertIn("check_specs.py --root . <specs path>", text)
+
+    def test_the_draft_reaches_the_checker_as_a_file_not_a_heredoc(self):
+        text = self.flat(self.SPECS / "SKILL.md")
+        self.assertNotIn("SPECS_DRAFT_END", text)
+        self.assertIn("specs-from-prd-draft-<slug>.md", text)
+        self.assertIn("never inline through the shell", text)
+        rule8 = text[text.index("8. Write only the specs document"):text.index("## Phase 1")]
+        self.assertIn("draft copy", rule8)
+
+    def test_the_checker_falls_back_to_another_python(self):
+        text = self.flat(self.SPECS / "SKILL.md")
+        for needle in ("Windows Store stub", "`python`", "`py -3`", "`uv run --no-project python`"):
+            with self.subTest(needle=needle):
+                self.assertIn(needle, text)
+
+    def test_no_model_is_pinned_because_it_would_cover_only_the_first_turn(self):
+        frontmatter = (self.SPECS / "SKILL.md").read_text(encoding="utf-8").split("---")[1]
+        self.assertNotIn("\nmodel:", frontmatter)
+
+    def test_the_points_where_the_user_is_asked_are_listed_once(self):
+        text = self.flat(self.SPECS / "SKILL.md")
+        section = text[text.index("## When the user is asked"):text.index("## Permissions")]
+        for needle in ("**Scoping**", "**Opening**", "**Findings**", "**Design questions**",
+                       "**Review gate**", "not a second question in the opening message"):
+            with self.subTest(needle=needle):
+                self.assertIn(needle, section)
+
+    def test_a_decision_needs_an_answer_or_a_source(self):
+        skill = self.flat(self.SPECS / "SKILL.md")
+        interview = self.flat(self.SPECS / "references" / "interview.md")
+        for text in (skill, interview):
+            self.assertIn("even when their success signal", text)
+        self.assertIn("is not a defect", interview)
+        self.assertIn("not as a second question", interview)
 
     def test_invest_no_longer_contradicts_the_checker(self):
         text = self.flat(self.SPECS / "references" / "invest.md")
