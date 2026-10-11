@@ -3,6 +3,7 @@
 - **Source PRD:** <path, URL or Confluence page of the PRD>
 - **Date:** <today's date, YYYY-MM-DD>
 - **Repositories:** <root folder name of each repository>
+- **Baseline:** <for each repository, the branch or ref read, and whether unmerged work counted as built>
 - **Audience and success signal:** <who this is for and what would tell the user it worked, from the opening interview question>
 
 ## Open gaps
@@ -11,11 +12,17 @@
 
 ## Feature design
 
+### Systems involved
+
+| System | Role in this feature, in plain words | Repository | Evidence |
+|---|---|---|---|
+| <system> | <what it does for this feature> | <root folder name, or "external"> | `<path/to/file.py:120>` |
+
 ### Components touched
 
 | Component | What changes | Evidence |
 |---|---|---|
-| <component> | <what changes> | `<path/to/file.py:120>` |
+| <component> | <what changes> | `<path/to/file.py:120>`, or `<repo>:<path/to/file.py:120>` in another repository |
 
 ### Data flow
 
@@ -80,9 +87,9 @@ flowchart LR
 
 ## PRD findings
 
-| Id | Claim or finding | Verdict | Evidence |
-|---|---|---|---|
-| F-01 | <what the PRD claims or what the scan found> | <TRUE, FALSE, PARTIAL or GAP> | `<path/to/file.py:120>` |
+| Id | System | Requirement, claim or finding | Verdict | Evidence |
+|---|---|---|---|---|
+| F-01 | <system it concerns> | <what the PRD requires or claims, or what the scan found> | <MET, PARTIAL or ABSENT for a requirement; TRUE, FALSE or PARTIAL for a claim; DEFECT; or GAP> | `<path/to/file.py:120>` |
 
 ## Change log
 
