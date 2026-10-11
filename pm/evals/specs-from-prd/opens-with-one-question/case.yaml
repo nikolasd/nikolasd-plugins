@@ -33,7 +33,8 @@ graders:
       PASS if the final message (a) begins with or contains a line starting "Source check:", and
       (b) asks the user exactly ONE question (a single question mark-terminated question, possibly
       with numbered answer options; a one-line offer to take the findings one at a time or grouped
-      by theme is a statement of how the interview will run, not a second question), and (c) does
+      by theme is a statement of how the interview will run, not a second question; a systems map
+      or a report of what the analysis found is content, not a question), and (c) does
       not present a full specs draft yet.
       
       FAIL if it asks several separate questions in one message, presents a finished draft without

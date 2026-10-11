@@ -1,0 +1,54 @@
+schema_version: "1.1"
+name: specs-from-prd-maps-a-business-prd-onto-the-systems
+description: >
+  Applied. The PRD is written from the business side and names no system. The repository's
+  architecture document and a code comment say invoices live in an external billing-api
+  service. The skill must learn that from the repository before judging the invoice
+  requirement, and must not report invoices as simply missing.
+tags: [specs-from-prd, applied, requires-bash]
+runs: 3
+expected_outcome: >
+  Names billing-api as a system it found, asks for its repository path or records it as out
+  of reach, explains the systems in plain words, and writes nothing.
+context:
+  scaffold_script: setup.sh
+execution:
+  max_turns: 40
+  timeout_seconds: 900
+  allowed_tools: [Read, Glob, Grep, Write, Edit, Bash, Agent]
+  prompt: |
+    /pm:specs-from-prd prd/records.md
+graders:
+  - name: writes-no-file
+    type: tool_used
+    tool: Write
+    min: 0
+    max: 0
+    arm: both
+
+  - name: finds-the-external-system
+    type: llm
+    weight: 2
+    criteria: |
+      The PRD names no system. The repository's docs/architecture.md and the docstring of
+      app/invoices.py say invoice documents are produced and stored by a separate billing-api
+      service. The order service only keeps the invoice number.
+
+      PASS if the final message names billing-api (or "the billing service") as a system that
+      takes part in the invoice requirement, and either asks the user for its repository path
+      or says it cannot be read and will be recorded as a gap.
+
+      FAIL if the message says invoices are missing or absent from the product without
+      mentioning the billing service, or never addresses where invoices come from.
+
+  - name: plain-language
+    type: llm
+    weight: 1
+    criteria: |
+      PASS if the final message explains which systems take part in words a product owner
+      who has never seen the code could follow (for example "the order service keeps your
+      orders; a separate billing service makes the invoices"), and any file paths appear
+      only as supporting references, not as the explanation itself.
+
+      FAIL if the message describes the situation only through file paths, function names
+      or code identifiers.

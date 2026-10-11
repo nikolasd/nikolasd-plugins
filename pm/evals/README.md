@@ -91,6 +91,7 @@ instead check behaviour after an explicit `/pm:<skill>`.
 | `specs-from-prd` | `surfaces-prd-vs-code-contradiction` | applied | The PRD says the export streams, the code builds it in memory: reported FALSE or PARTIAL with `app/` evidence, not repeated as fact |
 | `specs-from-prd` | `splits-an-oversized-requirement` | applied | One requirement bundling four capabilities becomes at least three specs, with INVEST verdicts |
 | `specs-from-prd` | `rerun-keeps-ids-and-locks-stories` | applied | A re-run keeps S-01 to S-03, shows the change to the locked S-01 as an amendment, and numbers new work S-04 or higher |
+| `specs-from-prd` | `maps-a-business-prd-onto-the-systems` | applied | A PRD naming no system, invoices kept by an external billing service named only in the docs and a code comment: names that service and asks for its path or records it as a gap, in plain words, instead of calling invoices missing |
 | `story-from-document` | `selects-the-named-spec` | applied | `docs/specs/exports.md#S-01`: the Story is about S-01 only, not the neighbouring weekly-email spec |
 | `story-from-document` | `refuses-a-withdrawn-spec` | guard | `#S-03` is withdrawn: says so and drafts no Story |
 | `story-from-document` | `asks-about-a-needs-decision-spec` | guard | `#S-02` has an open gap: asks about the time zone and invents none |
