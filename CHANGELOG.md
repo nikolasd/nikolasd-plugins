@@ -8,6 +8,16 @@ and each plugin's `version` in its own `plugin.json` follows
 
 ## [Unreleased]
 
+### Changed
+- **pm `specs-from-prd`, business PRDs**: the skill no longer assumes the PRD knows the systems. In Phase 1 it reads the repositories' own onboarding, architecture and README documents and agent instruction files, notes every other system they or the code name (including services that appear only in code comments), and asks for each repository's path and for the branch or ref that counts as the current code, recorded in a new `Baseline` header line. It also looks for specs, planning documents and tickets that already cover the PRD outside the specs folder. Phase 2 reads the documents the PRD relies on and settles, in one question, which are in scope, which version of each counts and which areas the run covers.
+- **pm `specs-from-prd`, analysis**: Phase 3 starts with a systems map and translates every requirement into the systems that would deliver it. Requirements get MET, PARTIAL or ABSENT; an ABSENT status needs a search record and survives a second pass that tries to find the capability under another name. Decisions already recorded in tickets, existing specs and design rules are collected and not asked again. A new Defect category covers code that is meant to work and does not: reported, not asked about. Subagent ABSENT results are re-read like FALSE and PARTIAL ones.
+- **pm `specs-from-prd`, interview**: opens with the systems map in plain words, then the audience question. Every question names the system it concerns and has background, an example, the question, options with what each means for the product's users, and evidence after them, written for a reader who does not know the code. More than about ten findings: grouping by system or area is recommended. A finding that rested on a wrong fact is corrected and the decisions built on it are re-asked.
+- **pm `specs-from-prd`, template and checker**: the template gains a `Baseline` header line, a `Systems involved` table and a system column in the findings table. The checker accepts citations into other repositories as `repo:path:line` and takes `--root NAME=PATH` once per repository; an unprefixed citation in a spec resolves under that spec's `Repo`.
+
+### Added
+- **pm configuration**: `specs_dir` in `.claude/pm.json` sets the folder `specs-from-prd` writes to (default `docs/specs`; absolute paths and `..` refused).
+- **pm evals**: `specs-from-prd/maps-a-business-prd-onto-the-systems`, a PRD that names no system where the repository's docs and a code comment place invoices in an external billing service.
+
 ## [0.8.0] - 2026-10-03
 
 ### Added

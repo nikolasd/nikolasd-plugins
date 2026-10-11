@@ -106,7 +106,8 @@ values, safe to commit. Every key is optional.
   "project_key": "PROJ",
   "repos_root": "/work/repos",
   "sdd_space": "DOCS",
-  "sdd_parent_id": "1234567891"
+  "sdd_parent_id": "1234567891",
+  "specs_dir": "docs/specs"
 }
 ```
 
@@ -117,6 +118,7 @@ values, safe to commit. Every key is optional.
 | `repos_root` | `story-from-document` | Directory holding the repositories to investigate, when they are not siblings of the current one. The skill tells you the path and asks once before reading outside the current repository. |
 | `sdd_template`, `sdd_guide` | `sdd` | The template and authoring guide to use instead of the bundled ones: a local file path relative to the repo root, or a Confluence page ID. Absolute paths and `..` are refused, so a cloned repository cannot point the skill at files elsewhere on your machine. |
 | `sdd_space`, `sdd_parent_id` | `sdd` | Default Confluence space key and parent page for a new document. |
+| `specs_dir` | `specs-from-prd` | The folder the specs document is written to, relative to the repo root. Defaults to `docs/specs`. Absolute paths and `..` are refused. |
 
 Values cannot contain double quotes or nested objects, when a key appears twice the first one wins, and a value may not end in a backslash. Because the file can come from a
 repository you did not write, each value is checked against a strict format (`site` a
@@ -193,9 +195,16 @@ update on each invocation.
 /pm:specs-from-prd <PRD path, URL or Confluence page> [specs path] [--dry-run]
 ```
 
-Run from inside the repository the PRD is about. The skill reads the PRD, checks what it
-says about the code against the code, and asks you about what it finds. It then writes one
-Markdown file, by default `docs/specs/<name>.md`, holding a feature-level design and a set
+Run from inside the repository the PRD is about. Most PRDs are written from the business
+side and do not name the systems that deliver them, so the skill first learns how the
+product is built: it reads the repositories' own onboarding, architecture and README
+documents, notes every other system they or the code name, and asks you for the path and
+branch of each repository it should read. It then maps every requirement onto those
+systems and checks it against the code, never calling something missing from a keyword
+search alone. The interview opens with that systems map in plain words and asks one
+question at a time, each with background, an example and options, written for someone
+who does not know the code. It then writes one Markdown file, by default
+`docs/specs/<name>.md` (or under `specs_dir`), holding a feature-level design and a set
 of specs, each sized as one small story under INVEST. It never touches Jira, and it writes
 only after you have seen and confirmed the full draft. Re-run it when the PRD changes: spec
 IDs stay stable, a spec that already has a Story is shown as a proposed amendment and never
