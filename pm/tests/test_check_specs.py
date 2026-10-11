@@ -687,6 +687,118 @@ class ContractTests(unittest.TestCase):
         self.assertIn("DANGLING_EVIDENCE", result.stdout)
 
 
+class MultiRepoEvidenceTests(unittest.TestCase):
+    """A specs document for a business PRD often cites several repositories."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        base = Path(self.tmp.name)
+        self.orders = base / "orders-service"
+        self.billing = base / "billing-api"
+        (self.orders / "app").mkdir(parents=True)
+        (self.orders / "app" / "exports.py").write_text("a\nb\nc\nd\ne\n")
+        (self.billing / "src").mkdir(parents=True)
+        (self.billing / "src" / "invoices.py").write_text("a\nb\nc\n")
+        self.roots = {"orders-service": self.orders, "billing-api": self.billing}
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def check(self, text, root=None, roots=None):
+        return [f for f in cs.check_text(text, root=root, roots=roots)[1]]
+
+    def test_a_prefixed_citation_resolves_under_its_named_root(self):
+        text = document(spec_block(approach="Calls `billing-api:src/invoices.py:2`."))
+        self.assertEqual(self.check(text, root=self.orders, roots=self.roots), [])
+
+    def test_a_prefixed_citation_out_of_range_is_dangling(self):
+        text = document(spec_block(approach="Calls `billing-api:src/invoices.py:9`."))
+        found = self.check(text, root=self.orders, roots=self.roots)
+        self.assertEqual([f.code for f in found], ["DANGLING_EVIDENCE"])
+
+    def test_a_prefix_with_no_root_is_reported_with_the_fix(self):
+        text = document(spec_block(approach="Calls `billing-api:src/invoices.py:2`."))
+        found = self.check(text, root=self.orders, roots={})
+        self.assertEqual([f.code for f in found], ["DANGLING_EVIDENCE"])
+        self.assertIn("--root billing-api=", found[0].message)
+
+    def test_a_prefix_naming_the_plain_root_folder_resolves_there(self):
+        text = document(spec_block(approach="Uses `orders-service:app/exports.py:5`."))
+        self.assertEqual(self.check(text, root=self.orders), [])
+
+    def test_an_unprefixed_citation_resolves_under_its_spec_repo(self):
+        block = spec_block(repo="billing-api", approach="Uses `src/invoices.py:3`.")
+        text = document(block, repositories="orders-service, billing-api")
+        self.assertEqual(self.check(text, root=self.orders, roots=self.roots), [])
+
+    def test_a_prefixed_citation_counts_as_evidence_without_a_root(self):
+        text = document(spec_block(approach="Calls `billing-api:src/invoices.py:2`."),
+                        components=["| Invoices | Read only | `billing-api:src/invoices.py:1` |"])
+        self.assertEqual(codes(text), [])
+
+    def test_cli_accepts_named_roots(self):
+        doc = self.orders / "specs.md"
+        doc.write_text(document(spec_block(approach="Calls `billing-api:src/invoices.py:9`.")),
+                       encoding="utf-8")
+        bad = run_cli("--root", str(self.orders), "--root", f"billing-api={self.billing}", str(doc))
+        self.assertEqual(bad.returncode, 1)
+        self.assertIn("DANGLING_EVIDENCE", bad.stdout)
+        doc.write_text(document(spec_block(approach="Calls `billing-api:src/invoices.py:3`.")),
+                       encoding="utf-8")
+        good = run_cli("--root", str(self.orders), "--root", f"billing-api={self.billing}", str(doc))
+        self.assertEqual(good.returncode, 0, good.stdout)
+
+
+class BusinessPrdProseTests(unittest.TestCase):
+    """A PRD written from the business side is mapped onto the systems before it is judged."""
+
+    SPECS = HERE.parent / "skills" / "specs-from-prd"
+
+    def flat(self, *parts):
+        return " ".join(self.SPECS.joinpath(*parts).read_text(encoding="utf-8").split())
+
+    def test_phase_1_learns_the_systems_and_settles_the_refs(self):
+        text = self.flat("SKILL.md")
+        phase1 = text[text.index("## Phase 1: Setup"):text.index("## Phase 2")]
+        for needle in ("onboarding", "code comments", "branch or ref", "unmerged", "`Baseline`",
+                       "outside the specs folder"):
+            with self.subTest(needle=needle):
+                self.assertIn(needle, phase1)
+
+    def test_phase_2_settles_referenced_documents_versions_and_scope_in_one_question(self):
+        text = self.flat("SKILL.md")
+        phase2 = text[text.index("## Phase 2"):text.index("## Phase 3")]
+        for needle in ("version", "which areas", "one message"):
+            with self.subTest(needle=needle):
+                self.assertIn(needle, phase2)
+
+    def test_analysis_maps_systems_and_does_not_accept_absent_from_a_keyword_search(self):
+        text = self.flat("references", "analysis.md")
+        for needle in ("3.1 Map the systems", "Translate the requirements", "search record",
+                       "Try to prove every ABSENT status wrong", "already decided", "**Defect:**",
+                       "FALSE, PARTIAL or ABSENT result"):
+            with self.subTest(needle=needle):
+                self.assertIn(needle, text)
+
+    def test_questions_are_written_for_a_reader_who_does_not_know_the_systems(self):
+        text = self.flat("references", "interview.md")
+        for needle in ("not the systems", "**Background:**", "**An example:**", "**Evidence:**",
+                       "Never \"the agent\"", "systems map", "never replace it"):
+            with self.subTest(needle=needle):
+                self.assertIn(needle, text)
+
+    def test_the_template_records_the_baseline_and_the_systems(self):
+        text = self.flat("templates", "specs-document.md")
+        self.assertIn("- **Baseline:**", text)
+        self.assertIn("### Systems involved", text)
+
+    def test_the_specs_folder_is_configurable_and_defaults_to_docs_specs(self):
+        text = self.flat("SKILL.md")
+        self.assertIn("`specs_dir`", text)
+        self.assertIn("When `specs_dir` is `(unset)`, the specs folder is `docs/specs/`", text)
+
+
+
 class ContractProseTests(unittest.TestCase):
     """The prose on both sides of the document says what the checker enforces."""
 

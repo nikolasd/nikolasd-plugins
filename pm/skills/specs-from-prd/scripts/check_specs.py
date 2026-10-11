@@ -4,6 +4,8 @@
 Usage:
   python3 check_specs.py docs/specs/exports.md
   python3 check_specs.py --root . docs/specs/exports.md   (also look up every cited path:line)
+  python3 check_specs.py --root . --root billing-api=../billing-api docs/specs/exports.md
+                                           (citations prefixed `billing-api:` resolve there)
   python3 check_specs.py - < draft.md        (read the document from stdin)
 
 Rules (every one must hold for PASS):
@@ -21,8 +23,8 @@ Rules (every one must hold for PASS):
     heading included), Needs decision has at least one
   - every live spec has the bold labels User story, Scope, Acceptance criteria, Technical
     approach, Gaps and PRD trace, and its Technical approach and the Components touched
-    table each cite a `path:line`; with --root every cited file must exist under the root
-    and the line must be inside it
+    table each cite a `path:line` (or `repo:path:line` in another repository); with --root
+    every cited file must exist under its repository's root and the line must be inside it
   - the header has Source PRD, Date (YYYY-MM-DD), Repositories and Audience and success
     signal; every live spec's Repo is one of the Repositories
   - the Open gaps section names exactly the specs that hold a gap (entries with no spec ID,
@@ -63,7 +65,8 @@ REQUIRED_LABELS = ("User story", "Scope", "Acceptance criteria", "Technical appr
 HEADER_FIELDS = ("Source PRD", "Date", "Repositories", "Audience and success signal")
 HEADER_LINE = re.compile(r"^- \*\*([^*]+):\*\*[ \t]*(.*?)[ \t]*$")
 LABEL_NAME = re.compile(r"^\*\*([^*\n]+):\*\*")
-EVIDENCE = re.compile(r"`([^`\s:]+):(\d+)(?:-(\d+))?`")
+EVIDENCE = re.compile(r"`(?:([A-Za-z0-9._-]+):)?([^`\s:]+):(\d+)(?:-(\d+))?`")
+ROOT_NAME = re.compile(r"^[A-Za-z0-9._-]+$")
 DATE_ISO = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 SPLIT_REPOS = re.compile(r"[,;&]|\s+and\s+")
 GAP_MARK = re.compile(r"\[gap\b", re.IGNORECASE)
@@ -289,8 +292,36 @@ def section_lines(lines: list, heading: str):
     return None
 
 
-def check_text(text: str, root=None):
-    """Return (specs, findings) for the document text. With a root, cited paths are looked up."""
+def citation_root(prefix, spec_repo, root, roots):
+    """The directory a citation resolves under, or a reason it cannot be checked.
+
+    A prefixed citation (`repo:path:line`) resolves under the named root of that repository,
+    or under the plain root when the plain root's folder carries that name. An unprefixed
+    citation resolves under the named root of its spec's Repo when there is one, otherwise
+    under the plain root.
+    """
+    if prefix:
+        if prefix in roots:
+            return roots[prefix], None
+        if root is not None and Path(root).resolve().name == prefix:
+            return Path(root), None
+        return None, f"no root for repository {prefix!r}: pass --root {prefix}=<path> to check it"
+    if spec_repo and spec_repo in roots:
+        return roots[spec_repo], None
+    if root is not None:
+        return Path(root), None
+    if spec_repo:
+        return None, f"no root for repository {spec_repo!r}: pass --root {spec_repo}=<path> to check it"
+    return None, "an unprefixed citation outside a spec needs a plain --root, or a repository prefix"
+
+
+def check_text(text: str, root=None, roots=None):
+    """Return (specs, findings) for the document text.
+
+    With a root (the plain repository root) or roots (repository name to root), cited paths
+    are looked up on disk.
+    """
+    roots = {name: Path(path) for name, path in (roots or {}).items()}
     lines, unclosed = prose_lines(text)
     findings: list = []
     if unclosed:
@@ -392,13 +423,16 @@ def check_text(text: str, root=None):
         elif not spec.live or not spec.gaps:
             findings.append(Finding("GAPS_SUMMARY_MISMATCH", f"Open gaps names {sid}, which holds no gap", spec.line, sid))
 
-    if root is not None:
-        cited = [(spec.id, spec.approach) for spec in specs if spec.live] + [("", components or [])]
-        for sid, entries in cited:
+    if root is not None or roots:
+        cited = [(spec.id, spec.fields.get("Repo", "").strip(), spec.approach)
+                 for spec in specs if spec.live] + [("", "", components or [])]
+        for sid, spec_repo, entries in cited:
             for number, entry in entries:
                 for match in EVIDENCE.finditer(entry):
-                    end = int(match.group(3)) if match.group(3) else None
-                    reason = dangling(match.group(1), int(match.group(2)), end, Path(root))
+                    base, reason = citation_root(match.group(1), spec_repo, root, roots)
+                    if base is not None:
+                        end = int(match.group(4)) if match.group(4) else None
+                        reason = dangling(match.group(2), int(match.group(3)), end, base)
                     if reason:
                         findings.append(Finding("DANGLING_EVIDENCE", reason, number, sid))
 
@@ -427,8 +461,10 @@ def summary(spec: Spec) -> str:
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description="Checker for a specs-from-prd document.")
     parser.add_argument("doc", help="path to the specs document, or - to read stdin")
-    parser.add_argument("--root", type=Path, default=None,
-                        help="repository root: when given, every cited path:line must exist under it")
+    parser.add_argument("--root", action="append", default=[], metavar="[NAME=]PATH",
+                        help="repository root: when given, every cited path:line must exist under "
+                             "it. Repeat as NAME=PATH for each other repository the document "
+                             "cites as `NAME:path:line`.")
     args = parser.parse_args(argv)
     try:
         if args.doc == "-":
@@ -438,7 +474,14 @@ def main(argv=None) -> int:
     except (OSError, UnicodeDecodeError) as error:
         print(f"cannot read {args.doc}: {error}", file=sys.stderr)
         return 2
-    specs, findings = check_text(text, root=args.root)
+    root, roots = None, {}
+    for value in args.root:
+        name, sep, path = value.partition("=")
+        if sep and ROOT_NAME.match(name):
+            roots[name] = Path(path)
+        else:
+            root = Path(value)
+    specs, findings = check_text(text, root=root, roots=roots)
     for spec in specs:
         print(summary(spec))
     for finding in sorted(findings, key=lambda f: f.line):
