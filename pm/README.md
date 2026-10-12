@@ -68,7 +68,9 @@ confirmation of a full draft before it writes anything.
 - The official Atlassian MCP server, active in your Claude Code session and registered
   under the name `atlassian`: the skills call its tools as `mcp__atlassian__*`. A server
   registered under a different name, or a third-party Atlassian MCP with different tool
-  names, is not supported.
+  names, is not supported, with one exception: `specs-from-prd` needs Atlassian only to
+  read a Confluence PRD, and it can do that through an Atlassian server registered under
+  another name. With a local file or a written brief it needs no Atlassian server at all.
 - For `sdd`: a git identity (`user.name` and `user.email`), because it commits.
 - A POSIX `sh` on your PATH (macOS, Linux, or Git Bash on Windows). The plugin's
   configuration loader and mockup renderer are short shell scripts; they need no
