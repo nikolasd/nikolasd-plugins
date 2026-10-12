@@ -8,6 +8,8 @@ and each plugin's `version` in its own `plugin.json` follows
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-10-12
+
 ### Changed
 - **pm `specs-from-prd`, business PRDs**: the skill no longer assumes the PRD knows the systems. In Phase 1 it reads the repositories' own onboarding, architecture and README documents and agent instruction files, notes every other system they or the code name (including services that appear only in code comments), and asks for each repository's path and for the branch or ref that counts as the current code, recorded in a new `Baseline` header line. It also looks for specs, planning documents and tickets that already cover the PRD outside the specs folder. Phase 2 reads the documents the PRD relies on and settles, in one question, which are in scope, which version of each counts and which areas the run covers.
 - **pm `specs-from-prd`, analysis**: Phase 3 starts with a systems map and translates every requirement into the systems that would deliver it. Requirements get MET, PARTIAL or ABSENT; an ABSENT status needs a search record and survives a second pass that tries to find the capability under another name. Decisions already recorded in tickets, existing specs and design rules are collected and not asked again. A new Defect category covers code that is meant to work and does not: reported, not asked about. Subagent ABSENT results are re-read like FALSE and PARTIAL ones.
