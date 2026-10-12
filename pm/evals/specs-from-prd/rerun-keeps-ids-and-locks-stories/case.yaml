@@ -19,7 +19,7 @@ graders:
   - name: ran-the-checker
     type: tool_used
     tool: Bash
-    input_match: 'check_specs\.py'
+    input_match: '(\bpython3?|\bpy -3|\buv run[^|;&]*\bpython)(\s+-\S+)*\s+\S*check_specs\.py'
     min: 1
 
   - name: writes-no-file

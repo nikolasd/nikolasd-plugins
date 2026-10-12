@@ -46,10 +46,12 @@ graders:
     type: llm
     weight: 1
     criteria: |
-      PASS if the final message explains which systems take part in words a product owner
-      who has never seen the code could follow (for example "the order service keeps your
-      orders; a separate billing service makes the invoices"), and any file paths appear
-      only as supporting references, not as the explanation itself.
+      PASS if the final message says in plain words what each system it found does in this
+      feature, in words a tech lead or solution architect who has not read this code could
+      follow (for example "the order service keeps your orders; a separate billing service
+      makes the invoices"). File paths may appear in brackets after a plain statement. Judge
+      only how the systems are described; setup questions about paths, branches or settings
+      are fine.
 
-      FAIL if the message describes the situation only through file paths, function names
-      or code identifiers.
+      FAIL if a system's role is given only through file paths, function names or code
+      identifiers, or if the message names billing-api without saying what it does.
