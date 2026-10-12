@@ -780,9 +780,10 @@ class BusinessPrdProseTests(unittest.TestCase):
             with self.subTest(needle=needle):
                 self.assertIn(needle, text)
 
-    def test_questions_are_written_for_a_reader_who_does_not_know_the_systems(self):
+    def test_questions_are_written_for_a_tech_lead_in_plain_words(self):
         text = self.flat("references", "interview.md")
-        for needle in ("not the systems", "**Background:**", "**An example:**", "**Evidence:**",
+        for needle in ("tech lead or solution architect", "only as much as this decision needs",
+                       "quote that instead", "for the user to correct", "**Background:**", "**An example:**", "**Evidence:**",
                        "Never \"the agent\"", "systems map", "never replace it"):
             with self.subTest(needle=needle):
                 self.assertIn(needle, text)
@@ -936,8 +937,10 @@ class WorkflowTests(unittest.TestCase):
         self.assertNotIn("get their approval before any split or merge", check)
         gate = self.phase("## Phase 7: Review gate", "## Phase 8")
         self.assertIn("splits and merges", gate)
-        for text in (check, self.flat(self.SPECS / "references" / "invest.md")):
-            self.assertIn("locked spec or a recorded decision", text)
+        self.assertIn("is locked or that a recorded decision settled, stop and ask the user", check)
+        self.assertNotIn("Ask before drafting", check)
+        invest = self.flat(self.SPECS / "references" / "invest.md")
+        self.assertIn("locked spec or a recorded decision", invest)
 
     def test_waits_after_an_amendment_or_a_dry_run_are_explicit(self):
         gate = self.phase("## Phase 7: Review gate", "## Phase 8")
