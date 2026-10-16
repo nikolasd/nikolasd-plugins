@@ -8,6 +8,10 @@ and each plugin's `version` in its own `plugin.json` follows
 
 ## [Unreleased]
 
+### Changed
+- **pm `specs-from-prd`, messages**: every message to the user states each fact in plain words first, with its `file:line` after it in brackets; a file is never the subject of a sentence.
+- **pm evals**: the `plain-language` grader of `specs-from-prd/maps-a-business-prd-onto-the-systems` is a two-point checklist (what billing-api does, with no file path as the subject, and what this repository keeps), so judges no longer split on equivalent messages.
+
 ## [0.9.0] - 2026-10-12
 
 ### Changed
