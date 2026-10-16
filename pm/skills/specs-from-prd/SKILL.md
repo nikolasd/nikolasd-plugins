@@ -56,6 +56,8 @@ The user is asked something at these points only, each in its own message that e
 
 A system or repository the analysis turns up that no document names is a finding, asked in step 3, not a second question in the opening message.
 
+In every message to the user, state each fact in plain words first and put the `file:line` after it in brackets, as evidence. A file is never the subject of a sentence.
+
 ## Permissions
 
 The tools in `allowed-tools` are pre-approved only until the user's first reply; after that any tool, the checker included, may ask for permission. A write prompt is a second check, not a replacement for the review gate. If the user declines a permission prompt, do not retry, reword it or find another route: say what is ready and stop.
@@ -95,7 +97,7 @@ If a document already exists at that path, this run is a **re-run**. Read it now
 Learn which systems make up the product before you settle the repositories. Read the documentation of the repository you are in that describes how it is built: onboarding, architecture and design documents, ADRs, the README and the agent instruction files (`CLAUDE.md`, `AGENTS.md`). Note every other system it names, including services that appear only in code comments or configuration. If `docs/solution-design.md` exists, read it as background; its claims about the code still need verification.
 
 Then settle the repositories: by default the one you are in, at the checked-out branch.
-When you found other systems, or another branch could count as the current code, ask once (with the specs path, if you ask one) for the path of each other repository to read. Say in one plain line what each system you found does in this feature, with the place you found it after it in brackets, so the user can see why you ask: "the payments service takes the card payment (`docs/architecture.md:12`); this repository only records that the order was paid." Ask also for the branch or ref of each that counts, including whether unmerged work counts as built. A system with no path becomes a gap in Phase 3.
+When you found other systems, or another branch could count as the current code, ask once (with the specs path, if you ask one) for the path of each other repository to read. Say in one plain line what each system you found does in this feature, so the user can see why you ask: "the payments service takes the card payment (`docs/architecture.md:12`); this repository only records that the order was paid." Ask also for the branch or ref of each that counts, including whether unmerged work counts as built. A system with no path becomes a gap in Phase 3.
 Record the refs in the header's `Baseline` line and use them for every verdict.
 
 Note any work outside the specs folder that already covers part of this PRD (specs, planning documents, tickets it names) for Phase 3.

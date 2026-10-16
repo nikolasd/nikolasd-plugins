@@ -849,6 +849,12 @@ class ContractProseTests(unittest.TestCase):
             with self.subTest(needle=needle):
                 self.assertIn(needle, section)
 
+    def test_every_message_states_the_fact_before_its_evidence(self):
+        text = self.flat(self.SPECS / "SKILL.md")
+        section = text[text.index("## When the user is asked"):text.index("## Permissions")]
+        self.assertIn("state each fact in plain words first", section)
+        self.assertIn("A file is never the subject of a sentence", section)
+
     def test_a_decision_needs_an_answer_or_a_source(self):
         skill = self.flat(self.SPECS / "SKILL.md")
         interview = self.flat(self.SPECS / "references" / "interview.md")
