@@ -46,12 +46,16 @@ graders:
     type: llm
     weight: 1
     criteria: |
-      PASS if the final message says in plain words what each system it found does in this
-      feature, in words a tech lead or solution architect who has not read this code could
-      follow (for example "the order service keeps your orders; a separate billing service
-      makes the invoices"). File paths may appear in brackets after a plain statement. Judge
-      only how the systems are described; setup questions about paths, branches or settings
-      are fine.
+      Check only these two points in the final message, and nothing else:
 
-      FAIL if a system's role is given only through file paths, function names or code
-      identifiers, or if the message names billing-api without saying what it does.
+      1. A sentence says what billing-api (or "the billing service") does with invoices, for
+         example that it produces, stores or owns them, and that sentence does not have a
+         file path, function name or code identifier as its subject.
+      2. A sentence says what this repository (or "the order service") keeps or does for
+         invoices, for example that it only keeps the invoice number.
+
+      PASS if both points hold. File paths in brackets, the number of paths, setup questions,
+      length and tone do not affect the verdict.
+
+      FAIL if either point is missing, for example "`docs/architecture.md:5` says billing-api
+      owns the invoices" as the only statement of billing-api's role.
