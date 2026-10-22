@@ -1,0 +1,20 @@
+schema_version: "1.1"
+name: orient-fires-on-where-things-stand
+description: >
+  Trigger. A user resuming work asks what was in progress, in words not copied from
+  the skill's trigger phrases. The eval loads only nd, so this does not test the
+  choice between orient and bm-orient when both plugins are installed.
+tags: [orient]
+runs: 5
+expected_outcome: >
+  Invokes the orient skill.
+execution:
+  max_turns: 8
+  allowed_tools: [Read, Glob, Grep, Skill]
+  prompt: |
+    I'm back on this repo after a few days. What was I in the middle of?
+graders:
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?orient"'

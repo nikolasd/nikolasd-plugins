@@ -1,6 +1,6 @@
 # nd eval suite
 
-45 cases across the eight skills, run with [`claude plugin eval`](https://code.claude.com/docs/en/plugin-evals).
+48 cases across the nine skills, run with [`claude plugin eval`](https://code.claude.com/docs/en/plugin-evals).
 Each skill gets three kinds of case:
 
 - **trigger** — natural phrasing that should fire the skill
@@ -49,7 +49,7 @@ eval's own temporary `HOME` (the scaffolds refuse to run anywhere else).
 ```bash
 cd nd
 
-# All 45 cases. `onboarding-full-workflow-on-target-repo` fails its scaffold unless
+# All 48 cases. `onboarding-full-workflow-on-target-repo` fails its scaffold unless
 # EVAL_TARGET_REPO is set, and cost about $8 against a mid-size repo (about $36 was the early estimate). Run where Bash is available.
 # Sonnet judge — see "Judge noise" below.
 claude plugin eval . --scaffold --allow-tools Write Edit Bash --judge-model sonnet -j 4

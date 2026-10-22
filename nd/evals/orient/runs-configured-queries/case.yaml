@@ -1,0 +1,64 @@
+schema_version: "1.1"
+name: orient-runs-configured-queries
+description: >
+  Applied. The project's settings declare an orientQueries entry for a note type
+  Basic Memory's own orientation never searches. The skill must read the settings and
+  run (or, without the MCP tools, name) that search with the configured type and
+  statuses.
+tags: [orient]
+runs: 5
+expected_outcome: >
+  Reads the basicMemory settings and searches for ticket_journal notes with status
+  design or in_progress, or reports that Basic Memory is unreachable and names that
+  configured search.
+context:
+  scaffold_script: setup.sh
+execution:
+  max_turns: 14
+  allowed_tools: [Read, Glob, Grep, Skill, Bash]
+  prompt: |
+    Orient me: where do things stand in this project?
+graders:
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?orient"'
+
+  - name: reads-settings
+    type: llm
+    focus: trace
+    criteria: |
+      PASS if any tool call read `.claude/settings.local.json` or `.claude/settings.json`
+      in the workspace (Read, Bash cat/type, or Grep on that file all count).
+
+      FAIL if no tool call touched either file.
+
+  - name: runs-the-configured-search
+    type: llm
+    weight: 2
+    focus: trace
+    criteria: |
+      The settings declare one orientQueries entry: type `ticket_journal`, statuses
+      `design` and `in_progress`, label "Open ticket journals".
+
+      PASS if the run called a Basic Memory search (any tool whose name contains
+      `search_notes`) with a metadata filter on type `ticket_journal`, or, when no Basic
+      Memory tool was available, the final response says Basic Memory is unreachable and
+      names the configured ticket_journal search it would have run.
+
+      FAIL if the run ignored the orientQueries entry: no ticket_journal search and no
+      mention of it.
+
+  - name: covers-built-in-searches
+    type: llm
+    focus: trace
+    criteria: |
+      The configured search is added to Basic Memory's built-in orientation, not run
+      instead of it.
+
+      PASS if the run searched for, or (when no Basic Memory tool was available) the
+      final response names as searches it would have run, all three of: active `task`
+      notes, open `decision` notes and recent `session` notes.
+
+      FAIL if any of the three is missing, or the response only describes the
+      ticket_journal search.

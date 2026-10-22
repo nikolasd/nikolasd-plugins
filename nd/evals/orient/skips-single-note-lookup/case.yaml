@@ -1,0 +1,22 @@
+schema_version: "1.1"
+name: orient-skips-single-note-lookup
+description: >
+  Near-miss. Looking up one named note is a direct Basic Memory search, which the
+  skill's description excludes; a broad description would fire on it.
+tags: [orient, near-miss]
+runs: 5
+expected_outcome: >
+  Does not invoke the orient skill.
+execution:
+  max_turns: 6
+  allowed_tools: [Read, Glob, Grep, Skill]
+  prompt: |
+    Pull up what we wrote down about the release fixes for AGENTIC-601.
+graders:
+  - name: orient-not-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?orient"'
+    min: 0
+    max: 0
+    arm: both

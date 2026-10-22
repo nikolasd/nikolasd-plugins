@@ -8,6 +8,10 @@ and each plugin's `version` in its own `plugin.json` follows
 
 ## [Unreleased]
 
+### Added
+- **nd `orient`** (`/nd:orient`): orients from Basic Memory the way `bm-orient` does, then runs every search listed in a new `basicMemory.orientQueries` settings key (`type`, optional `status` string or list, `query` text, `after`, `project`), each shown under its `label`. Basic Memory's own orientation and SessionStart brief search only `task`, `decision`, `session` and `coding_session` notes, so a project that tracks work in notes of its own type, such as `ticket_journal`, got an empty orientation. Without `orientQueries` it behaves exactly like `bm-orient`, whose searches it carries itself, so it needs only the Basic Memory MCP tools, not the plugin. A configured type with no notes in the listed statuses shows "none"; only a type with no notes at all is reported as a setup problem. When Basic Memory is unreachable it says so and lists the searches it would have run.
+- **nd evals**: `orient/fires-on-where-things-stand`, `orient/skips-single-note-lookup` (near-miss) and `orient/runs-configured-queries` (scaffolds a small repository and a settings file with one `orientQueries` entry, and checks the configured search runs alongside the built-in task, decision and session searches, not instead of them).
+
 ## [0.9.1] - 2026-10-16
 
 ### Changed
