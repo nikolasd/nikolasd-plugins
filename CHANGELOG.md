@@ -8,6 +8,8 @@ and each plugin's `version` in its own `plugin.json` follows
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-10-26
+
 ### Changed
 - **nd `reflect`, checkpoint**: when the session leaves work in progress (a branch, unpushed work, a failing check, a blocker, a next action), reflect ends by invoking Basic Memory's `bm-checkpoint` skill, after the notes and under the same Step 4 approval. It skips the checkpoint when nothing is in progress or when a note the session updated, such as a ticket journal, already holds that state. Without `bm-checkpoint` it gives the state in the reply. Before, reflect dropped this state as ephemeral.
 
