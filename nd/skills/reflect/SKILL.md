@@ -11,7 +11,7 @@ when_to_use: |
 
 # Reflecting Session Learnings
 
-End-of-session knowledge consolidation: extract what is genuinely new, verify it against current state, and write it to the correct knowledge base without duplicating what already exists in rules or CLAUDE.md.
+End-of-session knowledge consolidation: extract what is genuinely new, verify it against current state, and write it to the correct knowledge base without duplicating what already exists in rules or CLAUDE.md. When the session leaves work in progress, finish with a checkpoint through the `bm-checkpoint` skill (Step 6).
 
 The knowledge base has two tiers: shared notes for all engineers, and internal memory for this user only. Follow the core pattern below so notes are useful, verifiable, and correctly classified. Knowledge that should be in rules, skills, agents or CLAUDE.md is not to be duplicated in memory: suggest the edit to those sources instead (Step 4).
 
@@ -49,10 +49,11 @@ Read ONLY the files directly relevant to what you are about to write. Do not bat
 | Correction to agent behavior ("stop doing X") | Internal memory — `feedback` type |
 | Confirmation of agent behavior ("keep doing Y") | Internal memory — `feedback` type |
 | User preference or working style | Internal memory — `user` type |
-| Branch scope, active refactoring context | Internal memory — `project` type |
+| Branch scope that holds across sessions ("on X until Y lands"), active refactoring context | Internal memory — `project` type |
 | Pointer to an external resource (URL, dashboard, ticket) | Internal memory — `reference` type |
 | Already in `.claude/rules/` or CLAUDE.md | **Skip** |
-| Ephemeral detail ("today we fixed X") that will not matter in a future session with no context | **Skip** |
+| Ephemeral detail ("today we fixed X") that will not matter in a future session with no context | **Skip** as a note; if it is part of where the work stands, it goes in the checkpoint |
+| Where this session stopped: branch, last commit, open PR, checks run, blockers, next action | **Checkpoint** (Step 6), never a lasting note |
 
 ### Step 3 — Verify Before Recording
 
@@ -68,7 +69,7 @@ Facts about the state of the code must be verified against the files. Decisions 
 
 Before writing anything, present a summary to the user:
 
-- A table of what will be written: learning, destination tier, and a one-line description of the note
+- A table of what will be written: learning, destination tier, and a one-line description of the note. Include one row for the checkpoint (Step 6), or say why none is needed
 - Items that will be skipped and why (already in rules, ephemeral, etc.)
 - Learnings that belong in a rule or CLAUDE.md, listed as "suggest rule edit". Do not edit those files without approval.
 - Any uncertainty — flag it rather than silently deciding
@@ -86,6 +87,15 @@ Before writing the first note, read one existing note in that store to match its
 
 For internal memory: follow the built-in memory schema. After writing, add a one-line pointer to `MEMORY.md` (skip this if no `MEMORY.md` exists).
 
+### Step 6 — Checkpoint
+
+The notes keep what stays true; a checkpoint keeps where the work stands, so the next session can pick it up. It is planned in the Step 4 table and written after the notes, with the same approval.
+
+- **Needed** when the session leaves work in progress: a branch with unmerged work, uncommitted or unpushed changes, a failing check, a blocker, a next action.
+- **Not needed** when nothing is in progress, or when the project already keeps that state in a note this session updated (for example a ticket journal), so the checkpoint would only repeat it.
+- **Write it by invoking the `bm-checkpoint` skill** (Basic Memory plugin). It owns the note's format, folder and required fields; do not write the note by hand. Tell it which notes Step 5 just wrote, so it links them under `## Relations` instead of repeating their lessons and decisions.
+- **If `bm-checkpoint` is not available,** say so in Step 4 and give the state in the reply instead.
+
 ---
 
 ## Completion Checklist
@@ -97,3 +107,4 @@ For internal memory: follow the built-in memory schema. After writing, add a one
 - [ ] Shared notes written to the project's storage directory with correct frontmatter
 - [ ] Internal memory files written with correct frontmatter and type
 - [ ] `MEMORY.md` index updated for any new internal memory files
+- [ ] Checkpoint written through `bm-checkpoint` when needed and approved, or its absence explained

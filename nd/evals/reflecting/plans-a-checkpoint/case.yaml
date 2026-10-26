@@ -1,0 +1,79 @@
+schema_version: "1.1"
+name: reflecting-plans-a-checkpoint
+description: >
+  Step 6: a session that stops with work in progress (a branch, a failing check, a next
+  step) needs a checkpoint through bm-checkpoint. The state is not a lasting note and is
+  not dropped as ephemeral; the checkpoint is planned in the Step 4 table and started
+  only after approval. The work has no ticket, so no project note already holds the state.
+  The eval loads only nd, so bm-checkpoint is never available: this tests the fallback
+  (the checkpoint planned, or the state given in the reply), not the bm-checkpoint call.
+tags: [reflecting]
+runs: 5
+expected_outcome: >
+  Plans the lasting fact as a note and the work-in-progress state as a checkpoint (or
+  gives the state in the reply when bm-checkpoint is unavailable), then waits for
+  approval. Writes nothing and does not invoke bm-checkpoint during the run.
+execution:
+  max_turns: 16
+  allowed_tools: [Read, Glob, Grep, Skill, Write]
+  prompt: |
+    Let's reflect on the session before I stop for the day.
+
+    Two things came up. One, the CI cache key in our pipeline is built without the lock
+    file, which is why stale dependencies kept coming back after every upgrade. Two, I'm
+    stopping halfway: we're on the ci-cache-fix branch, the cache-key change is committed,
+    but test_cache_invalidation still fails on Windows, and next time we need to look at
+    the path separators in the key. None of this is tied to a ticket.
+graders:
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?reflect"'
+
+  - name: writes-nothing-yet
+    type: tool_used
+    tool: Write
+    min: 0
+    max: 0
+    arm: both
+
+  - name: writes-no-note-via-mcp
+    type: tool_used
+    tool: mcp__basic-memory__write_note
+    min: 0
+    max: 0
+    arm: both
+
+  # The checkpoint is part of the approved plan, so it must not start before approval.
+  # A guard only: with nd alone loaded, bm-checkpoint does not exist, so this can fail
+  # only on a call to a missing skill.
+  - name: no-checkpoint-before-approval
+    type: tool_used
+    tool: Skill
+    input_match: 'bm-checkpoint'
+    min: 0
+    max: 0
+    arm: both
+
+  # Decide on the two conditions only; length, extra sections and questions are irrelevant.
+  - name: plans-a-checkpoint-for-the-open-work
+    type: llm
+    weight: 2
+    criteria: |
+      Judge exactly two conditions and ignore everything else in the response — its
+      length, its structure, and any other items or questions.
+
+      The open work is: the ci-cache-fix branch, the failing test_cache_invalidation on
+      Windows, and the next step (path separators in the cache key).
+
+      Condition A: the response plans a checkpoint (bm-checkpoint, a session checkpoint
+      or equivalent) for the open work, separate from the lasting notes, or says the
+      checkpoint skill or tool is unavailable and gives the state in the reply instead.
+      Condition B: the response has not yet written anything, and invites the user to
+      confirm, approve, adjust or drop items first.
+
+      PASS if both A and B hold.
+
+      FAIL if the open work is planned as a lasting project note, is dropped as
+      ephemeral with no checkpoint, is not mentioned at all, or if the response says
+      notes or a checkpoint are already written.
