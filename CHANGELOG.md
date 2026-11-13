@@ -8,6 +8,8 @@ and each plugin's `version` in its own `plugin.json` follows
 
 ## [Unreleased]
 
+## [0.11.1] - 2026-11-13
+
 ### Changed
 - **nd `herdr`, Herdr desktop app**: the skill is for the standalone `herdr` CLI only. Its description now excludes the Herdr desktop app, and its first step tells the two apart: `HERDR_ENV=1` is a standalone pane and the skill goes on; otherwise `HC_TERMINAL_ID` set is a terminal of the app, so it runs no `herdr` command and does the task with the app's own commands from `herdr-app --skill` (`herdr-app do tab.new --argv … --task …`, `hc read`/`send`/`wait`). `HERDR_APP_HOME` is not used for this, because a scoop install sets it for every terminal on the machine. Before, a request such as "start codex in Herdr" loaded the skill in the app, found `HERDR_ENV` unset and stopped, reporting the session was not in Herdr.
 - **nd `architect` / `engineer`, peer spawning**: in a Herdr desktop app terminal they start the peer session with the app's commands instead of `nd:herdr`'s recipe, and read it with `hc read`. That route is not yet tested.
