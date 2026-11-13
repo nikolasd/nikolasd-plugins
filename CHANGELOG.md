@@ -8,6 +8,15 @@ and each plugin's `version` in its own `plugin.json` follows
 
 ## [Unreleased]
 
+### Changed
+- **nd `herdr`, Herdr desktop app**: the skill is for the standalone `herdr` CLI only. Its description now excludes the Herdr desktop app, and its first step tells the two apart: `HERDR_ENV=1` is a standalone pane and the skill goes on; otherwise `HC_TERMINAL_ID` set is a terminal of the app, so it runs no `herdr` command and does the task with the app's own commands from `herdr-app --skill` (`herdr-app do tab.new --argv … --task …`, `hc read`/`send`/`wait`). `HERDR_APP_HOME` is not used for this, because a scoop install sets it for every terminal on the machine. Before, a request such as "start codex in Herdr" loaded the skill in the app, found `HERDR_ENV` unset and stopped, reporting the session was not in Herdr.
+- **nd `architect` / `engineer`, peer spawning**: in a Herdr desktop app terminal they start the peer session with the app's commands instead of `nd:herdr`'s recipe, and read it with `hc read`. That route is not yet tested.
+- **nd evals**: `herdr/does-not-resend-after-timeout` and `herdr/hands-dialogs-to-user` unset `HC_TERMINAL_ID` in their scaffold, and `herdr/stops-outside-herdr` gains a scaffold that unsets it and `HERDR_ENV`, so running the suite from a Herdr app terminal does not send them down the app route. All four herdr scaffolds also accept the Windows eval home (`/tmp/claude-eval-*/home`), which they refused before.
+- **nd evals README, Windows**: removing an unreadable `PATH` entry (Automox) now clears the credential-helper refusal on Claude Code 2.1.323; any case that grants `Bash` is still refused on Windows because no shell sandbox is available there, so those cases run on macOS or Linux and the rest run without a `Bash` grant.
+
+### Added
+- **nd evals**: `herdr/redirects-in-herdr-app`, a session in a Herdr app terminal asked to start codex, checking no standalone `herdr pane|tab|agent` command runs and the agent is started with `herdr-app do`.
+
 ## [0.11.0] - 2026-10-26
 
 ### Changed

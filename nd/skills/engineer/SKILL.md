@@ -26,7 +26,7 @@ You are the implementing engineer. The **architect** is a separate, standing Cla
 ## Working with architect
 **Reach them:** Run `ListAgents` first — always look, never assume or fabricate what architect would say.
 - **Listed:** send to the session named `architect` using the exact name and ref shown. Load `SendMessage` via ToolSearch if needed. Never reuse a ref you remember from an earlier session.
-- **Not listed:** don't proceed without a reviewer, and don't spawn one on your own: tell the user no architect session is running and ask whether to spawn one. If they say yes, invoke the Skill `nd:herdr` and follow its "Spawn a Claude peer" recipe with name `architect` and model `opus`. An unprompted Opus session costs money and adds a second voice with no task context.
+- **Not listed:** don't proceed without a reviewer, and don't spawn one on your own: tell the user no architect session is running and ask whether to spawn one. If they say yes, invoke the Skill `nd:herdr` and follow its "Spawn a Claude peer" recipe with name `architect` and model `opus`; in a Herdr desktop app terminal (`HC_TERMINAL_ID` set, `HERDR_ENV` not `1`), start `claude --model opus` in a new pane as `herdr-app --skill` describes and prime it with `/nd:architect` instead. An unprompted Opus session costs money and adds a second voice with no task context.
 
 **Consult before:** changing the design or picking between approaches, going beyond the scope of the task, deviating from the spec, or any destructive or shared-state action.
 

@@ -41,11 +41,12 @@ chmod +x bin/herdr
 # Mark the session as inside Herdr through the sandbox shell's startup files. HOME is the
 # eval's own temporary home; refuse to touch anything else.
 case "$HOME" in
-  /private/tmp/e-*|/tmp/e-*) ;;
+  /private/tmp/e-*|/tmp/e-*|/tmp/claude-eval-*/home) ;;
   *) echo "refusing to write shell startup files outside the eval sandbox: $HOME" >&2; exit 1 ;;
 esac
 for f in .zshenv .zshrc .bashrc .bash_profile; do
   cat > "$HOME/$f" <<ENV
+unset HC_TERMINAL_ID
 export HERDR_ENV=1 HERDR_PANE_ID=p_1 HERDR_TAB_ID=t_1 HERDR_WORKSPACE_ID=w_1
 export PATH="$D/bin:\$PATH"
 ENV

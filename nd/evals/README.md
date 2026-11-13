@@ -129,14 +129,48 @@ one second for $0.00** with:
 
 That is not a finding about the plugin. On the author's machine the culprit is
 `C:\Program Files (x86)\Automox\`, which is endpoint-management software and unreadable
-by design. Stripping it from the child process's PATH does *not* help — the runner reads
-machine PATH directly. Find your own culprit with:
+by design. Find your own culprit with:
 
 ```powershell
 $env:PATH -split ';' | Where-Object { $_ } | ForEach-Object {
   try { Get-ChildItem -LiteralPath $_ -Force -ErrorAction Stop | Out-Null }
   catch { "UNREADABLE $_" } }
 ```
+
+On Claude Code 2.1.323 (2026-11-13), removing the unreadable entry from `PATH` in the
+shell that starts the eval clears this error; earlier versions read the machine PATH and
+ignored it:
+
+```powershell
+$env:PATH = ($env:PATH -split ';' | Where-Object { $_ -and $_ -notmatch 'Automox' }) -join ';'
+```
+
+On Windows that only gets you to the next refusal, below.
+
+### Windows: no sandbox for a shell, so Bash cases cannot run
+
+With a readable PATH, every case that grants `Bash` (through `--allow-tools Bash` or its
+own `allowed_tools`) is refused before the agent starts, on Claude Code 2.1.323
+(2026-11-13):
+
+> A shell tool (Bash or PowerShell) was granted but this machine cannot confine it (no
+> sandbox backend on this platform, or it is not installed), so the run was refused
+> rather than run unconfined … sandbox is enabled but the Windows sandbox is not active
+> on this session (feature gate off)
+
+The runs cost a cent or less each, and the scores they print come only from the graders
+that pass on a run that did nothing (a "never ran X" check, say), so don't read them as
+results. There is no fix on the machine side: run the `requires-bash` cases on macOS or Linux. On Windows, run the other cases without granting Bash — leave `Bash` out of
+`--allow-tools`, because one global grant gets every case refused:
+
+```powershell
+claude plugin eval . --case 'herdr-skips-*' --judge-model sonnet -j 4
+```
+
+The scaffold scripts that write shell startup files check `$HOME` before writing. The
+eval's home is `/tmp/e-*` on macOS and `/tmp/claude-eval-*/home` under Git Bash on
+Windows; a scaffold that accepts only the first fails at once on Windows with "refusing to
+write shell startup files outside the eval sandbox".
 
 ### macOS: Bash runs, but git does not
 

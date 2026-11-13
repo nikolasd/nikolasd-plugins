@@ -1,20 +1,21 @@
 ---
 name: herdr
-description: Spawns and controls other coding-agent sessions in Herdr panes and tabs (split, start, prompt, read, close) via the herdr CLI. Use when the user asks for another agent in a pane or tab, or mentions herdr. Works only inside Herdr (HERDR_ENV=1); not for in-session subagents.
+description: Spawns and controls other coding-agent sessions in Herdr panes and tabs (split, start, prompt, read, close) via the standalone herdr CLI. Use when the user asks for another agent in a pane or tab, or mentions herdr. Works only inside a standalone Herdr pane (HERDR_ENV=1); not for the Herdr desktop app (HC_TERMINAL_ID set, driven with herdr-app and hc), not for in-session subagents.
 when_to_use: |
   Trigger phrases: "open a new pane", "start Claude in another tab", "in a Herdr pane", "send that agent in the other pane a prompt", "what is the agent in the other pane doing", "close that pane", any mention of `herdr`.
 
-  Not for: the Agent tool or subagents, or background and parallel work where no pane or Herdr is mentioned. For anything beyond spawning and driving a single agent (multi-machine control, worktrees, workspace management, layout inspection), run `herdr --skill` for the full reference instead.
+  Not for: the Herdr desktop app. When `HERDR_ENV` is not `1` and `HC_TERMINAL_ID` is set, the session runs in a terminal of the app, which has its own commands (`herdr-app do …`, `hc`) documented by `herdr-app --skill`; follow that instead of this skill. Also not for the Agent tool or subagents, or background and parallel work where no pane or Herdr is mentioned. For anything beyond spawning and driving a single agent (multi-machine control, worktrees, workspace management, layout inspection), run `herdr --skill` for the full reference instead.
 ---
 
 # Spawning and Controlling Herdr Agents
 
 ## Prerequisite
 
-Confirm you're inside a Herdr-managed pane before doing anything. If false, say so and stop. Do not run any `herdr` command to diagnose it, including `herdr agent list`: they cannot work outside a Herdr pane, and the only thing to report is that the session is not in one.
+Check where the session runs before doing anything, in this order:
 
-- Bash: `test "${HERDR_ENV:-}" = 1`
-- PowerShell: `$env:HERDR_ENV -eq '1'`
+1. **A standalone Herdr pane** (`HERDR_ENV` is `1`; Bash: `test "${HERDR_ENV:-}" = 1`, PowerShell: `$env:HERDR_ENV -eq '1'`): continue with this skill.
+2. **A terminal of the Herdr desktop app** (`HC_TERMINAL_ID` is set; Bash: `test -n "${HC_TERMINAL_ID:-}"`, PowerShell: `[bool]$env:HC_TERMINAL_ID`): this skill does not apply, so run no `herdr` command. Run `herdr-app --skill` (or read `AGENTS.md` in the app's home, `$HERDR_APP_HOME` on a scoop install) and do the task with the app's commands, for example `herdr-app do tab.new --argv '["codex"]' --task "<first message>"` to start an agent in a new tab, then `hc read` / `hc send` / `hc wait` on the terminal it returns. `herdr-app commands` gives the exact arguments for the installed version. Don't test `HERDR_APP_HOME` for this: a scoop install sets it for every terminal on the machine, inside the app or not.
+3. **Neither**: say the session is not in Herdr and stop. Do not run any `herdr` command to diagnose it, including `herdr agent list`: they cannot work outside a Herdr pane, and the only thing to report is that the session is not in one.
 
 ## Spawn the agent
 
