@@ -1,10 +1,11 @@
 ---
 name: plain-language
-description: Explains or rewrites text in everyday words, short sentences and active voice, keeping only the technical terms that carry meaning. Use when the user asks for plain language, says an answer was too jargon-heavy, or wants text rewritten for a non-specialist reader.
+description: Explains or rewrites text in everyday words, short sentences and active voice, keeping only the technical terms that carry meaning. Use when the user asks for plain language, says an answer was too jargon-heavy, wants text rewritten for a non-specialist reader, or when writing a Jira comment, PR reply or message that colleagues will read.
 when_to_use: |
   Trigger phrases: "in plain language", "plain English", "explain it simply", "ELI5", "layman's terms", "too much jargon", "explain like I'm not an engineer", "rewrite this for a non-technical reader".
+  Also: drafting a Jira comment or description, a reply on a pull request, or a message to colleagues or stakeholders.
 
-  Not this skill: authoring technical documentation, ADRs, architecture documents, code comments, commit messages, or PR descriptions — those keep their own technical register.
+  Not this skill: authoring technical documentation, ADRs, architecture documents, code comments, commit messages, or PR descriptions — those keep their own technical register. Replies on a pull request are in scope.
 ---
 
 # Writing Plain Language
@@ -38,3 +39,23 @@ Two habits the recipe above won't catch:
 
 - Naming a framework, pattern or technique when a plain description says the same thing.
 - Treating "this is a technical topic" as licence for technical wording throughout.
+
+## Text that colleagues read
+
+Jira comments and descriptions, PR replies and messages are read by people with different context: the ticket's author, a reviewer, QA, a manager. Each must understand it without asking. On top of the recipe:
+
+- **Explain, don't instruct.** When the code differs from what a ticket asks, say what the ticket asks, what the code does instead, and why. A list of "change X to Y" edits leaves the reader guessing.
+- **No inside references.** Leave out ids, codes and document sections that only your team knows, even when they look like ticket keys; say what they decided or what is still open instead. Keep a ticket key only when the reader can open that ticket and needs to, with a few words saying what it is. If you can't tell, leave it out.
+- **Don't tell people what they already know.** Not the status of their own PR; just the point.
+- **Be specific.** Name the setting, the value, the case: not "when the switch is on" but "when `FEATURE_X` is on".
+- **Give a tester what they need.** The exact settings to turn on, and anything outside this change that would look like a bug.
+- **Back every claim.** Cite only what the reader can find ("see Ana's comment on this ticket"), and say when something is temporary.
+- **Show the draft first.** Text other people read is shown to the user before it is posted.
+
+<Bad>
+"The code marks an address as a mobile carrier only if the GeoIP result says so in a field named mobile_carrier. The field name is a guess until AGENTIC-1019 is decided, and QK-54 is still open."
+</Bad>
+
+<Good>
+"GeoIP doesn't currently provide a mobile-carrier value. Until we decide where that value comes from, or whether to keep a list of mobile carriers ourselves, every address shows 'mobile carrier: unknown'."
+</Good>

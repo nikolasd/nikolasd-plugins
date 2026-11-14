@@ -1,0 +1,72 @@
+schema_version: "1.1"
+name: plain-language-explains-ticket-difference
+description: >
+  Applied case for "Text that colleagues read". A Jira comment telling the ticket's
+  author, a reviewer and QA why the code differs from the ticket. The prompt plants
+  team-only references (a Standard id, a question code, a decision code) that the
+  comment must not repeat, and an unnamed switch the comment must name.
+tags: [plain-language]
+runs: 5
+expected_outcome: >
+  The comment explains, for each difference, what the ticket asks, what the code does
+  and why, in plain words, names the setting, and repeats none of the team-only codes.
+execution:
+  max_turns: 8
+  allowed_tools: [Read, Glob, Grep, Skill, Write]
+  prompt: |
+    Draft the Jira comment for ticket NET-12 explaining why the code differs from the
+    ticket. The ticket's author, the code reviewer and QA will all read it. Put only the
+    comment in comment.md.
+
+    My notes:
+    - Ticket says: show "mobile carrier: yes/no" per address. Code: always "unknown",
+      because GeoIP has no carrier field; per IT3b we only take it from a supplied field
+      or the carrier list in QK-54, which is undecided. Never guessed from the network
+      owner's name.
+    - Ticket says the rows need no other switch. Code: they need NET_FACTS_ON and
+      FACT_SHEET_ON both set for the org (D-62: the rows are built from the org's fact
+      sheet, so without FACT_SHEET_ON there is nothing to build them from); with only
+      NET_FACTS_ON the service logs an error at startup and builds nothing.
+graders:
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?plain-language"'
+
+  - name: comment-file-created
+    type: file_exists
+    path: "**/comment.md"
+
+  - name: no-team-only-codes
+    type: regex
+    target: { source: file, path: comment.md }
+    pattern: '\b(IT3b|QK-54|D-62)\b'
+    match: not_contains
+    weight: 2
+    arm: both
+
+  - name: names-both-switches
+    type: regex
+    target: { source: file, path: comment.md }
+    pattern: 'NET_FACTS_ON[\s\S]*FACT_SHEET_ON|FACT_SHEET_ON[\s\S]*NET_FACTS_ON'
+    match: contains
+
+  - name: explains-each-difference
+    type: llm
+    weight: 2
+    focus: { source: file, path: comment.md }
+    criteria: |
+      The comment is for a ticket author, a code reviewer and QA, who share no inside
+      knowledge.
+
+      PASS if, for both differences (mobile carrier, and the second switch), the comment
+      says what the ticket asks, what the code does instead, and why, in everyday words;
+      says the carrier is never guessed from the owner's name; and tells a tester to set
+      both switches for the organisation.
+
+      Naming the settings NET_FACTS_ON and FACT_SHEET_ON is expected; they are not
+      inside codes. Ignore length, headings and formatting.
+
+      FAIL if it is a list of edits to make to the ticket without the reasons, if either
+      difference is missing, or if it relies on internal reference codes (such as a
+      decision or question id) that a reader outside the team could not look up.

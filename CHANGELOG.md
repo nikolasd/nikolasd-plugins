@@ -8,6 +8,12 @@ and each plugin's `version` in its own `plugin.json` follows
 
 ## [Unreleased]
 
+### Changed
+- **nd `plain-language`, text that colleagues read**: the skill also applies when drafting a Jira comment or description, a pull-request reply, or a message to colleagues or stakeholders. A new section adds the rules for that text: explain what the ticket asks, what the code does instead and why, rather than listing edits; leave out ids and codes only the team knows, including ones that look like ticket keys, unless the reader can open that ticket and needs to; don't tell people what they already know; name the setting and value; give a tester the exact settings and anything outside the change that would look like a bug; cite only what the reader can find; show the draft before posting. Code comments, commit messages and PR descriptions still keep their technical register; replies on a pull request are in scope.
+
+### Added
+- **nd evals**: `plain-language/explains-ticket-difference`, a Jira comment explaining why code differs from its ticket, checking it names both settings, repeats none of the planted team-only codes, and gives each difference with its reason. 5 runs: 1.00 with the skill, 0.33 without (without it, every comment repeats all three codes). The first runs kept `QK-54` because the skill allowed ticket keys; the rule now drops keys the reader can't open.
+
 ## [0.11.1] - 2026-11-13
 
 ### Changed
