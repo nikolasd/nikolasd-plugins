@@ -8,6 +8,8 @@ and each plugin's `version` in its own `plugin.json` follows
 
 ## [Unreleased]
 
+## [0.11.2] - 2026-11-14
+
 ### Changed
 - **nd `plain-language`, text that colleagues read**: the skill also applies when drafting a Jira comment or description, a pull-request reply, or a message to colleagues or stakeholders. A new section adds the rules for that text: explain what the ticket asks, what the code does instead and why, rather than listing edits; leave out ids and codes only the team knows, including ones that look like ticket keys, unless the reader can open that ticket and needs to; don't tell people what they already know; name the setting and value; give a tester the exact settings and anything outside the change that would look like a bug; cite only what the reader can find; show the draft before posting. Code comments, commit messages and PR descriptions still keep their technical register; replies on a pull request are in scope.
 
