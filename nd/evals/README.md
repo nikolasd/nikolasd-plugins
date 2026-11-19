@@ -439,10 +439,17 @@ does **not** discriminate: a baseline also trusts the code over a contradicting 
 a three-file repo, so it only shows the skill doesn't break that behaviour. The skill
 costs about 3-4x more per run there ($0.52-0.65 vs $0.16).
 
-Scaffold cases need a real `bash` first on `PATH`. On Windows `bash` can resolve to WSL
-with no distro installed (`execvpe(/bin/bash) failed`, $0.00 per run): put Git Bash
-(for example `scoop\apps\git\current\bin`) first. `--case` globs take `*` only, not
-character classes.
+Scaffold cases need a real `bash`. On Windows `bash` can resolve to WSL. With no distro
+installed, runs fail with `execvpe(/bin/bash) failed` ($0.00 per run). With a distro
+installed, every scaffold fails at once with `scaffold failed (exit 127): /bin/bash:
+C:Dev...setup.sh: No such file or directory`, because WSL's bash strips the backslashes from
+the Windows path. On Claude Code 2.1.327 (2026-11-19) this happened even with Git Bash first
+on `PATH` and `CLAUDE_CODE_GIT_BASH_PATH` set; Windows looks in `System32` before `PATH`.
+No machine-side fix was found: run scaffolded cases on Linux or macOS. To check one case by
+hand on Windows, run its `setup.sh` with Git Bash in an empty directory, then from there run
+`claude -p "<the case prompt>" --plugin-dir <plugin> --strict-mcp-config --setting-sources
+project,local --allowedTools <the case's tools>` and read the reply and the files against
+the graders. `--case` globs take `*` only, not character classes.
 
 ### `full-workflow-on-target-repo` (expensive, tagged `expensive`)
 
