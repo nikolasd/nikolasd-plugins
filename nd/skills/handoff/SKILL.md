@@ -1,14 +1,16 @@
 ---
 name: handoff
-description: Writes a HANDOFF.md at the repo root capturing state, non-obvious decisions and next steps, so a fresh session or agent can continue without this conversation. Use when ending a session, running low on context, or handing work to another agent.
+description: Writes a HANDOFF.md at the repo root capturing state, non-obvious decisions and next steps, so a fresh session or agent can continue without this conversation. Use when ending a session, running low on context, or handing work to another agent (for one task handed to another agent, it writes a message instead).
 when_to_use: |
   Trigger phrases: "hand off", "write a handoff", "I'm running out of context", "wrap up for the next session", "continue this in a new session".
 
   Not this skill: recording a single decision or fact (use the basic-memory MCP directly); "compact", "summarize so far" or "recap" while staying in this session (just summarise it, or use /compact).
+
+  One task handed to another agent ("prepare a handoff for the other agent", "hand this change to the agent doing X") is a message, not a `HANDOFF.md`: follow "Handing one task to another agent" below. To choose: one scoped change, passed to an agent that is already running, is a message; the session's work continued by a fresh session is `HANDOFF.md`. If the request names no agent, write `HANDOFF.md`.
 argument-hint: "What will the next session be used for?"
 ---
 
-Produce a handoff document so a fresh agent can continue the work without needing this conversation.
+Produce a handoff so a fresh agent can continue the work without needing this conversation: a `HANDOFF.md` for the session's work, or a message for one task handed to another agent (see "Handing one task to another agent" below).
 
 Next session's focus: $ARGUMENTS
 
@@ -16,7 +18,20 @@ If that focus is non-empty, let it drive which sections get the most detail, and
 
 ## Prerequisite
 
-Run `git rev-parse --git-dir`. If it fails, this is not a git repo: skip steps 1 and 5, still write `HANDOFF.md`, and tell the user at the end that the file is uncommitted.
+Run `git rev-parse --git-dir`. If it fails, this is not a git repo: skip steps 1 and 5, still write `HANDOFF.md`, and tell the user at the end that the file is uncommitted. In one-task mode, skip this check unless you need it for the message's "where the work stands" line.
+
+## Handing one task to another agent
+
+When the user asks for a handoff of one change to another agent, write a message instead of `HANDOFF.md`. Skip steps 1, 2, 3 and 5. Step 4's content rules still apply to the message; run its secret scan on the draft (save it to a scratch file and point the `grep` at that) before showing it. If you can't save or `grep` a file, read the draft for the same patterns yourself and say so when you show it. The receiving agent has none of this conversation, so the message carries four things besides the change:
+
+1. **How it came up.** The source (document, review, ticket) and what was found in it, with the file and line that shows it.
+2. **The decision.** What was decided, who decided it and when, and what was deliberately not decided.
+3. **Why each detail is the way it is.** For every non-obvious part of the change (a label, a date, a wording), the reason, so the receiver can adapt it if its own work has moved the text.
+4. **How to verify.** For each fact the change relies on, the command or file that confirms it and the expected result; then the checks to run after the change (build, test, read-back) with their expected outcome.
+
+Also state where the work stands (branch, commit, uncommitted files that are not from this task) and what the receiver must not change. Check every claim in the message against the code or files before showing it. A claim that rests only on a subagent's reading, not checked first-hand, is marked as such in the message, and named to the user when you show the draft.
+
+Show the draft to the user and let them send it; don't send it to the other agent yourself (with `SendMessage`, a `herdr` prompt or similar) unless they ask you to.
 
 ## Steps
 
@@ -96,11 +111,14 @@ Stage and commit `HANDOFF.md` by path (`git add HANDOFF.md`, then `git commit -m
 
 ## Completion checklist
 
+For a one-task handoff, only the focus, gotchas, duplication, secrets and one-task items apply.
+
 - [ ] Prerequisite checked — git repo confirmed, or steps 1 and 5 consciously skipped
 - [ ] Pending work committed with user confirmation, or recorded under Outstanding Work
 - [ ] `HANDOFF.md` written at the repo root, updating in place if it already existed
 - [ ] Next session's focus reflected in section emphasis, if one was given
 - [ ] Gotchas and non-obvious decisions documented — not just a summary of the diff
+- [ ] For a one-task handoff to another agent: origin, decision, reasons and verification steps included, and every claim checked
 - [ ] Nothing duplicated that a linked artifact already captures
 - [ ] No secret value in the file (scanned); the user told if one was left out
 - [ ] `HANDOFF.md` committed by path on an unprotected branch, or the user told it is uncommitted

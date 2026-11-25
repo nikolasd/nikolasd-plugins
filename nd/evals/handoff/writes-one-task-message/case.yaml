@@ -1,0 +1,69 @@
+schema_version: "1.1"
+name: handoff-writes-one-task-message
+description: >
+  One scoped change is handed to an agent that is already running in another pane.
+  The skill must write a message, not HANDOFF.md, carrying where the change came from,
+  the decision (who, when, what is still open), the reason for the non-obvious detail,
+  and how to verify it, and must show the draft rather than claim to have sent it.
+tags: [handoff]
+runs: 5
+expected_outcome: >
+  Replies with a message for the other agent that names RELEASE_NOTES.md line 3 and the
+  new date 2026-12-08, says the user decided it this morning, keeps "beta" because
+  marketing asked, leaves the delay mention open, and gives a check for the result.
+  No HANDOFF.md is created and nothing is committed.
+context:
+  scaffold_script: setup.sh
+execution:
+  max_turns: 12
+  # No Bash: the message needs no git action, and leaving Bash out lets the case run on Windows.
+  allowed_tools: [Read, Glob, Grep, Skill, Write]
+  prompt: |
+    We reviewed RELEASE_NOTES.md: line 3 says the release ships on 2026-12-01, but ticket REL-12 says 2026-12-08.
+    I decided this morning to change it to 2026-12-08 and to keep the "(beta)" label, because marketing asked for it.
+    Whether to mention the delay in the notes is still open.
+
+    The agent working on the docs in the other pane should make the change. Prepare the handoff for it. Don't ask me anything.
+graders:
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?handoff"'
+
+  - name: no-handoff-file
+    type: file_exists
+    path: "**/HANDOFF.md"
+    exists: false
+    arm: both
+
+  - name: never-commits
+    type: tool_used
+    tool: Bash
+    input_match: 'git\s+commit'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: names-file-and-date
+    type: regex
+    pattern: 'RELEASE_NOTES\.md[\s\S]*2026-12-08|2026-12-08[\s\S]*RELEASE_NOTES\.md'
+
+  - name: carries-the-handoff-parts
+    type: llm
+    criteria: |
+      The response should contain a message meant for another agent. Check it for each of:
+      1. Origin: says the change came from reviewing RELEASE_NOTES.md (line 3) against ticket REL-12.
+      2. Decision: says the user decided to use 2026-12-08, says when (this morning), and says that
+         mentioning the delay is still open / not decided.
+      3. Reason: says "(beta)" stays because marketing asked for it.
+      4. Verification: gives at least one check to run before the edit that confirms a fact the
+         change relies on, with its expected result (for example, line 3 currently reads 2026-12-01),
+         and a check of the result after the edit with its expected result (for example, line 3
+         reads 2026-12-08 with "(beta)" still there).
+      5. Where the work stands: names the branch or commit, and says what the receiver must not change.
+
+      PASS if all five are present and the response does not claim it has already sent the message
+      to the other agent.
+
+      FAIL if any of the five is missing, if the response writes a HANDOFF.md-style session document
+      instead of a message, or if it says it sent the message itself.

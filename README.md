@@ -16,7 +16,7 @@ your own note types.
 
 | Skill | Command | What it does |
 | :--- | :--- | :--- |
-| `handoff` | `/nd:handoff` | Produces a `HANDOFF.md` so a fresh agent can continue the work without the current conversation. |
+| `handoff` | `/nd:handoff` | Produces a `HANDOFF.md` so a fresh agent can continue the work without the current conversation, or, for one task handed to another agent, a message to send it. |
 | `reflect` | `/nd:reflect` | Consolidates learnings from a session into project notes after a significant conversation, refactor, or rule change. |
 | `herdr` | `/nd:herdr` | Spawns, runs, and controls other coding-agent sessions via Herdr — panes, tabs, and agent sessions. |
 | `plain-language` | `/nd:plain-language` | Rewrites jargon-heavy text in plain language for a non-specialist reader. |

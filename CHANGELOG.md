@@ -8,6 +8,12 @@ and each plugin's `version` in its own `plugin.json` follows
 
 ## [Unreleased]
 
+### Changed
+- **nd `handoff`, one task handed to another agent**: when the user asks to hand one scoped change to an agent that is already running, the skill writes a message instead of `HANDOFF.md`, and doesn't commit anything. The message says how the question came up, what was decided and by whom, why each non-obvious detail is the way it is, and how the receiver checks each fact and the result; it also says where the work stands and what not to change. Every claim is checked first, and a claim known only from a subagent is marked in the message and named to the user. The skill shows the draft and sends it only if asked. A handoff request that names no agent still gets `HANDOFF.md`.
+
+### Added
+- **nd evals**: `handoff/writes-one-task-message`, one release-notes date change handed to an agent in another pane, checking a message is written (no `HANDOFF.md`, no commit) with where it came from, the decision and what is still open, the reason for keeping "(beta)", a check before and after the edit, and where the work stands. 5 runs: 0.95 with the skill, 0.75 without; with the earlier, looser judge it was 1.00 against 0.75. In the runs without the skill that were read, the message gives the change and a final check but no check before the edit and no branch or commit. A second case for asking when the request is unclear was dropped: in 20 runs the agent never found it unclear (it wrote a message when an agent was named and `HANDOFF.md` when none was), so the skill now defaults to `HANDOFF.md` instead of asking.
+
 ## [0.11.2] - 2026-11-14
 
 ### Changed
