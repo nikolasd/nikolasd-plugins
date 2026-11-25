@@ -2,7 +2,7 @@
   "$schema": "https://anthropic.com/claude-code/plugin.schema.json",
   "name": "nd",
   "displayName": "Personal Skills",
-  "version": "0.7.3",
+  "version": "0.8.0",
   "description": "Personal workflow skills: session handoff, session reflection, plain-language writing style, spawning/controlling agents via Herdr, paired architect/engineer sessions, a disciplined-delivery protocol for test-first, fully verified changes with per-action approval gates, a code-grounded onboarding-documentation workflow (C4, engineering, AI design, infra/deploy, ownership), Basic Memory orientation that includes your own note types, and Git Town syncing for branches checked out in other worktrees",
   "author": {
     "name": "Nikolas Demiridis",
