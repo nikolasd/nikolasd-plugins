@@ -8,6 +8,8 @@ and each plugin's `version` in its own `plugin.json` follows
 
 ## [Unreleased]
 
+## [0.11.3] - 2026-11-25
+
 ### Changed
 - **nd `handoff`, one task handed to another agent**: when the user asks to hand one scoped change to an agent that is already running, the skill writes a message instead of `HANDOFF.md`, and doesn't commit anything. The message says how the question came up, what was decided and by whom, why each non-obvious detail is the way it is, and how the receiver checks each fact and the result; it also says where the work stands and what not to change. Every claim is checked first, and a claim known only from a subagent is marked in the message and named to the user. The skill shows the draft and sends it only if asked. A handoff request that names no agent still gets `HANDOFF.md`.
 
