@@ -1,0 +1,23 @@
+schema_version: "1.1"
+name: git-town-worktrees-skips-new-branch
+description: >
+  Near-miss. Creating a branch with Git Town in a repo with worktrees is `git town hack`,
+  not a sync; a description that fires on any Git Town or worktree mention would fire here.
+tags: [git-town-worktrees, near-miss]
+runs: 5
+expected_outcome: >
+  Does not invoke the git-town-worktrees skill.
+execution:
+  max_turns: 6
+  allowed_tools: [Read, Glob, Grep, Skill]
+  prompt: |
+    I keep each feature in its own worktree. Use git town to start a new branch called
+    fix-login off trunk, so it shows up in the stack.
+graders:
+  - name: skill-not-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?git-town-worktrees"'
+    min: 0
+    max: 0
+    arm: both

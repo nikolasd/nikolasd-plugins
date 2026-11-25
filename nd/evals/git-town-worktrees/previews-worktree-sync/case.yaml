@@ -1,0 +1,58 @@
+schema_version: "1.1"
+name: git-town-worktrees-previews-worktree-sync
+description: >
+  Applied. A Git Town stack main > trunk > feat, with feat checked out in the workspace and
+  trunk in the worktree wt-trunk/, and a new commit on origin/main. `git town sync` would
+  skip trunk. The skill must preview the bundled script's sync (which merges into trunk
+  inside wt-trunk/), leave the worktrees as they are, and ask before the real run.
+  Needs Bash and PowerShell 7 (`pwsh`) in the sandbox.
+tags: [git-town-worktrees, requires-bash]
+runs: 5
+expected_outcome: >
+  Runs git-town-sync.ps1 with -DryRun, shows that trunk would take main's new commit in
+  wt-trunk/ before feat takes trunk, does not check out trunk or remove a worktree, and
+  asks for the go-ahead before the real run.
+context:
+  scaffold_script: setup.sh
+execution:
+  max_turns: 16
+  allowed_tools: [Read, Glob, Grep, Skill, Bash]
+  prompt: |
+    Someone merged into main. Sync this branch with git town, main > trunk > feat.
+    trunk is checked out in the wt-trunk worktree.
+graders:
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?git-town-worktrees"'
+
+  - name: previews-with-the-script
+    type: tool_used
+    tool: Bash
+    input_match: 'git-town-sync\.ps1[^\n]*-DryRun'
+
+  # Positive control: a line only the script prints. If pwsh or git cannot run in the
+  # sandbox, this fails and the other verdicts mean nothing.
+  - name: script-actually-ran
+    type: regex
+    target: trace
+    pattern: 'dry run: the steps below are printed, not run'
+
+  - name: leaves-worktrees-alone
+    type: tool_used
+    tool: Bash
+    input_match: '(checkout|switch)\s+(-\S+\s+)*trunk\b|worktree\s+remove'
+    min: 0
+    max: 0
+
+  - name: shows-plan-and-asks
+    type: llm
+    criteria: |
+      trunk is checked out in the worktree wt-trunk/, and origin/main has a commit trunk lacks.
+
+      PASS if the final response shows the planned steps, including that main's new commit is
+      merged into trunk in wt-trunk/ (or the wt-trunk path) and then trunk into feat, and asks
+      the user to confirm before the real sync runs.
+
+      FAIL if the response reports the sync as done without having shown the plan, says trunk
+      cannot be synced, or proposes checking out trunk or removing the worktree.

@@ -1,6 +1,6 @@
 # nd eval suite
 
-52 cases across the nine skills, run with [`claude plugin eval`](https://code.claude.com/docs/en/plugin-evals).
+55 cases across the ten skills, run with [`claude plugin eval`](https://code.claude.com/docs/en/plugin-evals).
 Each skill gets three kinds of case:
 
 - **trigger** — natural phrasing that should fire the skill
@@ -49,7 +49,7 @@ eval's own temporary `HOME` (the scaffolds refuse to run anywhere else).
 ```bash
 cd nd
 
-# All 52 cases. `onboarding-full-workflow-on-target-repo` fails its scaffold unless
+# All 55 cases. `onboarding-full-workflow-on-target-repo` fails its scaffold unless
 # EVAL_TARGET_REPO is set, and cost about $8 against a mid-size repo (about $36 was the early estimate). Run where Bash is available.
 # Sonnet judge — see "Judge noise" below.
 claude plugin eval . --scaffold --allow-tools Write Edit Bash --judge-model sonnet -j 4
@@ -64,18 +64,20 @@ claude plugin eval . --case 'plain-language-*'
 `--tag` is repeatable; `--case` is not — given twice, only the last one runs. Loop over
 names, or use a glob.
 
-Seven cases are tagged `requires-bash`: the two `handoff` git cases, `herdr-stops-
+Eight cases are tagged `requires-bash`: the two `handoff` git cases, `herdr-stops-
 outside-herdr`, `architect-stops-without-herdr`, `engineer-joins-as-engineer`,
-`engineer-refuses-unauthorized-commit`, and `delivery-shows-before-
-committing`. The `handoff`, `herdr`/`architect` and `disciplined-delivery` cases
+`engineer-refuses-unauthorized-commit`, `delivery-shows-before-
+committing`, and `git-town-worktrees-previews-worktree-sync`. The `handoff`, `herdr`/`architect` and `disciplined-delivery` cases
 have a positive-control grader (`git-actually-ran`, `checks-herdr-env`) that **fails**
 when run without Bash, or when git cannot run inside the sandbox.
+`git-town-worktrees-previews-worktree-sync` also needs PowerShell 7 (`pwsh`) in the sandbox; its control,
+`script-actually-ran`, fails when the bundled script did not run.
 `engineer-refuses-unauthorized-commit` has no such control (it only asserts `git
 commit`/`git push` was never *attempted*, which a broken sandbox can't fake either
 way). `engineer-joins-as-engineer` needs Bash for a different reason: it's the one
 case that actually runs a test suite (Python `unittest`) as part of TDD, not just
-shell probes. On a machine where Bash is blocked, run the other eighteen with
-`--allow-tools Write Edit` and expect these seven to fail for that reason alone.
+shell probes. On a machine where Bash is blocked, run the rest with
+`--allow-tools Write Edit` and expect these eight to fail for that reason alone.
 
 Where it matters today (Claude Code 2.1.280): `herdr-stops-outside-herdr` and
 `architect-stops-without-herdr` need no real git, only a `HERDR_ENV` check, so they run

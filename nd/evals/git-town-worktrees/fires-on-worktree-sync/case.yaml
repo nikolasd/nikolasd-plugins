@@ -1,0 +1,21 @@
+schema_version: "1.1"
+name: git-town-worktrees-fires-on-worktree-sync
+description: >
+  Trigger. The user asks for a Git Town sync of a stack whose parent branch is checked
+  out in another worktree, in words not copied from the skill's trigger phrases.
+tags: [git-town-worktrees]
+runs: 5
+expected_outcome: >
+  Invokes the git-town-worktrees skill.
+execution:
+  max_turns: 8
+  # No Bash: the trigger needs no shell, and leaving Bash out lets the case run on Windows.
+  allowed_tools: [Read, Glob, Grep, Skill]
+  prompt: |
+    My trunk branch is checked out in the main repo folder and this feature branch lives in a
+    separate worktree. Bring this branch up to date with git town: main into trunk, trunk into here.
+graders:
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?git-town-worktrees"'

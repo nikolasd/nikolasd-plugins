@@ -8,6 +8,11 @@ and each plugin's `version` in its own `plugin.json` follows
 
 ## [Unreleased]
 
+### Added
+- **nd `git-town-worktrees`**: syncs a Git Town branch tree when some of its branches are checked out in other worktrees, which `git town sync` skips without an error. The bundled `git-town-sync.ps1` (PowerShell 7) reads Git Town's lineage and settings, fetches once, and syncs parents first with the merge strategy: main and perennial branches fast-forward and push, feature branches merge their remote branch and their parent and push, and prototype, contribution, observed and parked branches follow their Git Town rules. Each merge runs where the branch is: in its worktree, with `git update-ref` or `git merge-tree` when it is not checked out, or, on a conflict, in a new `sync-<branch>` worktree where the run stops for the conflict to be resolved; running it again carries on. Uncommitted changes in the current worktree are stashed and restored; another worktree with uncommitted changes is skipped, with the branches below it, unless `-Stash` is given. `-Stack`, `-All`, `-Branch`, `-NoPush` and `-DryRun` match `git town sync`'s scope and preview. It never deletes a branch, and refuses a rebase or compress strategy. The skill tells the agent to check `git worktree list` first, preview with `-DryRun`, and ask before the real run.
+- **nd evals**: `git-town-worktrees/fires-on-worktree-sync` (trigger), `git-town-worktrees/skips-new-branch` (near-miss: `git town hack` in a repo with worktrees) and `git-town-worktrees/previews-worktree-sync` (applied: a stack whose parent is in another worktree, checking the script's dry run, no checkout or worktree removal, and a question before the real run; needs Bash and `pwsh`). 5 runs each, Sonnet judge, on Windows: the trigger fired 5/5 with the plugin (0/5 without), the near-miss stayed quiet 5/5. The applied case grants Bash, so it cannot run on Windows and has not been run yet.
+- **Tests**: `tests/git-town-sync/test-git-town-sync.ps1`, nine scenario tests of the script against throwaway repositories with a bare origin and worktrees, run in CI.
+
 ## [0.11.3] - 2026-11-25
 
 ### Changed

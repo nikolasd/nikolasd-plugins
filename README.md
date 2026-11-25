@@ -11,8 +11,9 @@ Personal workflow skills for session handoff, session reflection, plain-language
 writing, spawning/controlling agents via Herdr, a paired architect/engineer
 session workflow, a disciplined-delivery protocol for test-first, fully
 verified changes with per-action approval gates, a code-grounded
-onboarding-documentation workflow, and Basic Memory orientation that includes
-your own note types.
+onboarding-documentation workflow, Basic Memory orientation that includes
+your own note types, and Git Town syncing for branches checked out in other
+worktrees.
 
 | Skill | Command | What it does |
 | :--- | :--- | :--- |
@@ -25,8 +26,9 @@ your own note types.
 | `delivery` | `/nd:delivery` | Research-before-code, test-first implementation, the definition of "fully implemented," adversarial self-review, honest reporting, and per-action git approval gates. |
 | `onboard` | `/nd:onboard` | Produces a 360° onboarding doc set (C4, engineering, AI design, infra/deploy, ownership) grounded on code only, via specialist subagents, a bundled acceptance checker, and a mandatory verify-and-fix review pass. |
 | `orient` | `/nd:orient` | Orients from Basic Memory like `bm-orient`, plus the searches listed in `basicMemory.orientQueries`, so notes of your own types (for example ticket journals) count as active work. |
+| `git-town-worktrees` | `/nd:git-town-worktrees` | Syncs a Git Town branch tree like `git town sync` (merge strategy), including the branches checked out in other worktrees that `git town sync` skips, with a bundled PowerShell script that merges each branch where it is checked out. |
 
-Backed by a 48-case eval suite (`nd/evals/`) run with `claude plugin eval` — see
+Backed by a 55-case eval suite (`nd/evals/`) run with `claude plugin eval` — see
 [`nd/evals/README.md`](nd/evals/README.md) for how to run it, known
 machine-specific gotchas (macOS git sandboxing, Linux sandbox dependencies), and
 past findings.

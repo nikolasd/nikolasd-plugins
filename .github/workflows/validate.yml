@@ -28,6 +28,9 @@ jobs:
       - name: Validate nd plugin
         run: claude plugin validate nd --strict
 
+      - name: Test nd git-town-sync script
+        run: pwsh -NoProfile -File tests/git-town-sync/test-git-town-sync.ps1
+
       - name: Validate pm plugin
         run: claude plugin validate pm --strict
 
