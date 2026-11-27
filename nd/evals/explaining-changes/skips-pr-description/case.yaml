@@ -1,0 +1,39 @@
+schema_version: "1.1"
+name: explaining-changes-skips-pr-description
+description: >
+  Near-miss. Writing a PR description is excluded, even though the skill fires
+  once for the whole branch before a PR. Requires --scaffold.
+tags: [explaining-changes, near-miss]
+runs: 5
+expected_outcome: >
+  Writes a PR description for the change in branch.diff. Does not invoke the
+  explaining-changes skill.
+context:
+  scaffold_script: setup.sh
+execution:
+  max_turns: 8
+  allowed_tools: [Read, Glob, Grep, Skill]
+  prompt: |
+    I'm about to open the PR for this branch; the diff is in branch.diff. Write me
+    the PR description.
+graders:
+  - name: explaining-changes-not-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?explaining-changes"'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: writes-pr-description
+    type: llm
+    criteria: |
+      The user asked for a PR description of a change that moves order totals from
+      float to Decimal, validates quantities, renames DISCOUNT, deletes legacy_total
+      and moves InvalidOrder to a new errors.py.
+
+      PASS if the answer is a PR description: a title or summary of the change and
+      what reviewers should know, short enough to paste into a PR.
+
+      FAIL if it is mainly a teaching walkthrough per file with a principle for each
+      change.

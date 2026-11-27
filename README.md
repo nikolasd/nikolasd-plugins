@@ -29,7 +29,7 @@ worktrees, and explaining a finished change to the engineer who will maintain it
 | `git-town-worktrees` | `/nd:git-town-worktrees` | Syncs a Git Town branch tree like `git town sync` (merge strategy), including the branches checked out in other worktrees that `git town sync` skips, with a bundled PowerShell script that merges each branch where it is checked out. |
 | `explaining-changes` | `/nd:explaining-changes` | Explains a finished change from its final diff, file by file: every addition and deletion, why it was made, and the principle it follows, then the tests and the weak points. |
 
-Backed by a 58-case eval suite (`nd/evals/`) run with `claude plugin eval` — see
+Backed by a 60-case eval suite (`nd/evals/`) run with `claude plugin eval` — see
 [`nd/evals/README.md`](nd/evals/README.md) for how to run it, known
 machine-specific gotchas (macOS git sandboxing, Linux sandbox dependencies), and
 past findings.

@@ -1,0 +1,37 @@
+schema_version: "1.1"
+name: explaining-changes-answers-one-change
+description: >
+  Applied case. A question about one change gets an answer about that change, not
+  the whole walkthrough. A regression guard: the model without the plugin already
+  passes it. Requires --scaffold.
+tags: [explaining-changes]
+runs: 5
+expected_outcome: >
+  Explains why DISCOUNT became VIP_DISCOUNT, with its reason and whether it is
+  mechanical, without walking through the rest of branch.diff.
+context:
+  scaffold_script: setup.sh
+execution:
+  max_turns: 8
+  allowed_tools: [Read, Glob, Grep, Skill]
+  prompt: |
+    The diff of my branch is in branch.diff. Why did DISCOUNT get renamed to
+    VIP_DISCOUNT?
+graders:
+  - name: answers-only-the-rename
+    type: llm
+    criteria: |
+      The rename of DISCOUNT to VIP_DISCOUNT names the constant after the only
+      orders it applies to (order["vip"]); the value also became Decimal("0.10").
+
+      PASS if the answer explains this rename (the reason, and that the name now
+      says which orders get the discount) and stays on it; a sentence of context
+      about the Decimal value is fine. A reason not stated in the diff may be
+      marked as inferred.
+
+      A sentence or a short list noting that other changes came in the same diff
+      is fine.
+
+      FAIL if it explains the other changes (legacy_total, quantity validation,
+      errors.py, the tests) with their own reasons or principles, file by file, or
+      states a ticket or bug as the source without evidence.

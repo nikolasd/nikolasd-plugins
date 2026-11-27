@@ -3,29 +3,40 @@ name: explaining-changes-explains-finished-change
 description: >
   Applied case. The agent has just finished an implementation and reports back.
   The skill must turn the wrap-up into an explanation of the final diff, file by
-  file, with every addition and deletion, its reason and its principle. Without
-  the skill, baseline runs gave a short list of what changed with no reasons.
-  Requires --scaffold and Bash.
+  file, with every addition and deletion, its reason and its principle. The work
+  spans two commits plus a last step left uncommitted, with one new untracked
+  file, so base..HEAD alone misses part of it. Without the skill, baseline runs
+  gave a short list of what changed with no reasons. Requires --scaffold and Bash.
 tags: [explaining-changes, requires-bash]
 runs: 5
 expected_outcome: >
-  Reads the final diff (base..main) and explains it per file: each change as
-  Added, Deleted or Changed with a reason and a principle, including the deleted
-  legacy_total and the renamed DISCOUNT; then the tests; then weak points.
+  Reads the final diff since `base`, including uncommitted and untracked work, and
+  explains it per file: each change as Added, Deleted or Changed with a reason and
+  a principle, including the deleted legacy_total, the renamed DISCOUNT and the new
+  src/shop/errors.py; then the tests; then weak points.
 context:
   scaffold_script: setup.sh
 execution:
   max_turns: 14
   allowed_tools: [Read, Glob, Grep, Skill, Bash]
   prompt: |
-    You just finished the change on main (everything since the tag `base`): order
-    totals now use Decimal, bad quantities are rejected, and the module was tidied
-    up. Wrap up and report back to me.
+    You just finished the change, starting from the tag `base`: order totals now
+    use Decimal, bad quantities are rejected, and the module was tidied up. Wrap up
+    and report back to me.
 graders:
   - name: skill-fired
     type: tool_used
     tool: Skill
     input_match: '"skill"\s*:\s*"(?:[\w-]+:)?explaining-changes"'
+
+  # "Wrap up" is close to a handoff trigger phrase; this is a report, not a handoff.
+  - name: handoff-not-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?handoff"'
+    min: 0
+    max: 0
+    arm: both
 
   # Positive control: the explanation must come from the diff, not the prompt.
   - name: read-the-diff
@@ -37,15 +48,22 @@ graders:
     type: llm
     weight: 2
     criteria: |
-      The reader is a junior engineer who will maintain the code.
+      The reader is a junior engineer who will maintain the code. The change since
+      the tag `base` is two commits plus a last step that is not committed: the
+      rename of DISCOUNT to VIP_DISCOUNT, the deletion of legacy_total, and the move
+      of InvalidOrder to a new, untracked file src/shop/errors.py. A helper
+      _to_decimal was added in the first commit and removed again in the last step,
+      so it is not part of the final change.
 
       PASS if the report is organised by file (not by commit); explains each change
       in src/shop/orders.py with what changed, why, and the principle or practice it
       follows, including the deletion of legacy_total and the renaming of DISCOUNT
-      to VIP_DISCOUNT, each with a reason; covers the tests in tests/test_orders.py;
-      and ends with weak points or risks (such as the changed return type or the
-      default rounding mode).
+      to VIP_DISCOUNT, each with a reason; covers the new src/shop/errors.py and the
+      move of InvalidOrder there; covers the tests in tests/test_orders.py; and ends
+      with weak points or risks (such as the changed return type or the default
+      rounding mode).
 
       FAIL if it is a short list of changes without reasons, if it is organised per
-      commit, if the deletion of legacy_total is missing, or if principles are named
-      without saying why they apply here.
+      commit, if it describes _to_decimal as part of the change, if it misses the
+      uncommitted work (the deletion of legacy_total, the rename, or errors.py), or
+      if principles are named without saying why they apply here.
