@@ -3,13 +3,13 @@
   "name": "nd",
   "displayName": "Personal Skills",
   "version": "0.8.0",
-  "description": "Personal workflow skills: session handoff, session reflection, plain-language writing style, spawning/controlling agents via Herdr, paired architect/engineer sessions, a disciplined-delivery protocol for test-first, fully verified changes with per-action approval gates, a code-grounded onboarding-documentation workflow (C4, engineering, AI design, infra/deploy, ownership), Basic Memory orientation that includes your own note types, and Git Town syncing for branches checked out in other worktrees",
+  "description": "Personal workflow skills: session handoff, session reflection, plain-language writing style, spawning/controlling agents via Herdr, paired architect/engineer sessions, a disciplined-delivery protocol for test-first, fully verified changes with per-action approval gates, a code-grounded onboarding-documentation workflow (C4, engineering, AI design, infra/deploy, ownership), Basic Memory orientation that includes your own note types, Git Town syncing for branches checked out in other worktrees, and explaining a finished change file by file to the engineer who will maintain it",
   "author": {
     "name": "Nikolas Demiridis",
     "email": "nikolas@demiridis.gr",
     "url": "https://github.com/nikolasd"
   },
   "license": "MIT",
-  "keywords": ["handoff", "reflection", "plain-language", "writing", "workflow", "herdr", "agents", "architect", "engineer", "disciplined-delivery", "tdd", "verification", "onboarding", "documentation", "c4", "architecture", "basic-memory", "orientation", "git-town", "worktrees"],
+  "keywords": ["handoff", "reflection", "plain-language", "writing", "workflow", "herdr", "agents", "architect", "engineer", "disciplined-delivery", "tdd", "verification", "onboarding", "documentation", "c4", "architecture", "basic-memory", "orientation", "git-town", "worktrees", "explanation", "code-walkthrough"],
   "repository": "https://github.com/nikolasd/nikolasd-plugins"
 }

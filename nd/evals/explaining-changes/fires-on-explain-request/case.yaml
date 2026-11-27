@@ -1,0 +1,23 @@
+schema_version: "1.1"
+name: explaining-changes-fires-on-explain-request
+description: >
+  Trigger case. A user asks for the branch's changes to be explained to a junior
+  engineer, with the final diff saved in branch.diff. Requires --scaffold.
+tags: [explaining-changes]
+runs: 5
+expected_outcome: >
+  The explaining-changes skill fires and the answer explains the diff to a junior
+  engineer.
+context:
+  scaffold_script: setup.sh
+execution:
+  max_turns: 8
+  allowed_tools: [Read, Glob, Grep, Skill]
+  prompt: |
+    Our new junior dev is taking over the shop code. The diff of my branch is in
+    branch.diff. Walk them through everything I changed and why.
+graders:
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?explaining-changes"'

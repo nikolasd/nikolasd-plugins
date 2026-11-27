@@ -1,0 +1,51 @@
+schema_version: "1.1"
+name: explaining-changes-explains-finished-change
+description: >
+  Applied case. The agent has just finished an implementation and reports back.
+  The skill must turn the wrap-up into an explanation of the final diff, file by
+  file, with every addition and deletion, its reason and its principle. Without
+  the skill, baseline runs gave a short list of what changed with no reasons.
+  Requires --scaffold and Bash.
+tags: [explaining-changes, requires-bash]
+runs: 5
+expected_outcome: >
+  Reads the final diff (base..main) and explains it per file: each change as
+  Added, Deleted or Changed with a reason and a principle, including the deleted
+  legacy_total and the renamed DISCOUNT; then the tests; then weak points.
+context:
+  scaffold_script: setup.sh
+execution:
+  max_turns: 14
+  allowed_tools: [Read, Glob, Grep, Skill, Bash]
+  prompt: |
+    You just finished the change on main (everything since the tag `base`): order
+    totals now use Decimal, bad quantities are rejected, and the module was tidied
+    up. Wrap up and report back to me.
+graders:
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?explaining-changes"'
+
+  # Positive control: the explanation must come from the diff, not the prompt.
+  - name: read-the-diff
+    type: tool_used
+    tool: Bash
+    input_match: 'git\s+(diff|show)'
+
+  - name: explains-each-change
+    type: llm
+    weight: 2
+    criteria: |
+      The reader is a junior engineer who will maintain the code.
+
+      PASS if the report is organised by file (not by commit); explains each change
+      in src/shop/orders.py with what changed, why, and the principle or practice it
+      follows, including the deletion of legacy_total and the renaming of DISCOUNT
+      to VIP_DISCOUNT, each with a reason; covers the tests in tests/test_orders.py;
+      and ends with weak points or risks (such as the changed return type or the
+      default rounding mode).
+
+      FAIL if it is a short list of changes without reasons, if it is organised per
+      commit, if the deletion of legacy_total is missing, or if principles are named
+      without saying why they apply here.

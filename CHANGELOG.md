@@ -8,6 +8,10 @@ and each plugin's `version` in its own `plugin.json` follows
 
 ## [Unreleased]
 
+### Added
+- **nd `explaining-changes`**: when an implementation is finished and reported back (after each task of a plan, at the end of a branch, or when asked to explain the changes), the change is explained from its final diff, not its commits, to the engineer who will maintain it: a one-line scope, the big picture, then one section per file in the order the data flows, with every addition and deletion named and given its reason and the principle it follows (a mechanical change is called mechanical), then what each test file proves, then the weak points. In baseline runs on the eval fixture, an agent asked to wrap up a finished change gave a short list of what changed with no reasons (2 of 2); asked explicitly, it explained well but organised by commit or concept. With the skill, wrap-ups explained every change per file, including the deleted function and the renamed constant, with reasons and principles (2 of 2), and an explicit request followed the same shape.
+- **nd evals**: `explaining-changes/fires-on-explain-request` (trigger), `explaining-changes/skips-diff-review` (near-miss: reviewing someone's diff for bugs) and `explaining-changes/explains-finished-change` (applied: a wrap-up after a finished change, needs Bash). Not run yet with `claude plugin eval`.
+
 ## [0.12.0] - 2026-11-25
 
 ### Added

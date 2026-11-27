@@ -1,0 +1,37 @@
+schema_version: "1.1"
+name: explaining-changes-skips-diff-review
+description: >
+  Near-miss. Reviewing a diff for defects before a merge is a review, not an
+  explanation of one's own finished change. Requires --scaffold.
+tags: [explaining-changes, near-miss]
+runs: 5
+expected_outcome: >
+  Reviews branch.diff for problems. Does not invoke the explaining-changes skill.
+context:
+  scaffold_script: setup.sh
+execution:
+  max_turns: 8
+  allowed_tools: [Read, Glob, Grep, Skill]
+  prompt: |
+    A teammate opened this change for review; the diff is in branch.diff. Before I
+    approve it, list any bugs or risky behaviour you see. Just the problems, please.
+graders:
+  - name: explaining-changes-not-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?explaining-changes"'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: lists-problems
+    type: llm
+    criteria: |
+      The user asked only for bugs and risky behaviour in a diff that moves order
+      totals from float to Decimal, validates quantities and deletes legacy_total.
+
+      PASS if the answer is a list of concrete problems or risks (for example the
+      changed return type, bool accepted as a quantity, unvalidated prices, the
+      default rounding mode, or the deleted public function).
+
+      FAIL if it is mainly a file-by-file explanation of what changed and why.
